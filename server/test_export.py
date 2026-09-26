@@ -288,6 +288,62 @@ check("a scale it does not know is refused",
 
 
 print()
+print("the Eos patch survives an address nobody has decided yet")
+# 🔴 Jerry hit this in the editor, 2026.09.26: Export → Eos patch on a plot
+# whose two LED addresses read "PENDING — Art, universe 2" returned a 500. The
+# address went straight to int() and took the whole export down.
+#
+# ⚠ Writing a note where an address goes is the RIGHT thing to do when nobody
+# has decided it — the plot is honest and the exporter was not. A unit whose
+# address is undecided belongs in the NOT PATCHED list beside the ones with no
+# address at all, with the reason, not in a traceback.
+from plotedit.exports import _addr_text, _unpatchable
+
+_pending = {"unit": 61, "channel": 61, "type": "SHEHDS 19",
+            "address": "PENDING — Art, universe 2", "position": "GRID C"}
+_plot = {"show": "crash probe", "venue": "", "revision": "0",
+         "room": {"width": 30, "depth": 30}, "positions": [],
+         "instruments": [
+             _pending,
+             {"unit": 1, "channel": 1, "type": "S4 26", "address": 45, "position": "E1"},
+             {"unit": 2, "channel": 2, "type": "S4 36", "address": "2/12", "position": "E1"},
+             {"unit": 3, "channel": 3, "type": "S4 26", "address": None, "position": "E1"},
+         ]}
+
+_asc = exports.eos_patch(_plot)          # this is the line that used to raise
+check("an undecided address no longer crashes the export", bool(_asc), True)
+check("...it is listed as not patched, with the reason",
+      any("PENDING" in l and "not a number" in l for l in _asc.splitlines()), True)
+check("a plain address still patches", "   1<45" in _asc, True)
+# ⚠ 2/12 is not 2 divided by 12 and it is not 212. A console that takes
+# universes needs the slash carried through.
+check("universe/address survives as written", "   2<2/12" in _asc, True)
+check("no address is still its own reason",
+      any("unit 3" in l and "no address" in l for l in _asc.splitlines()), True)
+check("only the patchable units reached the patch block",
+      len([l for l in _asc.splitlines() if "<" in l and not l.startswith("!")]), 2)
+
+check("a bare number formats as itself", _addr_text("45"), "45")
+check("universe notation is normalised, not flattened", _addr_text(" 2 / 12 "), "2/12")
+check("a note is refused before it reaches the formatter",
+      _unpatchable(61, "PENDING — Art, universe 2") is not None, True)
+check("...and a real address is not", _unpatchable(1, "2/12"), None)
+
+# 🔴 The plot that actually caused it. If this file ever stops exporting, the
+# bug is back with the exact data that found it.
+import os as _os2
+_real = _os2.path.join(_os2.path.dirname(__file__), "..", "..", "..",
+                       "Documents", "AI Brain", "My-AI-Brain", "My AI Brain",
+                       "my-files (knowledge)", "plotedit-demo-data",
+                       "2026.09.25 - Inferno Productions - Without Consent - Light Plot.plot.json")
+if _os2.path.exists(_real):
+    _rp = json.load(open(_real))
+    check("the plot that found it exports too", bool(exports.eos_patch(_rp)), True)
+else:
+    print("  --   the demo plot is not on this machine; skipped")
+
+
+print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

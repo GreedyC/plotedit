@@ -20,6 +20,7 @@ The file says so in its own header, so nobody is misled downstream.
 """
 import csv
 import io
+import re
 from typing import Any, Dict, List
 
 from . import photometrics as ph
@@ -179,7 +180,7 @@ def magic_sheet_rows(plot: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 # --------------------------------------------------------------- console
 
-_ADDRESS = __import__("re").compile(r"^\s*(\d+)\s*[/.]\s*(\d+)\s*$|^\s*(\d+)\s*$")
+_ADDRESS = re.compile(r"^\s*(\d+)\s*[/.]\s*(\d+)\s*$|^\s*(\d+)\s*$")
 
 
 def _addr_text(addr):
@@ -190,7 +191,12 @@ def _addr_text(addr):
     rather than turned into an int and back.
     """
     m = _ADDRESS.match(str(addr))
-    if m and m.group(3) is not None:
+    # ⚠ Only ever called for an address _unpatchable() has already accepted.
+    # Saying so out loud rather than assuming it: an unguarded .group() on None
+    # is the same class of crash this whole change exists to remove.
+    if m is None:
+        raise ValueError(f"not an address: {addr!r}")
+    if m.group(3) is not None:
         return str(int(m.group(3)))
     return f"{int(m.group(1))}/{int(m.group(2))}"
 
