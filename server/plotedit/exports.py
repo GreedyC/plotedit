@@ -20,6 +20,7 @@ The file says so in its own header, so nobody is misled downstream.
 """
 import csv
 import io
+import re
 from typing import Any, Dict, List
 
 from . import photometrics as ph
@@ -179,6 +180,50 @@ def magic_sheet_rows(plot: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 # --------------------------------------------------------------- console
 
+_ADDRESS = re.compile(r"^\s*(\d+)\s*[/.]\s*(\d+)\s*$|^\s*(\d+)\s*$")
+
+
+def _addr_text(addr):
+    """An address as Eos writes it: a bare number, or universe/address.
+
+    ⚠ "2/45" is not 2 divided by 45 and it is not 245. A console that takes
+    universes needs the slash carried through, so the string is normalised
+    rather than turned into an int and back.
+    """
+    m = _ADDRESS.match(str(addr))
+    # ⚠ Only ever called for an address _unpatchable() has already accepted.
+    # Saying so out loud rather than assuming it: an unguarded .group() on None
+    # is the same class of crash this whole change exists to remove.
+    if m is None:
+        raise ValueError(f"not an address: {addr!r}")
+    if m.group(3) is not None:
+        return str(int(m.group(3)))
+    return f"{int(m.group(1))}/{int(m.group(2))}"
+
+
+def _unpatchable(ch, addr):
+    """Why this unit cannot be patched, or None if it can.
+
+    🔴 IT USED TO CRASH. The address was passed straight to int(), so a plot
+    that recorded an honest "PENDING — universe 2" — which is the right thing
+    to write when the address is not known yet — took the whole export down
+    with a ValueError. The file is a draft for a console; a unit whose address
+    nobody has decided belongs in the NOT PATCHED list beside the ones with no
+    address at all, not in a traceback.
+    """
+    if ch is None:
+        return "no channel"
+    try:
+        int(ch)
+    except (TypeError, ValueError):
+        return f"channel is not a number ({ch!r})"
+    if addr is None or str(addr).strip() == "":
+        return "no address"
+    if not _ADDRESS.match(str(addr)):
+        return "address is not a number or universe/address"
+    return None
+
+
 def eos_patch(plot: Dict[str, Any]) -> str:
     """USITT ASCII patch: channel < address.
 
@@ -203,26 +248,28 @@ def eos_patch(plot: Dict[str, Any]) -> str:
     patched, skipped = [], []
     for i in plot["instruments"]:
         ch, addr = i.get("channel"), i.get("address")
-        if ch is None or addr is None:
-            skipped.append(i)
+        why = _unpatchable(ch, addr)
+        if why:
+            skipped.append((i, why))
         else:
-            patched.append((int(ch), int(addr), i))
+            patched.append((int(ch), _addr_text(addr), i))
 
     if skipped:
-        L.append("! Not patched — no channel or no address:")
-        for i in skipped:
+        L.append("! Not patched:")
+        for i, why in skipped:
             L.append(f"!   {i.get('position', '?')} unit {i.get('unit', '?')} "
-                     f"{i.get('type', '?')} ch={i.get('channel')} addr={i.get('address')}")
+                     f"{i.get('type', '?')} ch={i.get('channel')} "
+                     f"addr={i.get('address')} — {why}")
         L.append("!")
 
     L.append("Patch 1")
-    for ch, addr, _ in sorted(patched):
+    for ch, addr, _ in sorted(patched, key=lambda r: r[0]):
         L.append(f"   {ch}<{addr}")
     L.append(" ")
 
     # Channel labels carry the purpose through to the board, which is the whole
     # value of exporting a patch rather than typing it.
-    for ch, _, i in sorted(patched):
+    for ch, _, i in sorted(patched, key=lambda r: r[0]):
         label = i.get("purpose") or i.get("type") or ""
         if label:
             L.append(f"$ChanLabel {ch} {label}")
