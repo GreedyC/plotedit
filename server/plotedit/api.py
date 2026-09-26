@@ -95,7 +95,12 @@ class WashRequest(BaseModel):
 
 @app.get("/health")
 def health() -> Dict[str, Any]:
-    return {"ok": True, "fixtures": len(ph.FIXTURES), "gels": len(ph.GELS)}
+    # ⭐ The version is here rather than in its own endpoint because the editor
+    # already calls this on boot. A tester reporting something has to be able to
+    # say which build they saw it in.
+    from .version import version as _v
+    return {"ok": True, "fixtures": len(ph.FIXTURES), "gels": len(ph.GELS),
+            "version": _v()}
 
 
 @app.get("/fixtures")

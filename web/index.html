@@ -137,10 +137,22 @@
     /* ⚠ `rulers` sits among the display toggles but does NOT change the screen.
        Saying so on the control is cheaper than explaining it afterwards. */
     .print-only { opacity:.62; font-size:.85em; }
+    .version { opacity:.5; font-size:.78em; letter-spacing:.02em; white-space:nowrap; }
+    /* A build that is not a release says so, and says it in a colour that asks
+       to be noticed — running a working copy and reporting it as a release is
+       how a bug gets hunted in the wrong source. */
+    .version.dev { opacity:.9; color:var(--tertiary, #994C00); font-weight:600; }
     input[type=range] { accent-color:var(--primary); }
 
     /* ---- the drawing ------------------------------------------------- */
-    main { display:grid; grid-template-columns:1fr 380px; overflow:hidden; }
+    /* ⭐ The side panel's width is the reader's to choose — dragged at the
+       splitter, remembered per browser. A fixed 380px put the positions and
+       schedule behind a horizontal scrollbar. */
+    main { display:grid; grid-template-columns:minmax(0,1fr) 6px var(--aside-w,380px); overflow:hidden; }
+    #splitter { cursor:col-resize; background:var(--outline-variant); touch-action:none;
+                transition:background-color .15s; }
+    #splitter:hover, #splitter.dragging { background:var(--primary); }
+    body.resizing { cursor:col-resize; user-select:none; }
     #canvas { overflow:auto; display:grid; place-items:center; padding:16px; }
     svg { background:#fff; border-radius:var(--shape-s); box-shadow:var(--elev-1); touch-action:none; }
     /* 🔴 THE DRAWING IS NOT TEXT ON A PAGE. Inside the SVG one user unit is one
@@ -306,6 +318,11 @@
       <span class="venue" id="venue"></span>
       <span id="dirty"></span>
       <span id="status" class="muted"></span>
+      <!-- ⭐ Which build this is. A tester who finds something has to be able to
+           say which version they saw it in, and until now nothing in the
+           download said. Sits by the show name, muted, out of the way until
+           somebody goes looking for it. -->
+      <span id="version" class="version" title="Which build this is. Quote it if you report something."></span>
       <div class="group grow">
         <button id="undo" class="icon" title="Undo (⌘Z)" disabled>
           <span class="material-symbols-outlined">undo</span></button>
@@ -356,12 +373,24 @@
       <label title="PRINT ONLY — the screen never draws these. A dimension scale along the edges of the plan: X across the bottom, Y up the side, so you can read where something is without walking a scale rule across the sheet.">
         <input type="checkbox" id="rulers"> rulers <span class="print-only">(print)</span></label>
       <div class="divider"></div>
-      <label><span class="material-symbols-outlined">zoom_in</span>
-        <input type="range" id="zoom" min="6" max="40" step="0.5" value="14"></label>
+      <label>drawing zoom: <span class="material-symbols-outlined">zoom_in</span>
+        <input type="range" id="zoom" min="2" max="40" step="0.5" value="14"></label>
+      <div class="group">
+        <button id="zoom-page" class="icon" title="Fit the whole plot">
+          <span class="material-symbols-outlined">fit_screen</span></button>
+        <button id="zoom-height" class="icon" title="Fit to height">
+          <span class="material-symbols-outlined">height</span></button>
+        <button id="zoom-width" class="icon" title="Fit to width">
+          <span class="material-symbols-outlined">width</span></button>
+        <button id="zoom-100" class="small outlined" title="Default zoom (14 px per foot)">100%</button>
+      </div>
+      <div class="divider"></div>
     </div>
   </header>
   <main>
     <div id="canvas"><svg id="plot"></svg></div>
+    <div id="splitter" role="separator" aria-orientation="vertical"
+         title="Drag to resize the side panel · double-click to reset"></div>
     <aside>
       <details class="panel details" id="panel-details" open>
         <summary>

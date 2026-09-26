@@ -32,3 +32,8 @@ plots/
 # The built editor. NOT committed — it is a build artifact, and a stale one in
 # git is worse than none. The release workflow builds it into the download.
 web/dist/
+
+# Written into the package by the release workflow, from the tag. A checkout
+# must never have one — a working copy that claims a released version sends
+# somebody hunting a bug in source that is not what they are running.
+server/plotedit/VERSION

@@ -316,5 +316,48 @@ console.log("\nunits are never hand-formatted outside the formatters");
   check("the inspector formats levels through fmtFc", /fmtFc\(/.test(insp), true);
 }
 
+console.log("\nthe splitter leaves the drawing the width it promises");
+// 🔴 Found by Copilot's review of the first outside contribution, after a
+// human review that missed it. The clamp subtracted CANVAS_MIN from the window
+// but never the splitter's own 6px column, so dragging the panel as wide as it
+// would go left the canvas 234px against an advertised 240.
+//
+// ⚠ It was in my own test output — clamped to 1260 in a 1500px window, and
+// 1500 − 1260 − 6 is 234 — and I read past it. A number that is nearly right
+// is the easiest kind to miss.
+//
+// There is no DOM here, so this pins the ARITHMETIC that the clamp has to
+// satisfy. It is the rule, stated once, that the implementation must match.
+{
+  const ASIDE_MIN = 280, CANVAS_MIN = 240, SPLITTER_W = 6;
+  const clamp = (w: number, room: number) =>
+    Math.round(Math.max(ASIDE_MIN, Math.min(w, room - CANVAS_MIN - SPLITTER_W)));
+  const canvasLeft = (aside: number, room: number) => room - aside - SPLITTER_W;
+
+  check("dragged as wide as it goes, the drawing keeps its minimum",
+        canvasLeft(clamp(Infinity, 1500), 1500), CANVAS_MIN);
+  check("...and that is not 234", canvasLeft(clamp(Infinity, 1500), 1500) === 234, false);
+  check("a width in the middle is left alone", clamp(600, 1500), 600);
+  check("crushed the other way it stops at the panel minimum",
+        clamp(0, 1500), ASIDE_MIN);
+  // On a narrow window the two minimums cannot both be met. The PANEL wins,
+  // because a panel below 280 is unusable while a squeezed drawing still
+  // scrolls — but it must be a deliberate choice, not an accident of Math.min.
+  check("on a window too narrow for both, the panel minimum wins",
+        clamp(999, 400), ASIDE_MIN);
+  const fs2 = await import("node:fs");
+  const path2 = await import("node:path");
+  const src = fs2.readFileSync(
+    path2.join(new URL("./", import.meta.url).pathname, "main.ts"), "utf8");
+  check("the clamp really does subtract the splitter",
+        /room - CANVAS_MIN - SPLITTER_W/.test(src), true);
+  check("...and re-clamps when the window changes",
+        /addEventListener\("resize"/.test(src), true);
+  check("the separator is keyboard-operable",
+        /bar\.tabIndex = 0/.test(src) && /"keydown"/.test(src), true);
+  check("...and reports its value to a screen reader",
+        /aria-valuenow/.test(src), true);
+}
+
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

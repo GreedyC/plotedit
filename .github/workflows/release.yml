@@ -56,6 +56,17 @@ jobs:
         run: |
           mkdir -p out/plotedit out/plotedit/web
           cp -r server samples run.command run.bat README.md LICENSE out/plotedit/
+          # ⭐ The version comes from the TAG and is written into the package.
+          # A clone has no VERSION file and reports "dev", which is the honest
+          # answer — the checkout could be anything. Only a build made from a
+          # tag is allowed to claim a number.
+          # ⚠ workflow_dispatch has no tag, so it is not given one either.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            printf '%s' "${GITHUB_REF_NAME#v}" > out/plotedit/server/plotedit/VERSION
+            echo "packaged as ${GITHUB_REF_NAME#v}"
+          else
+            echo "not a tag build — no VERSION written, it will report dev"
+          fi
           chmod +x out/plotedit/run.command
           cp -r web/dist out/plotedit/web/dist
           # 🔴 docs/ is copied WITHOUT docs/reference. That folder holds a copy

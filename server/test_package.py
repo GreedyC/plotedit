@@ -1083,6 +1083,56 @@ check("...and is zoomed in as far as it goes (3/4in clips)",
       any("CLIPPED" in w for w in _sec_up.warnings), True)
 
 print()
+print("the build says which build it is")
+# ⭐ Jerry, 2026.09.26: "I'd like to print the version number on the UI so they
+# know." Testers had no way to say which version they saw something in, and the
+# download carried no version information at all — the releases are git tags,
+# so a clone knew and the people who never cloned did not.
+#
+# 🔴 A build must NEVER invent a number. A working copy reporting itself as a
+# release sends whoever reads the report hunting in source that is not what was
+# running, which costs more than having no version at all.
+import os as _os
+from plotedit import version as _V
+
+_had = _V._FILE.exists()
+_orig = _V._FILE.read_text(encoding="utf-8") if _had else None
+try:
+    if _had:
+        _os.unlink(_V._FILE)
+    check("a checkout reports dev, not a number", _V.version(), "dev")
+    _V._FILE.write_text("0.1.7\n", encoding="utf-8")
+    check("a packaged build reports its tag", _V.version(), "0.1.7")
+    _V._FILE.write_text("   \n", encoding="utf-8")
+    check("an empty VERSION is dev, not blank", _V.version(), "dev")
+    _os.unlink(_V._FILE)
+finally:
+    if _had:
+        _V._FILE.write_text(_orig, encoding="utf-8")
+
+from fastapi.testclient import TestClient as _TC
+from plotedit.api import app as _app
+check("health carries it so the editor can show it",
+      "version" in _TC(_app).get("/health").json(), True)
+
+# ⚠ The workflow is the only thing that writes VERSION, and nothing else would
+# notice if that line were dropped — the package would just quietly go back to
+# saying "dev" on every release.
+_wf = open(_os.path.join(_os.path.dirname(__file__), "..",
+                         ".github", "workflows", "release.yml"),
+           encoding="utf-8").read()
+check("the release workflow writes VERSION into the package",
+      "out/plotedit/server/plotedit/VERSION" in _wf, True)
+check("...from the tag, and only on a tag build",
+      'GITHUB_REF_TYPE}" = "tag"' in _wf and "GITHUB_REF_NAME#v" in _wf, True)
+
+# 🔴 And it must never be committed. A checkout carrying a VERSION file would
+# claim a release it is not.
+_ign = open(_os.path.join(_os.path.dirname(__file__), "..", ".gitignore"),
+            encoding="utf-8").read()
+check("VERSION is gitignored", "server/plotedit/VERSION" in _ign, True)
+
+print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

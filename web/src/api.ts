@@ -330,3 +330,18 @@ export async function pdfPaths(
   if (!r.ok) throw new Error(await detailOf(r));
   return r.json();
 }
+
+/** Which build the server is. "dev" for anything not built from a tag.
+ *
+ * ⚠ Never falls back to a number. A working copy that reports itself as a
+ * release sends whoever reads the report hunting in source that is not what
+ * was running. */
+export async function serverVersion(): Promise<string> {
+  try {
+    const r = await fetch("/api/health");
+    if (!r.ok) return "unknown";
+    return (await r.json()).version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
