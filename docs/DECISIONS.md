@@ -83,3 +83,38 @@ than only in the docs, because the file is what somebody will open at tech.
 - **The Eos patch format.** Written to spec, never tested. Ten minutes with
   Nomad and a scratch show file settles it.
 
+## 2026.09.26 — Fixtures arrive as code, not as imported SVG
+
+Testers asked whether a fixture plotedit does not draw could be supplied as an
+SVG file. **No — they are contributed through a fork instead**, and the standard
+for doing it is the longest section of `CONTRIBUTING.md`.
+
+Three reasons, in the order they matter:
+
+- **An SVG is not a symbol.** A plot symbol carries a real size in feet, an
+  origin at the yoke — which is what it rotates about — a facing, and line
+  weights from the three RP-2 §6.18 allows. A drawing file has a bounding box
+  and pixel strokes. Every one of those four would have to be asked for
+  separately, and a wrong yoke puts every focus angle quietly out.
+- **The geometry lives in one place.** `symbols.py` feeds both the PDF and the
+  browser through `GET /symbols`. `docs/SYMBOLS.md` says porting the shapes to
+  TypeScript would guarantee they drift; a second runtime source of shapes is
+  the same mistake wearing a different hat.
+- **SVG is XML, and this is a local server** that people would feed files from
+  the internet. Entity expansion, external references, embedded script. That is
+  a real exposure for a feature whose whole job is to draw a light.
+
+**⭐ The objection this answers is "a fork is slow".** It is not: the symbol works
+on your own plots the moment you write it, and the pull request is only how it
+reaches everyone else. Nobody waits on review to draft a show.
+
+**⚠ And there is a cheaper route that is not a new symbol at all** — mapping an
+unrecognised fixture onto an existing RP-2 family in `fixture_names.py`, which is
+one line and no geometry. Most people asking for a custom symbol want their
+unfamiliar unit to stop being a blank, not to draw one. That route is offered
+first in `CONTRIBUTING.md`.
+
+Revisit if a standards-correct symbol library ever exists in a form worth
+importing wholesale. Arbitrary user artwork in an RP-2 plot is what is refused
+here, not interchange.
+
