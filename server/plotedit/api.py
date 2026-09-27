@@ -24,6 +24,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from . import dmx
+from . import labels as _labels
 from . import photometrics as ph
 from . import positions as P
 from . import exports, dxf_bridge, pdf_bridge, symbols as sym
@@ -92,6 +93,11 @@ class Instrument(BaseModel):
 
 class ComputeRequest(BaseModel):
     instruments: List[Instrument]
+    # ⚠ How tall the COLOUR LABEL is drawn, in feet, so the collision tiers can
+    # be worked out for the caller's own scale. The browser draws it at a fixed
+    # 0.5 ft so it zooms with the plot; the sheet draws 7pt, which in feet
+    # depends on the scale. Same rule, different input — see labels.color_tiers.
+    colorTextHeightFt: Optional[float] = None
     # The height to cut the pools at — 0 for the deck, ~5'-2" for a face,
     # 5'-6" for the top of a head. Separate from where a unit is AIMED.
     pool_plane: Optional[float] = None
@@ -240,6 +246,14 @@ def compute(req: ComputeRequest) -> Dict[str, Any]:
     """
     from . import units as _u
     sysm = _u.system_of({"units": req.units})
+    # 🔴 Colour labels that would touch (issue #21). Worked out for the WHOLE
+    # plot before any row, because a label's tier depends on its neighbours.
+    # ⭐ The rule lives in labels.py and is served. A copy in TypeScript would
+    # drift from the sheet, and the two would disagree about a drawing.
+    _tiers = _labels.color_tiers(
+        [i.model_dump() for i in req.instruments],
+        req.colorTextHeightFt or 0.5)
+
     results = []
     for i, inst in enumerate(req.instruments):
         row: Dict[str, Any] = {"index": i, "unit": inst.unit, "channel": inst.channel,
@@ -259,6 +273,7 @@ def compute(req: ComputeRequest) -> Dict[str, Any]:
         # is given. A copy of this rule in TypeScript would drift from the Eos
         # exporter, which is the mistake docs/SYMBOLS.md exists to warn about.
         row["patch"], row["patch_note"] = _patch_cell(inst)
+        row["color_tier"] = _tiers[i]
         if inst.type not in ph.FIXTURES:
             row["note"] = f"{inst.type} is not in the fixture table"
             results.append(row); continue

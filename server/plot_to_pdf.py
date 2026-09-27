@@ -136,8 +136,15 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     _boom_names = {(p.get("name") or "").strip().lower()
                    for p in plot["positions"] if P.is_vertical(p)}
 
+    # 🔴 Colour labels that would touch get pushed further out (issue #21). The
+    # text is 7pt on paper, so how much of the STAGE it covers depends on the
+    # scale — at 1/4" nothing on the demo plot collides, at 1/8" it does. Work
+    # the tiers out once, here, where the scale is known.
+    _text_h = 7.0 / s.pt_per_ft if getattr(s, "pt_per_ft", None) else 0.39
+    _tiers = L.color_tiers(plot["instruments"], _text_h)
+
     rows = []
-    for inst in plot["instruments"]:
+    for _i, inst in enumerate(plot["instruments"]):
         focus = ((inst["focusX"], inst["focusY"])
                  if inst.get("focusX") is not None else None)
         r = s.unit(inst["x"], inst["y"], inst["unit"], ch=inst.get("channel"),
@@ -156,7 +163,8 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                    show_pool=show_pools, show_focus=show_focus,
                    show_labels=show_labels,
                    in_plan=(inst.get("position") or "").strip().lower()
-                           not in _boom_names)
+                           not in _boom_names,
+                   color_tier=_tiers[_i])
         rows.append(r)
 
     # ⭐ The key goes ON THE PLOT. §5.0 allows it "in any location that does not

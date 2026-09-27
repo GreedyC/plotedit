@@ -2,6 +2,11 @@
 import type { Plot, Position, Instrument } from "./plot.js";
 import type { Computed } from "./render.js";
 
+/** The colour label's height in feet, as render.ts draws it (TEXT * 0.5). ⚠ If
+ *  that changes, this changes with it, or the server works out tiers for a label
+ *  size the screen is not using. */
+export const COLOR_TEXT_FT = 0.5;
+
 export async function compute(plot: Plot, poolPlane?: number): Promise<Computed[]> {
   const instruments = plot.instruments.map(i => ({
     unit: i.unit, channel: i.channel, type: i.type, x: i.x, y: i.y,
@@ -23,7 +28,12 @@ export async function compute(plot: Plot, poolPlane?: number): Promise<Computed[
     // ⚠ `units` decides how the server FORMATS its answers — throw_ft, field_ft
     // and the rest come back as text. The arithmetic is feet either way; leave
     // this out and a metric plot gets metric pools beside imperial throws.
-    body: JSON.stringify({ instruments, pool_plane: poolPlane, units: plot.units }),
+    // ⚠ The colour label is drawn at 0.5 FEET on screen, so it scales with the
+    // drawing. The sheet draws 7pt, which is a different number of feet at every
+    // scale. Telling the server which one we are lets it answer with tiers that
+    // are right for THIS drawing — see labels.color_tiers.
+    body: JSON.stringify({ instruments, pool_plane: poolPlane, units: plot.units,
+                           colorTextHeightFt: COLOR_TEXT_FT }),
   });
   if (!r.ok) throw new Error(`compute failed: ${r.status} ${await r.text()}`);
   return (await r.json()).instruments as Computed[];
