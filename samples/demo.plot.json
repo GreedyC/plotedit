@@ -316,7 +316,8 @@
       "color": "R52+R119",
       "position": "House Right Boom #1",
       "purpose": "Side SR mid",
-      "address": 11
+      "address": 11,
+      "focusH": 3.5
     },
     {
       "unit": 3,
@@ -331,7 +332,8 @@
       "color": "R52+R119",
       "position": "House Right Boom #1",
       "purpose": "Side SR shin",
-      "address": 12
+      "address": 12,
+      "focusH": 1.5
     },
     {
       "unit": 1,
@@ -358,21 +360,22 @@
       "height": 6,
       "position": "House Left Box Boom 1",
       "color": "R52+R119",
-      "focusX": 28.583333333333332,
-      "focusY": 8.916666666666666,
-      "address": 14
+      "focusX": 28.5,
+      "focusY": 9.0,
+      "address": 14,
+      "focusH": 3.5
     },
     {
       "unit": 1,
       "channel": 46,
       "type": "S4 36",
       "x": 10,
-      "y": 31.166666666666668,
+      "y": 31.0,
       "trim": 14,
       "position": "Electric 7",
       "color": "R52+R119",
-      "focusX": 21.833333333333332,
-      "focusY": 20.583333333333332,
+      "focusX": 22.0,
+      "focusY": 20.5,
       "address": 15
     },
     {
@@ -380,12 +383,12 @@
       "channel": 47,
       "type": "S4 36",
       "x": 10,
-      "y": 27.166666666666668,
+      "y": 27.0,
       "trim": 14,
       "position": "Electric 7",
       "color": "R52+R119",
-      "focusX": 23.333333333333332,
-      "focusY": 27.166666666666668,
+      "focusX": 23.5,
+      "focusY": 27.0,
       "address": 16
     }
   ],
