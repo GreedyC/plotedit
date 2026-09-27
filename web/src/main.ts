@@ -128,6 +128,19 @@ function draw() {
   setUnitSystem(store.plot.units);
   fillScaleMenu(); render(svg, store.plot, view(), computed, opts()); }
 
+/** The dimmer, or the address where there is no dimmer, and which of the two it
+ *  is. ⚠ ONE COLUMN CANNOT SAY WHICH ON ITS OWN — "12" is a plausible dimmer and
+ *  a plausible address, and a patch column that leaves that open is how a unit
+ *  gets plugged into the wrong thing. The number is what is read at a glance;
+ *  the hover says what it is. */
+function patchCell(inst: { address?: unknown; dimmer?: unknown }): [string, string] {
+  const filled = (v: unknown) => v !== undefined && v !== null && String(v).trim() !== "";
+  if (filled(inst.address)) return [String(inst.address).trim(), "address"];
+  if (filled(inst.dimmer)) return [String(inst.dimmer).trim(), "dimmer"];
+  return ["—", "no dimmer and no address — this unit is not patched to anything"];
+}
+
+
 function fillTable() {
   const tb = $<HTMLTableElement>("schedule").querySelector("tbody")!;
   tb.replaceChildren();
@@ -136,7 +149,8 @@ function fillTable() {
     const tr = document.createElement("tr");
     tr.dataset.index = String(i);
     if (i === store.selected) tr.classList.add("sel");
-    const cells: [string, boolean][] = [
+    const [patchText, patchWhat] = patchCell(inst);
+    const cells: [string, boolean, string?][] = [
       [inst.position ?? "", false], [String(inst.unit), false],
       [inst.channel !== undefined ? String(inst.channel) : "", false],
       [inst.type, false], [inst.color ?? "—", false],
@@ -144,12 +158,21 @@ function fillTable() {
       // "nothing on that circuit", which is how a dimmer gets loaded past its
       // rating on paper.
       [c ? (c.watts != null ? `${c.watts}` : "UNKNOWN") : "—", true],
-      [c?.throw_ft ?? "—", true], [c?.field_ft ?? "—", true],
-      [c?.footcandles != null ? String(c.footcandles) : "—", true],
+      // ⭐ Jerry, 2026.09.26: the throw, the pool and the footcandles came off
+      // this table and the patch went on. Those three are design figures, and
+      // the inspector already gives them for the unit in hand; this list is
+      // read while working through a rig, where what is wanted is what each
+      // unit is plugged into.
+      //
+      // ⚠ An address and a dimmer are ALTERNATIVES, not a pair — the same rule
+      // the Eos exporter follows in _patch_target. The address wins when a unit
+      // carries both, because that is the number the console uses.
+      [patchText, true, patchWhat],
     ];
-    for (const [text, num] of cells) {
+    for (const [text, num, hover] of cells) {
       const td = document.createElement("td");
       if (num) td.className = "num";
+      if (hover) td.title = hover;
       td.textContent = text;
       tr.appendChild(td);
     }
