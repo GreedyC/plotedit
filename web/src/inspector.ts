@@ -46,6 +46,15 @@ export const FIELDS: Field[] = [
   // read that as "clear this field", so a perfectly good address unset itself.
   { key: "address", label: "Address", kind: "text", recompute: true,
     hint: "45, or 2/21 for a universe. The START address" },
+  // ⭐ The specific fixture, and the personality it is set to (Jerry,
+  // 2026.09.26). Type above is the photometric key, which a Series 1 and a
+  // Series 2 share; these two decide how many addresses the unit occupies.
+  { key: "model", label: "Model", kind: "select", recompute: true,
+    hint: "The specific fixture. Personalities differ between models, so the "
+        + "address range depends on this" },
+  { key: "profile", label: "DMX personality", kind: "select", recompute: true,
+    hint: "What the fixture is set to at its own display. The same instrument "
+        + "can be on a different personality from the one beside it" },
   { key: "type", label: "Type", kind: "select", photometric: true },
   { key: "position", label: "Position", kind: "select" },
   { key: "purpose", label: "Purpose", kind: "text" },
@@ -65,15 +74,6 @@ export const FIELDS: Field[] = [
   { key: "lamp", label: "Lamp", kind: "select", photometric: true },
   { key: "mode", label: "LED mode", kind: "select", photometric: true,
     hint: "The PHOTOMETRIC output mode — how bright. Not the DMX personality" },
-  // ⭐ The specific fixture, and the personality it is set to (Jerry,
-  // 2026.09.26). Type above is the photometric key, which a Series 1 and a
-  // Series 2 share; these two decide how many addresses the unit occupies.
-  { key: "model", label: "Model", kind: "select", recompute: true,
-    hint: "The specific fixture. Personalities differ between models, so the "
-        + "address range depends on this" },
-  { key: "profile", label: "DMX personality", kind: "select", recompute: true,
-    hint: "What the fixture is set to at its own display. The same instrument "
-        + "can be on a different personality from the one beside it" },
   { key: "lensRotation", label: "Lens angle", kind: "number", step: 15,
     hint: "Oval-beam units (PARNel): degrees the lens is turned" },
   { key: "accessories", label: "Accessories", kind: "list",
@@ -174,6 +174,22 @@ export function renderInspector(
     label.htmlFor = id;
     label.textContent = f.label;
     if (f.hint) label.title = f.hint;
+    // ⭐ Jerry, 2026.09.26: "if we say 2/1 it should expand to 2/1-X". It
+    // expands HERE, beside the label, and NOT in the box.
+    //
+    // ⚠ The input keeps the START address. Putting "2/1-2/15" in the box would
+    // make the next edit store that string as the address, and nothing matches
+    // it — the unit would quietly stop being patched. A range is something the
+    // program worked out; the address is what the designer typed, and the two
+    // must not share an editable field.
+    if (f.key === "address" && c?.patch && c.patch !== String(inst.address ?? "")
+        && c.patch.includes("-")) {
+      const span = document.createElement("span");
+      span.className = "muted";
+      span.textContent = ` ${c.patch}`;
+      span.title = c.patch_note ?? "";
+      label.appendChild(span);
+    }
 
     let input: HTMLInputElement | HTMLSelectElement;
     if (f.kind === "select") {
