@@ -3,6 +3,7 @@
 
     cd server && python3 test_dmx.py
 """
+import json
 import sys
 
 from fastapi.testclient import TestClient
@@ -178,6 +179,46 @@ check("unpublished ones are offered separately",
 check("...and are not in the counted list",
       "RGB Plus 7" in _t["profiles"][S2], False)
 check("every served model cites a source", all(_t["sources"].get(m) for m in _t["profiles"]), True)
+
+print("\nthe shipped demo actually demonstrates it")
+
+# 🔴 IT DID NOT, FOR THREE RELEASES. The personality field shipped in v0.1.12 and
+# samples/demo.plot.json recorded no model and no profile, so the demo showed a
+# start address and an explanation of why there was no range. The program was
+# right and the thing every tester opens demonstrated nothing. Same shape as the
+# Eos export that succeeded and contained nothing: the code worked, the sample
+# never exercised it.
+import os as _os3
+_demo = json.load(open(_os3.path.join(_os3.path.dirname(__file__), "..",
+                                      "samples", "demo.plot.json")))
+_lustrs = [i for i in _demo["instruments"] if "Lustr" in i.get("type", "")]
+check("the demo has LED units to demonstrate with", len(_lustrs) >= 2, True)
+check("...and every one records a model", all(i.get("model") for i in _lustrs), True)
+check("...and a personality", all(i.get("profile") for i in _lustrs), True)
+
+_r = client.post("/compute", json={"instruments": _demo["instruments"],
+                                   "colorTextHeightFt": 0.5})
+_by_ch = {i["channel"]: row for row, i in zip(_r.json()["instruments"], _demo["instruments"])}
+check("the demo shows a real range, not a start address",
+      all("-" in _by_ch[i["channel"]]["patch"] for i in _lustrs), True)
+
+# ⭐ TWO IDENTICAL FIXTURES ON DIFFERENT PERSONALITIES. That is the reason the
+# field is on the unit rather than the type, and a demo that put both on the same
+# one would not show it.
+check("...on two different personalities",
+      len({i["profile"] for i in _lustrs}) > 1, True)
+check("...which give two different footprints",
+      len({_by_ch[i["channel"]]["patch"] for i in _lustrs}) > 1, True)
+
+# ⚠ And the ranges must not overlap each other, or the demo teaches a patch that
+# would fight itself on a real rig.
+def _span(txt):
+    a, _, b = txt.partition("-")
+    f = lambda t: int(t.split("/")[-1])
+    return f(a), f(b or a)
+_spans = sorted(_span(_by_ch[i["channel"]]["patch"]) for i in _lustrs)
+check("...and the two ranges do not overlap",
+      all(a[1] < b[0] for a, b in zip(_spans, _spans[1:])), True)
 
 print()
 if FAILS:

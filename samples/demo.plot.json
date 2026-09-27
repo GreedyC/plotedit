@@ -256,7 +256,9 @@
       "mode": "Regulated 3200K",
       "position": "GRID B",
       "purpose": "Special SL",
-      "address": "2/1"
+      "address": "2/1",
+      "model": "Source Four LED Series 2",
+      "profile": "HSI Plus 7"
     },
     {
       "unit": 2,
@@ -270,7 +272,9 @@
       "mode": "Regulated 3200K",
       "position": "GRID B",
       "purpose": "Special SR",
-      "address": "2/21"
+      "address": "2/21",
+      "model": "Source Four LED Series 2",
+      "profile": "HSI"
     },
     {
       "unit": 4,
