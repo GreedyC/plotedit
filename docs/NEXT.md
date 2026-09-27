@@ -829,8 +829,23 @@ with an intensity gives a channel that moves the first parameter and nothing
 else. On a real rig that reads as a broken light rather than a wrong patch,
 which is an hour of somebody's evening to find.
 
-Not urgent while the LED units on the demo plots are unaddressed anyway. It
-becomes urgent the day somebody patches one.
+**⭐ Updated 2026.09.26, and the reason it got easier:** the plot now records the
+specific model and the DMX personality per unit, and `dmx.py` turns those into a
+channel count with a datasheet behind it. The schedule shows `2/1-2/15`. So the
+export no longer needs new facts — it needs to carry facts the plot already has.
+
+**⚠ And the gap is now visible rather than merely present.** The schedule tells
+the truth about the rig and the file handed to the console does not: two Lustrs
+on different personalities export identically, as bare dimmers at one address
+each. That is a worse state to leave alone than before, because anyone reading
+both will believe the export.
+
+What is still unknown is the Eos end — what a patch entry with a fixture type
+looks like in USITT ASCII, and whether it can carry a personality at all. The
+format has never been verified against a console (see the header of
+`exports.py`), so this waits on a real Eos export to diff against, not on more
+reasoning from the spec. Jerry, 2026.09.26: "we will have to find out how to
+export it, but that's another day."
 
 ⚠ Eos asks on import whether to bring fixtures in as **Library** or **Custom**;
 ETC's manual recommends Custom. That prompt is asking how to resolve fixture
