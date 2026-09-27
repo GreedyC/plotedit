@@ -29,14 +29,22 @@ On Windows, `run.bat` does all of that and is the normal way to run it.
 
 ### The tests
 
+The suites are plain scripts, not pytest. CI runs them exactly like this:
+
 ```
-cd server && ../.venv/bin/python -m pytest
-cd web && npm run test:all      # npm test alone runs only the geometry suite
+cd server && for f in test_*.py; do python "$f"; done
+cd server && python verify_suites.py
+cd web && npx tsc --noEmit && npm run test:all
 ```
 
+`npm test` on its own runs only the geometry suite; `test:all` is the whole thing.
+
 **A test that passes when the code is broken is worse than no test.** Before you
-believe a new test, break the thing it covers on purpose and watch it fail. This
-has caught more bad tests in this repo than review has.
+believe a new test, break the thing it covers on purpose and watch it fail.
+
+This is not just advice here — `verify_suites.py` does it automatically, breaking
+each suite and checking it actually goes red and names what broke. It runs in CI.
+A suite that passes no matter what you do to the code will fail that check.
 
 ---
 
