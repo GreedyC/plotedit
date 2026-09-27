@@ -21,33 +21,37 @@ def check(label, got, want):
         FAILS.append(f"{label}: got {got!r}, wanted {want!r}")
 
 
+# The specific model, because a Series 1 and a Series 2 Lustr share a
+# photometric key and do NOT share a personality list.
+S2 = "Source Four LED Series 2"
+
 print("the profile table, against the datasheet")
 # ETC Source Four LED Series 2 datasheet p.11, read off the plate itself.
 for profile, want in [("Direct", 10), ("HSIC", 7), ("HSI", 6),
                       ("RGB", 6), ("Studio", 6)]:
-    check(f"Lustr {profile}", dmx.channels("Lustr", profile)[0], want)
+    check(f"{S2} {profile}", dmx.channels(S2, profile)[0], want)
 
 # 🔴 NOT 6 + 7. The datasheet works this example itself: HSI with Plus 7 is a
 # FIFTEEN channel profile — six HSI channels, a spare at 7, the Plus 7 on/off
 # control at 8, and the seven native colours at 9-15. The first draft of the
 # table computed 13 from the prose and was wrong by two.
-check("Lustr HSI Plus 7 is 15, not 6+7", dmx.channels("Lustr", "HSI Plus 7")[0], 15)
+check("Lustr HSI Plus 7 is 15, not 6+7", dmx.channels(S2, "HSI Plus 7")[0], 15)
 
 # ⚠ Plus 7 is offered on RGB and HSIC too, but the datasheet publishes no count
 # for them, and the arithmetic that looks obvious is what got HSI wrong.
 check("RGB Plus 7 exists but is not counted",
-      dmx.channels("Lustr", "RGB Plus 7")[0], None)
+      dmx.channels(S2, "RGB Plus 7")[0], None)
 check("...and says to read it off the fixture",
-      "read it off" in dmx.channels("Lustr", "RGB Plus 7")[1], True)
+      "read it off" in dmx.channels(S2, "RGB Plus 7")[1], True)
 
-check("an unrecorded profile is not guessed", dmx.channels("Lustr", None)[0], None)
+check("an unrecorded profile is not guessed", dmx.channels(S2, None)[0], None)
 check("...and names the range it could be",
-      "6 to 15" in dmx.channels("Lustr", None)[1], True)
+      "6 to 15" in dmx.channels(S2, None)[1], True)
 check("a profile the fixture lacks is refused",
-      dmx.channels("Lustr", "Nonsense")[0], None)
+      dmx.channels(S2, "Nonsense")[0], None)
 check("a fixture with no table returns none", dmx.channels("S4", "HSI")[0], None)
 check("every entry cites a document",
-      all(dmx.SOURCES.get(f) for f in dmx.PROFILES), True)
+      all(dmx.SOURCES.get(m) for m in dmx.MODELS), True)
 
 print("\nthe range")
 check("universe notation is kept", dmx.span("2/21", 15), "2/21-2/35")
@@ -131,6 +135,49 @@ _r = client.post("/compute", json={"instruments": _mixed})
 check("a plot mixing int and string addresses computes", _r.status_code, 200)
 check("...and the throws survive it",
       all("throw" in row or not row.get("computed") for row in _r.json()["instruments"]), True)
+
+print("\nthe specific model, because the same type can be two fixtures")
+
+# ⭐ Jerry, 2026.09.26: the same instrument can have different personalities —
+# and a Series 1 and a Series 2 Lustr are both "Lustr 26 EDLT" here, same lens
+# and same optics, with different personality lists. Keying the lookup on the
+# family would answer a Series 2 question with Series 1 data.
+check("a family offers its known models", dmx.models_for("Lustr"), [S2])
+check("a conventional family offers none", dmx.models_for("S4"), [])
+check("a recorded model is used as given", dmx.resolve_model("Lustr", S2), (S2, None))
+
+# ⚠ One known model is used when the plot does not say — and it SAYS it assumed.
+_m, _note = dmx.resolve_model("Lustr", None)
+check("one known model is used when unrecorded", _m, S2)
+check("...and the assumption is stated, not silent", "assuming" in (_note or ""), True)
+check("a family with no models resolves to nothing",
+      dmx.resolve_model("S4", None)[0], None)
+
+# Two units of the SAME type on DIFFERENT personalities, which is the whole point.
+_pair = [dict(B, unit=1, channel=21, type="Lustr 26 EDLT", address="2/1",
+              model=S2, profile="HSI Plus 7"),
+         dict(B, unit=2, channel=22, type="Lustr 26 EDLT", address="2/21",
+              model=S2, profile="HSI")]
+_rows = client.post("/compute", json={"instruments": _pair}).json()["instruments"]
+check("same type, first on HSI Plus 7", _rows[0]["patch"], "2/1-2/15")
+check("same type, second on HSI", _rows[1]["patch"], "2/21-2/26")
+
+check("an assumed model is declared in the cell",
+      "assuming" in cell(type="Lustr 26 EDLT", address="2/21", profile="HSI")[1], True)
+check("...and is not claimed when the model is recorded",
+      "assuming" in cell(type="Lustr 26 EDLT", address="2/21", model=S2, profile="HSI")[1], False)
+
+print("\nthe table the inspector builds its dropdowns from")
+_t = client.get("/dmx").json()
+check("the models are served", _t["family_models"]["Lustr"], [S2])
+check("the personalities are served", "HSI Plus 7" in _t["profiles"][S2], True)
+# ⚠ An unpublished personality is still OFFERED — a designer on RGB Plus 7 has
+# to be able to record it. It is listed separately, not hidden.
+check("unpublished ones are offered separately",
+      "RGB Plus 7" in _t["unpublished"][S2], True)
+check("...and are not in the counted list",
+      "RGB Plus 7" in _t["profiles"][S2], False)
+check("every served model cites a source", all(_t["sources"].get(m) for m in _t["profiles"]), True)
 
 print()
 if FAILS:

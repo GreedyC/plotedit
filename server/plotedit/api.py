@@ -71,7 +71,12 @@ class Instrument(BaseModel):
     # Full — and has nothing to do with DMX. `profile` is the DMX personality
     # the fixture is set to, which is what decides how many addresses it eats.
     # The two are easy to confuse and answer completely different questions.
-    profile: Optional[str] = Field(None, description='DMX profile, e.g. "HSI Plus 7"')
+    profile: Optional[str] = Field(None, description='DMX personality, e.g. "HSI Plus 7"')
+    # ⭐ The SPECIFIC fixture (Jerry, 2026.09.26). `type` above is the
+    # photometric key — "Lustr 26 EDLT" — which a Series 1 and a Series 2 share
+    # because their optics are the same. Their personalities are not, so the
+    # footprint is looked up by THIS.
+    model: Optional[str] = Field(None, description='Specific fixture, e.g. "Source Four LED Series 2"')
     # 🔴 str OR int. Plots in the wild carry BOTH — samples/demo.plot.json
     # writes plain addresses as numbers and universe addresses as "2/21" — and
     # typing this as str alone made pydantic reject the whole request with a
@@ -193,7 +198,12 @@ def _patch_cell(inst) -> tuple:
         # There is no profile and nothing to look up.
         return str(addr), "address — a conventional fixture is one address"
 
-    n, why = dmx.channels(spec.get("family"), inst.profile)
+    model, assumed = dmx.resolve_model(spec.get("family"), inst.model)
+    if model is None:
+        return str(addr), f"address (start) — {assumed}"
+    n, why = dmx.channels(model, inst.profile)
+    if assumed:
+        why = f"{why} ({assumed})"
     if not n:
         return str(addr), f"address (start) — {why}"
     rng = dmx.span(addr, n)
@@ -204,6 +214,21 @@ def _patch_cell(inst) -> tuple:
         return str(addr), (f"address (start) — {why}, but {n} channels from here "
                            f"runs past the end of the universe. Check the patch.")
     return rng, f"address, {why}"
+
+
+@app.get("/dmx")
+def dmx_table() -> Dict[str, Any]:
+    """The DMX personalities, so the inspector can offer them.
+
+    ⭐ Served, never ported. The channel counts live in dmx.py and the browser
+    is given them — a second copy in TypeScript would drift from the exporter,
+    which is the mistake docs/SYMBOLS.md exists to warn about.
+    """
+    return {"family_models": dmx.FAMILY_MODELS,
+            "profiles": {m: sorted(t) for m, t in dmx.MODELS.items()},
+            "unpublished": {m: sorted(v) for m, v in dmx.UNPUBLISHED.items()},
+            "suggested": dmx.SUGGESTED,
+            "sources": dmx.SOURCES}
 
 
 @app.post("/compute")

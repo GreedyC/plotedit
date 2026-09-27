@@ -20,17 +20,20 @@ is the default, and it is right for most of any plot.
 """
 from typing import Dict, Optional, Tuple
 
-# Keyed by the `family` recorded in photometrics.FIXTURES, then by profile name.
+# ⭐ KEYED BY THE SPECIFIC MODEL, NOT THE FAMILY (Jerry, 2026.09.26). A Series 1
+# and a Series 2 Lustr are both "Lustr 26 EDLT" in the photometrics — same lens,
+# same optics — and they do NOT have the same personality list. Keying this on
+# the family would quietly answer a Series 2 question with Series 1 data, and
+# the answer would look right.
 #
 # Source Four LED Series 2 — "ETC Source Four LED Series 2 - Datasheet.pdf",
 # p.11, "DMX Input Channel Profiles". RGB and Studio are six-channel profiles in
 # which channel 4 is unused; the footprint is still six.
 #
-# ⚠ "Plus 7" is not a profile. It is an option that adds seven colour-control
-# channels to RGB, HSI or HSIC — the datasheet's own worked example is HSI with
-# Plus 7 becoming a fifteen-channel profile.
-PROFILES: Dict[str, Dict[str, int]] = {
-    "Lustr": {
+# ⚠ "Plus 7" is not a profile. It is an option that adds colour-control channels
+# to RGB, HSI or HSIC.
+MODELS: Dict[str, Dict[str, int]] = {
+    "Source Four LED Series 2": {
         "Direct": 10,
         "HSIC": 7,
         "HSI": 6,
@@ -48,52 +51,80 @@ PROFILES: Dict[str, Dict[str, int]] = {
 # Profiles that exist but whose channel count the datasheet does not publish.
 # ⚠ These are NOT absent from the fixture — Plus 7 is offered on RGB and HSIC
 # too. The datasheet simply works only the HSI example, and the arithmetic that
-# looks obvious is the arithmetic that got HSI Plus 7 wrong by two. So they
-# return "not known" rather than a number nobody printed.
+# looks obvious is the arithmetic that got HSI Plus 7 wrong by two.
 UNPUBLISHED: Dict[str, set] = {
-    "Lustr": {"RGB Plus 7", "HSIC Plus 7"},
+    "Source Four LED Series 2": {"RGB Plus 7", "HSIC Plus 7"},
+}
+
+# Which models a photometric family might be. The inspector offers these.
+# ⚠ A family with one known model does NOT mean the fixture is that model. It
+# means that is the only one whose datasheet has been read.
+FAMILY_MODELS: Dict[str, list] = {
+    "Lustr": ["Source Four LED Series 2"],
 }
 
 SOURCES: Dict[str, str] = {
-    "Lustr": "ETC Source Four LED Series 2 datasheet, p.11 "
-             "'DMX Input Channel Profiles'",
+    "Source Four LED Series 2":
+        "ETC Source Four LED Series 2 datasheet, p.11 'DMX Input Channel Profiles'",
 }
 
 # ⚠ ETC's own Quick Setup called "Stage" is HSI with Plus 7 enabled, and the
 # datasheet describes it as theatrical lighting with an incandescent dimming
 # curve and a 3200 K white point. It is the profile a theatre is most likely to
 # be on — but "most likely" is not "recorded", so this is NEVER applied
-# silently. It exists so the UI can offer a sensible starting choice.
-SUGGESTED: Dict[str, str] = {"Lustr": "HSI Plus 7"}
+# silently. The inspector uses it to order the list, nothing more.
+SUGGESTED: Dict[str, str] = {"Source Four LED Series 2": "HSI Plus 7"}
 
 
-def profiles_for(family: Optional[str]) -> Dict[str, int]:
-    """Every profile known for this fixture family, or {} if none are."""
-    return dict(PROFILES.get(family or "", {}))
+def models_for(family: Optional[str]) -> list:
+    """The specific models this photometric family might be."""
+    return list(FAMILY_MODELS.get(family or "", []))
 
 
-def channels(family: Optional[str], profile: Optional[str]) -> Tuple[Optional[int], str]:
+def resolve_model(family: Optional[str], model: Optional[str]):
+    """Which model to look profiles up in, and whether that was recorded.
+
+    ⚠ When the plot does not say, and exactly one model is known for the
+    family, that one is used — and the note SAYS it was assumed. Silence here
+    would put a channel range on paperwork on the strength of a guess about
+    which generation of fixture is in the rig.
+    """
+    if model:
+        return model, None
+    known = models_for(family)
+    if len(known) == 1:
+        return known[0], f"assuming {known[0]} — the model is not recorded"
+    return None, ("the fixture model is not recorded, and personalities differ "
+                  "between models")
+
+
+def profiles_for(model: Optional[str]) -> Dict[str, int]:
+    """Every profile with a published channel count for this model."""
+    return dict(MODELS.get(model or "", {}))
+
+
+def channels(model: Optional[str], profile: Optional[str]) -> Tuple[Optional[int], str]:
     """How many addresses this fixture occupies, and why that is the answer.
 
     Returns `(None, reason)` when it cannot be known, never a guess.
     """
-    table = PROFILES.get(family or "")
+    table = MODELS.get(model or "")
     if not table:
         # Not an error. A conventional fixture has no profile, and the caller
         # decides whether one address is the right assumption for it.
-        return None, f"no DMX profile table for {family or 'this fixture'}"
+        return None, f"no DMX profile table for {model or 'this fixture'}"
     if not profile:
         return None, ("the DMX profile is not recorded, and the footprint "
-                      f"depends on it — {family} runs from "
+                      f"depends on it — a {model} runs from "
                       f"{min(table.values())} to {max(table.values())} channels")
-    if profile in UNPUBLISHED.get(family or "", set()):
+    if profile in UNPUBLISHED.get(model or "", set()):
         return None, (f"{profile} exists, but the channel count for it is not in "
                       f"the datasheet — read it off the fixture's display")
     n = table.get(profile)
     if n is None:
         return None, (f"{profile!r} is not a profile this fixture has "
                       f"({', '.join(sorted(table))})")
-    return n, f"{profile}, {n} channels — {SOURCES.get(family or '', 'source not recorded')}"
+    return n, f"{profile}, {n} channels — {SOURCES.get(model or '', 'source not recorded')}"
 
 
 def _parts(addr: str):
