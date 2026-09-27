@@ -134,7 +134,8 @@
       "purpose": "Area 1",
       "accessories": [
         "top hat"
-      ]
+      ],
+      "address": 1
     },
     {
       "unit": 2,
@@ -149,7 +150,7 @@
       "lamp": "HPL 575",
       "position": "GRID C",
       "purpose": "Area 2",
-      "address": 93
+      "address": 2
     },
     {
       "unit": 3,
@@ -163,7 +164,8 @@
       "color": "R52+R119",
       "lamp": "HPL 575",
       "position": "GRID C",
-      "purpose": "Area 3"
+      "purpose": "Area 3",
+      "address": 3
     },
     {
       "unit": 4,
@@ -177,7 +179,8 @@
       "color": "R52+R119",
       "lamp": "HPL 575",
       "position": "GRID C",
-      "purpose": "Area 4"
+      "purpose": "Area 4",
+      "address": 4
     },
     {
       "unit": 5,
@@ -191,7 +194,8 @@
       "color": "R52+R119",
       "lamp": "HPL 575",
       "position": "GRID C",
-      "purpose": "Area 5"
+      "purpose": "Area 5",
+      "address": 5
     },
     {
       "unit": 1,
@@ -208,7 +212,8 @@
       "accessories": [
         "4-way barn door",
         "gobo"
-      ]
+      ],
+      "address": 6
     },
     {
       "unit": 2,
@@ -222,7 +227,8 @@
       "lamp": "HPL 750",
       "position": "GRID D",
       "purpose": "BAX",
-      "notes": "750W — drawn with the blackened rear per RP-2 §6.15's mark"
+      "notes": "750W — drawn with the blackened rear per RP-2 §6.15's mark",
+      "address": 7
     },
     {
       "unit": 3,
@@ -235,7 +241,8 @@
       "focusY": 14,
       "lamp": "HPL 575",
       "position": "GRID D",
-      "purpose": "BAX"
+      "purpose": "BAX",
+      "address": 8
     },
     {
       "unit": 1,
@@ -248,7 +255,8 @@
       "focusY": 8,
       "mode": "Regulated 3200K",
       "position": "GRID B",
-      "purpose": "Special SL"
+      "purpose": "Special SL",
+      "address": "2/1"
     },
     {
       "unit": 2,
@@ -261,7 +269,8 @@
       "focusY": 8,
       "mode": "Regulated 3200K",
       "position": "GRID B",
-      "purpose": "Special SR"
+      "purpose": "Special SR",
+      "address": "2/21"
     },
     {
       "unit": 4,
@@ -276,7 +285,8 @@
       "lamp": "HPL 575",
       "position": "GRID D",
       "purpose": "BAX",
-      "notes": "Lightwright calls this 'ETC Source4 PARNel'; the photometric table key is 'S4 PARNel @25'. See docs/NEXT.md."
+      "notes": "Lightwright calls this 'ETC Source4 PARNel'; the photometric table key is 'S4 PARNel @25'. See docs/NEXT.md.",
+      "address": 9
     },
     {
       "unit": 1,
@@ -290,7 +300,8 @@
       "focusY": 14,
       "color": "R52+R119",
       "position": "House Right Boom #1",
-      "purpose": "Side SR high"
+      "purpose": "Side SR high",
+      "address": 10
     },
     {
       "unit": 2,
@@ -304,7 +315,8 @@
       "focusY": 16,
       "color": "R52+R119",
       "position": "House Right Boom #1",
-      "purpose": "Side SR mid"
+      "purpose": "Side SR mid",
+      "address": 11
     },
     {
       "unit": 3,
@@ -318,7 +330,8 @@
       "focusY": 18,
       "color": "R52+R119",
       "position": "House Right Boom #1",
-      "purpose": "Side SR shin"
+      "purpose": "Side SR shin",
+      "address": 12
     },
     {
       "unit": 1,
@@ -332,7 +345,8 @@
       "focusY": 12,
       "color": "R52+R119",
       "position": "House Left Box Boom 1",
-      "purpose": "FOH box boom"
+      "purpose": "FOH box boom",
+      "address": 13
     },
     {
       "unit": 2,
@@ -345,7 +359,8 @@
       "position": "House Left Box Boom 1",
       "color": "R52+R119",
       "focusX": 28.583333333333332,
-      "focusY": 8.916666666666666
+      "focusY": 8.916666666666666,
+      "address": 14
     },
     {
       "unit": 1,
@@ -357,7 +372,8 @@
       "position": "Electric 7",
       "color": "R52+R119",
       "focusX": 21.833333333333332,
-      "focusY": 20.583333333333332
+      "focusY": 20.583333333333332,
+      "address": 15
     },
     {
       "unit": 2,
@@ -369,14 +385,16 @@
       "position": "Electric 7",
       "color": "R52+R119",
       "focusX": 23.333333333333332,
-      "focusY": 27.166666666666668
+      "focusY": 27.166666666666668,
+      "address": 16
     }
   ],
   "notes": [
     "A demonstration plot. Open it, click a light, drag it, drag the ring to re-aim it, and watch the throw, the pool and the footcandles change.",
     "Everything here is computed from published photometric data, and every figure names its source. It does not know your room — check anything that matters against something you measured.",
     "Things worth looking at: the boom elevations beside the plot (RP-2 §6.12 — in plan a boom is a single point, so its units are drawn to the side); the pipe running up and downstage, whose units number from the downstage end; and the pools, which are ellipses rather than circles because a cone only cuts a circle when it points straight down.",
-    "Export → Plot PDF draws it to USITT RP-2 on ARCH D, at the largest standard scale that fits. Export → Instrument schedule and Channel hookup give you the paperwork, with the load totalled."
+    "Export → Plot PDF draws it to USITT RP-2 on ARCH D, at the largest standard scale that fits. Export → Instrument schedule and Channel hookup give you the paperwork, with the load totalled.",
+    "The patch is demonstration data. The sixteen conventionals take one DMX address each; the two Lustrs sit in universe 2, twenty apart, because an LED fixture's footprint depends on the mode it is set to. Nothing here was measured in a real rig."
   ],
   "boomLayout": "option1"
 }
