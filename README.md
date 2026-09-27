@@ -159,6 +159,24 @@ cd web && npx tsc --noEmit && npm run test:all
 and requires it to fail *and* name what broke. A suite that passes when the code
 is wrong is worse than no suite, and this repo has had two.
 
+### Contributing, and fixtures it does not draw
+
+**[CONTRIBUTING.md](CONTRIBUTING.md) — in the repository, not in the download.**
+
+If plotedit will not draw a fixture you own, that is the place to look. There are
+two routes, and the first is usually enough. **An unknown fixture already draws**
+— the symbol falls back to a beam angle read from its name — so what is normally
+missing is its photometrics, and that is a line in
+`server/plotedit/fixture_names.py`. A genuinely different symbol, a moving light
+or a cyc unit, is a code contribution, and the standard for drawing one to RP-2
+is the longest section of that file.
+
+**Fixtures are not imported as SVG**, and `docs/DECISIONS.md` says why. The short
+version: a plot symbol carries a real size in feet, an origin at the yoke, a
+facing and one of three permitted line weights, and a drawing file carries none
+of them. **A fork is not a wait** — your symbol works on your own plots the
+moment you write it; the pull request is only how it reaches everybody else.
+
 ---
 
 ## Data sources

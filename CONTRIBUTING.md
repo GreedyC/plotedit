@@ -65,6 +65,56 @@ works immediately, on your plots, tonight. The pull request is only how the
 fixture reaches everyone else. Nobody has to wait on review to get their show
 drafted.
 
+### ⭐ First — check whether you need a symbol at all
+
+**Your fixture almost certainly draws already.** `symbols.for_type` falls back to
+a beam angle read out of the name, so an unknown instrument comes out as an ERS
+rather than as nothing. What an unrecognised fixture is missing is usually not
+the drawing — it is the **photometrics**: no pool, no footcandles, and a note
+saying why.
+
+So, in order of effort:
+
+**1. Is it a fixture the table already holds, under another spelling?** Then it
+belongs in `ALIASES` in `server/plotedit/fixture_names.py` — that table is *only*
+for a fixture that really is the one we hold data for, such as a rebadge or a
+Lightwright spelling nobody anticipated.
+
+**⚠ The key is the NORMALISED form, not what the paperwork says.** `normalise()`
+strips the manufacturer, unifies Source4/S4, turns `°` into a degree number and
+drops punctuation. Run it to find out what to type:
+
+```python
+>>> from plotedit.fixture_names import normalise
+>>> normalise("Chauvet Ovation E-260WW")
+'ovation e 260ww'
+```
+
+**2. Is it a real fixture nobody has a datasheet for?** Then it goes in
+`NO_DATA`, with the reason — `"lekolite 26": "Strand LekoLite — no datasheet
+fetched"`. It is then recognised and named honestly, and it draws, and it simply
+has no photometrics.
+
+**🔴 Do NOT point it at a fixture whose numbers you want to borrow.** Mapping a
+Chauvet to `S4 26` does not give it ETC's optics; it puts ETC's candela on a
+Chauvet, and that figure sizes a beam pool somebody will hang a rig by. A blank
+is safe. A borrowed number is not, and it looks exactly as authoritative.
+
+**3. Only then, a new symbol** — and only when the fixture genuinely looks
+different on paper: a moving light, a cyc unit, a striplight, something RP-2
+draws its own way. A 26° ERS from another maker does not; it is already right.
+
+### What happens after you open the pull request
+
+Jerry reviews it. There is no rota and no service level — it is one person and a
+theatre season, so a quiet week happens. **It does not block you**: your fork
+already draws your fixture.
+
+What gets sent back, in rough order of likelihood: a symbol that does not match
+its RP-2 plate; a dimension with no source; a line weight written as a number; a
+name that Lightwright's spelling will never match. None of those are hard to fix,
+and the symbol sheet from step 10 usually settles the first one in one exchange.
+
 ### The standard
 
 **1. Write a function in `server/plotedit/symbols.py`** that returns a list of
