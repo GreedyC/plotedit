@@ -201,7 +201,40 @@ def _addr_text(addr):
     return f"{int(m.group(1))}/{int(m.group(2))}"
 
 
-def _unpatchable(ch, addr):
+def _filled(v):
+    """A field somebody actually put a value in."""
+    return v is not None and str(v).strip() != ""
+
+
+def _patch_target(i):
+    """What this unit patches to and where the number came from, or the reason
+    it cannot be patched at all: `(text, source)` or `(None, why)`.
+
+    ⭐ AN ADDRESS AND A DIMMER ARE ALTERNATIVES, NOT A PAIR (Jerry, 2026.09.26).
+    A conventional unit in a dimmer-per-circuit house has a dimmer and no DMX
+    address of its own; an LED unit has an address and no dimmer. Either one is
+    a complete answer to "what does this channel talk to", and demanding both
+    would refuse most real plots. USITT ASCII agrees — the classic Patch entry
+    is channel<dimmer.
+
+    ⚠ The source travels back with the number so the file can say which units
+    were patched from a dimmer. A dimmer number is only the DMX address when
+    the racks are addressed one-to-one, which is usual and is not guaranteed,
+    and an assumption that big does not belong buried in a column.
+    """
+    addr, dim = i.get("address"), i.get("dimmer")
+    if _filled(addr) and _ADDRESS.match(str(addr)):
+        return _addr_text(addr), "address"
+    if _filled(dim) and _ADDRESS.match(str(dim)):
+        return _addr_text(dim), "dimmer"
+    if _filled(addr):
+        return None, "address is not a number or universe/address"
+    if _filled(dim):
+        return None, f"dimmer is not a number ({dim!r})"
+    return None, "no address and no dimmer"
+
+
+def _unpatchable(ch, addr, dimmer=None):
     """Why this unit cannot be patched, or None if it can.
 
     🔴 IT USED TO CRASH. The address was passed straight to int(), so a plot
@@ -217,11 +250,8 @@ def _unpatchable(ch, addr):
         int(ch)
     except (TypeError, ValueError):
         return f"channel is not a number ({ch!r})"
-    if addr is None or str(addr).strip() == "":
-        return "no address"
-    if not _ADDRESS.match(str(addr)):
-        return "address is not a number or universe/address"
-    return None
+    text, why = _patch_target({"address": addr, "dimmer": dimmer})
+    return None if text is not None else why
 
 
 def _partition(plot: Dict[str, Any]):
@@ -233,12 +263,12 @@ def _partition(plot: Dict[str, Any]):
     """
     patched, skipped = [], []
     for i in plot["instruments"]:
-        ch, addr = i.get("channel"), i.get("address")
-        why = _unpatchable(ch, addr)
+        why = _unpatchable(i.get("channel"), i.get("address"), i.get("dimmer"))
         if why:
             skipped.append((i, why))
         else:
-            patched.append((int(ch), _addr_text(addr), i))
+            text, source = _patch_target(i)
+            patched.append((int(i["channel"]), text, i, source))
     return patched, skipped
 
 
@@ -262,13 +292,14 @@ def eos_patch_refusal(plot: Dict[str, Any]):
     if not skipped:
         return "there are no instruments on this plot to patch."
     n = len(skipped)
-    no_addr = sum(1 for _, why in skipped if "address" in why)
-    detail = (f"{no_addr} of them have no usable address"
-              if no_addr else "none of them can be patched")
+    neither = sum(1 for _, why in skipped if why == "no address and no dimmer")
+    detail = (f"{neither} of them have neither an address nor a dimmer"
+              if neither else "none of them can be patched")
     return (f"the patch would be empty — {detail}, out of {n} "
             f"instrument{'s' if n != 1 else ''}. Eos imports an empty patch "
             f"without complaining and patches nothing, so this is refused "
-            f"rather than exported. Assign addresses and try again.")
+            f"rather than exported. Give the units an address or a dimmer "
+            f"— either one is enough — and try again.")
 
 
 def eos_patch(plot: Dict[str, Any]) -> str:
@@ -302,14 +333,25 @@ def eos_patch(plot: Dict[str, Any]) -> str:
                      f"addr={i.get('address')} — {why}")
         L.append("!")
 
+    from_dimmer = sorted(ch for ch, _, _, src in patched if src == "dimmer")
+    if from_dimmer:
+        # ⚠ Say it in the file. A dimmer number is the DMX address only when the
+        # racks are addressed one-to-one — usual, not guaranteed — and whoever
+        # loads this into a console is the person who can check.
+        L.append("! Patched from the DIMMER, there being no address on these:")
+        L.append("!   channels " + ", ".join(str(c) for c in from_dimmer))
+        L.append("!   That is the classic USITT channel<dimmer entry, and it is")
+        L.append("!   the DMX address only if the racks are addressed 1:1.")
+        L.append("!")
+
     L.append("Patch 1")
-    for ch, addr, _ in sorted(patched, key=lambda r: r[0]):
+    for ch, addr, _, _ in sorted(patched, key=lambda r: r[0]):
         L.append(f"   {ch}<{addr}")
     L.append(" ")
 
     # Channel labels carry the purpose through to the board, which is the whole
     # value of exporting a patch rather than typing it.
-    for ch, _, i in sorted(patched, key=lambda r: r[0]):
+    for ch, _, i, _ in sorted(patched, key=lambda r: r[0]):
         label = i.get("purpose") or i.get("type") or ""
         if label:
             L.append(f"$ChanLabel {ch} {label}")

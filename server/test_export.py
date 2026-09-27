@@ -348,6 +348,44 @@ else:
 
 
 print()
+print("an address and a dimmer are alternatives, not a pair")
+
+# ⭐ Jerry, 2026.09.26: "if there is an address there doesn't need to be a
+# dimmer or vice versa." A conventional unit in a dimmer-per-circuit house has
+# a dimmer and no DMX address of its own. Requiring both would refuse most real
+# plots, and USITT ASCII agrees — the classic entry is channel<dimmer.
+_mixed = {"show": "Mixed", "instruments": [
+    {"unit": 1, "channel": 1, "type": "S4 26", "position": "E1", "address": 45},
+    {"unit": 2, "channel": 2, "type": "S4 36", "position": "E1", "dimmer": 17},
+    {"unit": 3, "channel": 3, "type": "Lustr 26 EDLT", "position": "E1",
+     "address": "2/12", "dimmer": 99},
+    {"unit": 4, "channel": 4, "type": "S4 26", "position": "E1"},
+]}
+_mx = exports.eos_patch(_mixed)
+check("a dimmer alone patches", "   2<17" in _mx, True)
+check("an address alone patches", "   1<45" in _mx, True)
+check("the address wins when a unit has both", "   3<2/12" in _mx, True)
+check("...so the dimmer it also carries is not used",
+      "   3<99" in _mx, False)
+check("neither is still unpatched, and says so",
+      any("unit 4" in l and "no address and no dimmer" in l
+          for l in _mx.splitlines()), True)
+
+# ⚠ A dimmer is the DMX address only if the racks are addressed 1:1. The file
+# has to say which channels came in that way — it is an assumption, not a fact.
+check("the file names the channels patched from a dimmer",
+      any("channels 2" in l for l in _mx.splitlines()), True)
+check("...and does not claim it for the addressed ones",
+      any("channels 1" in l for l in _mx.splitlines()), False)
+
+_dimmers_only = {"instruments": [
+    {"unit": 1, "channel": 1, "type": "S4 26", "dimmer": 3}]}
+check("a plot with only dimmers is NOT refused",
+      exports.eos_patch_refusal(_dimmers_only), None)
+check("...and the route exports it",
+      client.post("/export/eos", json={"plot": _dimmers_only}).status_code, 200)
+
+print()
 print("an empty patch is refused, not exported")
 
 # 🔴 THE EXPORT USED TO SUCCEED AND CONTAIN NOTHING. A rig nobody has addressed
@@ -364,6 +402,8 @@ check("a plot with no addresses is refused", _why is not None, True)
 check("...and the reason says the patch would be empty",
       "empty" in (_why or ""), True)
 check("...and counts the units it looked at", "2 instruments" in (_why or ""), True)
+check("...and tells you either field will do",
+      "address or a dimmer" in (_why or ""), True)
 
 check("a plot with no instruments at all is refused too",
       exports.eos_patch_refusal({"instruments": []}) is not None, True)

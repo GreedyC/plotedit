@@ -795,3 +795,43 @@ round-trip tests exist for that, including one asserting that converting twice i
 
 **What stays imperial regardless:** RP-2 is a US standard, so symbol geometry
 does not change. Lamp names (HPL 575) and gel numbers are product codes.
+
+---
+
+# Patch completeness, and what the plot does not tell you
+
+*(Jerry, 2026.09.26, after an evening lost to an Eos file that was simply empty.)*
+
+**1. Warn on a channel that talks to nothing.** An instrument with a channel but
+**neither an address nor a dimmer** is not yet a working unit, and nothing in the
+editor says so. The export refuses now when *every* unit is like that, which is
+the loud case. The quiet case is worse: a plot where seventeen of twenty-four are
+unaddressed exports happily, and the seven that made it are the only ones that
+light. That warning belongs in front of the designer while they are drawing, not
+at the moment they export.
+
+⚠ **An address and a dimmer are alternatives, not a pair.** A conventional unit
+in a dimmer-per-circuit house has a dimmer and no DMX address of its own; an LED
+unit has an address and no dimmer. Either is a complete answer. Warn only when
+there is neither. `_patch_target` in `exports.py` already encodes this rule and
+is the one place it should live.
+
+Open question: where does the warning go? Candidates are the instrument
+inspector, a count in the status line, and the schedule. Probably all three
+eventually, but the schedule is where an ME would look.
+
+**2. Instrument types in the patch.** *Deferred deliberately — keep it simple
+for now.* The patch exports `channel<address` and nothing else, so every unit
+arrives at the console as a bare dimmer. For a Source Four that is correct: it
+**is** a dimmer as far as the board is concerned. For an LED unit it is wrong —
+it needs a personality and a block of addresses, and patching it as one address
+with an intensity gives a channel that moves the first parameter and nothing
+else. On a real rig that reads as a broken light rather than a wrong patch,
+which is an hour of somebody's evening to find.
+
+Not urgent while the LED units on the demo plots are unaddressed anyway. It
+becomes urgent the day somebody patches one.
+
+⚠ Eos asks on import whether to bring fixtures in as **Library** or **Custom**;
+ETC's manual recommends Custom. That prompt is asking how to resolve fixture
+records the file does not currently contain.
