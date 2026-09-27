@@ -46,6 +46,10 @@ export interface Computed {
   /** Which of the two the number is, and where a range came from or why there
    *  is not one. Shown on hover. */
   patch_note?: string;
+  /** How far out this unit's colour label has to sit so it does not touch its
+   *  neighbour's: 0 is normal, 1 a step further along the same axis. ⭐ Worked
+   *  out on the server so the screen and the sheet cannot disagree. */
+  color_tier?: number;
   note?: string;
 }
 
@@ -507,7 +511,11 @@ function labels(inst: Instrument, c?: Computed, symbolAngle?: string,
     // Anchor the INNER EDGE and let the label run outward instead.
     const rad = (drawn * Math.PI) / 180;
     const across = Math.abs(Math.sin(rad)) > Math.abs(Math.cos(rad));
-    const f = behind(-(clear + (across ? 0 : size / 2)));
+    // 🔴 Push it further out if it would touch a neighbour's (issue #21). Along
+    // the SAME axis, never above or below — RP-2 §6.14.2 puts colour in front of
+    // the unit, and dodging sideways would put it where something else lives.
+    const tier = c?.color_tier ?? 0;
+    const f = behind(-(clear + (across ? 0 : size / 2) + tier * size * 1.5));
     const t = el("text", {
       transform: counterFlip(f.x, f.y),
       "font-size": size, "font-family": "system-ui, sans-serif", fill: "#555",

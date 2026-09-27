@@ -245,3 +245,97 @@ def plan(positions, instruments, measure, room_width=None, unit_r=1.35,
         spot["text"] = text
         out.append(spot)
     return out
+
+
+# ----------------------------------------------------- colour labels that touch
+
+# ⚠ An average glyph is about .62 of the cap height in the sans face both the
+# sheet and the browser use. Measuring properly would mean a font metric in two
+# languages; this is deliberately a slight OVER-estimate, because staggering a
+# label that would just have cleared costs nothing and letting two run together
+# costs a misread gel at the focus call.
+CHAR_W = 0.62
+
+# ⭐ MEASURED, not guessed. In the browser the colour label is drawn at
+# font-size 0.5 (user units are feet) and "R52+R119" measures 2.52 ft across —
+# eight characters, so .63 of the font size each. CHAR_W above is that number.
+#
+# ⚠ The two renderers size this label DIFFERENTLY and both are right. On screen
+# it is 0.5 FEET tall, so it scales with the drawing and covers the same stage
+# area at every zoom. On paper it is 7 POINTS tall, so in feet it shrinks as the
+# scale grows: 0.39 ft at 1/4" = 1'-0", 0.19 ft at 1/2". That is why the height
+# is an argument here and not a constant — the same pipe collides on screen and
+# may be perfectly clear in print at 1/4".
+
+# Space to leave between two labels. ⚠ Not touching is not enough: two colour
+# strings a hair apart still read as one at arm's length under work light.
+PAD_FT = 0.35
+
+
+def color_width(text, text_h_ft, char_w=CHAR_W):
+    """Roughly how wide a colour label is, in FEET at the current scale."""
+    return len(str(text or "")) * char_w * text_h_ft
+
+
+def color_tiers(instruments, text_h_ft, char_w=CHAR_W, pad=PAD_FT):
+    """How far out each unit's colour label has to sit so they do not touch.
+
+    Returns one tier per instrument, index-aligned: 0 is the normal distance,
+    1 is a step further out along the same axis, and so on.
+
+    🔴 THE BUG THIS EXISTS FOR. On the demo plot, GRID C units 3 and 4 sit 2'-6"
+    apart where the rest of the pipe is at 5'-6", and "R52+R119" is wider than
+    the gap. The two labels rendered as "R52+R119R52+R119" with nothing between
+    them — in a column an electrician reads under work light while holding a gel
+    frame. Both units happened to be the SAME colour, which hid how bad it is:
+    two different colours run together give the reader no way to tell where one
+    ends. (Issue #21.)
+
+    ⭐ FURTHER OUT, NOT UP OR DOWN. RP-2 §6.14.2 puts colour in front of the
+    unit, across the lens. Moving a label above or below the symbol to dodge a
+    neighbour would put it where the standard says something else lives. Stepping
+    further along the SAME axis keeps the meaning and only changes the distance,
+    which is what a drafter does by hand.
+
+    ⚠ Scale-aware, which is why the text height is an argument rather than a
+    constant. Labels are drawn at a fixed point size, so at 1/2" scale they cover
+    half as much of the STAGE as at 1/4" and the same pipe may not collide at
+    all. A rule that ignored that would stagger plots which were already fine.
+    """
+    tiers = [0] * len(instruments)
+
+    # Neighbours on the same hanging position are the ones that collide; two
+    # units on different pipes are already a pipe apart.
+    groups = {}
+    for i, inst in enumerate(instruments):
+        if not (inst.get("color") or "").strip():
+            continue
+        groups.setdefault(inst.get("position") or "", []).append(i)
+
+    for idxs in groups.values():
+        if len(idxs) < 2:
+            continue
+        # Sort along whichever axis the position actually runs. A boom's units
+        # share an x and differ in y; a batten is the other way round.
+        xs = [float(instruments[i].get("x") or 0) for i in idxs]
+        ys = [float(instruments[i].get("y") or 0) for i in idxs]
+        along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+        pos_of = (lambda i: float(instruments[i].get("x") or 0)) if along_x \
+            else (lambda i: float(instruments[i].get("y") or 0))
+        idxs = sorted(idxs, key=pos_of)
+
+        # The right-hand edge already claimed at each tier.
+        claimed = []
+        for i in idxs:
+            w = color_width(instruments[i].get("color"), text_h_ft, char_w)
+            here = pos_of(i)
+            left, right = here - w / 2.0 - pad / 2.0, here + w / 2.0 + pad / 2.0
+            tier = 0
+            while tier < len(claimed) and claimed[tier] > left:
+                tier += 1
+            if tier == len(claimed):
+                claimed.append(right)
+            else:
+                claimed[tier] = right
+            tiers[i] = tier
+    return tiers

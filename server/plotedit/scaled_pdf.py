@@ -680,7 +680,7 @@ class Sheet:
                       f"{u.get('unit')}: NO HEIGHT RECORDED", size=5)
         return top
 
-    def unit(self, x, y, num, ch=None, kind="", color_gel=None, focus_to=None, r=None,
+    def unit(self, x, y, num, ch=None, kind="", color_gel=None, focus_to=None, r=None, color_tier=0,
              trim=None, focus_h=5.5, lamp=None, mode=None, lens_rotation=None,
              accessories=None, circuit=None, dimmer=None, wattage=None,
              control="dimmer-per-circuit", symbol_angle="orthogonal",
@@ -791,10 +791,18 @@ class Sheet:
         # accessory is hung on the nose.
         _clear = _sym.radius(_prims) + ft(0, 3)
         if in_plan and show_labels:
+            # 🔴 A unit whose colour label would touch its neighbour's is pushed
+            # one step FURTHER OUT along the same axis (issue #21). Not up or
+            # down: RP-2 §6.14.2 puts colour in front of the unit across the
+            # lens, and moving it above or below would put it where the standard
+            # says something else lives. A drafter solving this by hand moves it
+            # further out, not somewhere else.
+            _step = (7.0 / self.pt_per_ft if self.pt_per_ft else 0.39) * 1.5
+            _above = _clear + (color_tier or 0) * _step
             _sym.notation(self, x, y, unit=num, channel=ch, color=color_gel,
                           circuit=circuit, dimmer=dimmer, wattage=wattage,
                           control=control, rotate_deg=draw_deg,
-                          body_center=_center, above=_clear)
+                          body_center=_center, above=_above)
         result = None
         if focus_to:
             fx, fy = focus_to
