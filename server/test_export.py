@@ -85,9 +85,13 @@ check("every unit is listed as unpatched — the sample has no addresses",
 
 print("\nexport endpoints")
 req = {"plot": plot}
+# ⚠ /export/eos is NOT in this list, and that is the point. The sample has no
+# addresses, so its patch would be empty, and an empty patch is refused now —
+# see "an empty patch is refused" below. This loop used to assert it returned
+# 200 with a valid header, which was true and was exactly the bug: the file was
+# well formed, imported into Eos without complaint, and patched nothing.
 for path, kind, sniff in [("/export/schedule", "text/csv", b"Instrument Schedule"),
-                          ("/export/hookup", "text/csv", b"Channel Hookup"),
-                          ("/export/eos", "text/plain", b"Ident 3:0")]:
+                          ("/export/hookup", "text/csv", b"Channel Hookup")]:
     r = client.post(path, json=req)
     check(f"{path} 200", r.status_code, 200)
     check(f"{path} content", sniff in r.content, True)
@@ -342,6 +346,96 @@ if _os2.path.exists(_real):
 else:
     print("  --   the demo plot is not on this machine; skipped")
 
+
+print()
+print("an address and a dimmer are alternatives, not a pair")
+
+# ⭐ Jerry, 2026.09.26: "if there is an address there doesn't need to be a
+# dimmer or vice versa." A conventional unit in a dimmer-per-circuit house has
+# a dimmer and no DMX address of its own. Requiring both would refuse most real
+# plots, and USITT ASCII agrees — the classic entry is channel<dimmer.
+_mixed = {"show": "Mixed", "instruments": [
+    {"unit": 1, "channel": 1, "type": "S4 26", "position": "E1", "address": 45},
+    {"unit": 2, "channel": 2, "type": "S4 36", "position": "E1", "dimmer": 17},
+    {"unit": 3, "channel": 3, "type": "Lustr 26 EDLT", "position": "E1",
+     "address": "2/12", "dimmer": 99},
+    {"unit": 4, "channel": 4, "type": "S4 26", "position": "E1"},
+]}
+_mx = exports.eos_patch(_mixed)
+check("a dimmer alone patches", "   2<17" in _mx, True)
+check("an address alone patches", "   1<45" in _mx, True)
+check("the address wins when a unit has both", "   3<2/12" in _mx, True)
+check("...so the dimmer it also carries is not used",
+      "   3<99" in _mx, False)
+check("neither is still unpatched, and says so",
+      any("unit 4" in l and "no address and no dimmer" in l
+          for l in _mx.splitlines()), True)
+
+# ⚠ A dimmer is the DMX address only if the racks are addressed 1:1. The file
+# has to say which channels came in that way — it is an assumption, not a fact.
+check("the file names the channels patched from a dimmer",
+      any("channels 2" in l for l in _mx.splitlines()), True)
+check("...and does not claim it for the addressed ones",
+      any("channels 1" in l for l in _mx.splitlines()), False)
+
+_dimmers_only = {"instruments": [
+    {"unit": 1, "channel": 1, "type": "S4 26", "dimmer": 3}]}
+check("a plot with only dimmers is NOT refused",
+      exports.eos_patch_refusal(_dimmers_only), None)
+check("...and the route exports it",
+      client.post("/export/eos", json={"plot": _dimmers_only}).status_code, 200)
+
+print()
+print("an empty patch is refused, not exported")
+
+# 🔴 THE EXPORT USED TO SUCCEED AND CONTAIN NOTHING. A rig nobody has addressed
+# yet produced a valid file with an empty Patch block; Eos imported it without
+# complaint and patched nothing. The reason was in a comment at the top of a
+# file nobody opens.
+_unaddressed = {"show": "No Addresses Yet", "instruments": [
+    {"unit": 1, "channel": 1, "type": "S4 26", "position": "GRID A"},
+    {"unit": 2, "channel": 2, "type": "S4 26", "position": "GRID A",
+     "address": "PENDING — Art, universe 2"},
+]}
+_why = exports.eos_patch_refusal(_unaddressed)
+check("a plot with no addresses is refused", _why is not None, True)
+check("...and the reason says the patch would be empty",
+      "empty" in (_why or ""), True)
+check("...and counts the units it looked at", "2 instruments" in (_why or ""), True)
+check("...and tells you either field will do",
+      "address or a dimmer" in (_why or ""), True)
+
+check("a plot with no instruments at all is refused too",
+      exports.eos_patch_refusal({"instruments": []}) is not None, True)
+
+# One patchable unit is enough — a partial patch is a real patch.
+_one = {"instruments": _unaddressed["instruments"] +
+        [{"unit": 3, "channel": 3, "type": "S4 26", "address": 12}]}
+check("one addressed unit is NOT refused", exports.eos_patch_refusal(_one), None)
+# The shipped sample has no addresses either — every tester who opened it and
+# tried Export -> Eos patch got an empty file. Left as it is for now; whether the
+# sample should carry addresses is a question about what the demo represents.
+check("the sample is refused too, and says so",
+      "empty" in (exports.eos_patch_refusal(plot) or ""), True)
+
+# The route, which is what the user actually meets.
+_r = client.post("/export/eos", json={"plot": _unaddressed})
+check("the route refuses with 422", _r.status_code, 422)
+# ⚠ Read the body defensively. If the refusal ever stops firing this is a
+# FILE, not JSON, and a test that raises here reports a stack trace instead of
+# saying which assertion broke.
+_detail = _r.json().get("detail", "") if _r.headers.get(
+    "content-type", "").startswith("application/json") else ""
+check("...and the message reaches the front end",
+      "No Eos patch" in _detail, True)
+_r2 = client.post("/export/eos", json={"plot": _one})
+check("a plot that can be patched still exports", _r2.status_code, 200)
+
+# 🔴 The real plot that cost the evening: every unit unaddressed. Before this
+# change it downloaded a file with nothing in it.
+if _os2.path.exists(_real):
+    check("the plot that lost the evening is now refused",
+          exports.eos_patch_refusal(_rp) is not None, True)
 
 print()
 if FAILS:
