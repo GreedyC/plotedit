@@ -38,6 +38,14 @@ export interface Computed {
   footcandles?: number | null;
   footcandles_note?: string;
   gel_warning?: string;
+  /** What this unit is plugged into, ready to print: a dimmer, an address, or
+   *  an address RANGE where the DMX profile is recorded and the footprint is
+   *  therefore known. ⭐ Computed on the server and nowhere else — a copy of
+   *  the rule here would drift from the Eos exporter. */
+  patch?: string;
+  /** Which of the two the number is, and where a range came from or why there
+   *  is not one. Shown on hover. */
+  patch_note?: string;
   note?: string;
 }
 

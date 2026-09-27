@@ -149,7 +149,12 @@ function fillTable() {
     const tr = document.createElement("tr");
     tr.dataset.index = String(i);
     if (i === store.selected) tr.classList.add("sel");
-    const [patchText, patchWhat] = patchCell(inst);
+    // ⭐ The server's answer wins. patchCell is the fallback for the moment
+    // before the first compute returns, and it knows nothing about footprints —
+    // it can show a start address but never a range.
+    const [fallback, fallbackWhy] = patchCell(inst);
+    const patchText = c?.patch ?? fallback;
+    const patchWhat = c?.patch_note ?? fallbackWhy;
     const cells: [string, boolean, string?][] = [
       [inst.position ?? "", false], [String(inst.unit), false],
       [inst.channel !== undefined ? String(inst.channel) : "", false],

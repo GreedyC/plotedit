@@ -8,6 +8,12 @@ export async function compute(plot: Plot, poolPlane?: number): Promise<Computed[
     trim: i.trim, focus_x: i.focusX, focus_y: i.focusY, focus_h: i.focusH ?? 5.5,
     color: i.color, lamp: i.lamp, mode: i.mode,
     position: i.position, purpose: i.purpose,
+    // ⚠ THIS LIST IS EXPLICIT, so a field that is not named here does not reach
+    // the server at all. The patch column came back "not patched to anything"
+    // for a plot where every unit had an address, because address, dimmer and
+    // profile were simply never sent — and the server was right about what it
+    // was given. Anything /compute has to reason about belongs in this list.
+    address: i.address, dimmer: i.dimmer, profile: i.profile,
   }));
   const r = await fetch("/api/compute", {
     method: "POST",
