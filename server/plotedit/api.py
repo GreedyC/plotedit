@@ -322,7 +322,16 @@ def export_hookup(req: ExportRequest) -> Response:
 
 @app.post("/export/eos")
 def export_eos(req: ExportRequest) -> Response:
-    """USITT ASCII patch. ⚠ Unverified format — the file says so in its header."""
+    """USITT ASCII patch. ⚠ Unverified format — the file says so in its header.
+
+    ⚠ Refuses a patch with nothing in it, the same way the PDF refuses a
+    clipped sheet: a file that downloads, imports cleanly and does nothing is
+    indistinguishable from a broken format, and costs whoever hits it far more
+    than an error would.
+    """
+    why = exports.eos_patch_refusal(req.plot)
+    if why:
+        raise HTTPException(status_code=422, detail=f"No Eos patch: {why}")
     return _attach(exports.eos_patch(req.plot).encode(), "text/plain",
                    f"{_stem(req.plot)} — Patch.asc")
 

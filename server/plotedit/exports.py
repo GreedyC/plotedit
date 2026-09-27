@@ -224,6 +224,53 @@ def _unpatchable(ch, addr):
     return None
 
 
+def _partition(plot: Dict[str, Any]):
+    """Split the instruments into the patchable and the not.
+
+    ⭐ ONE place. The exporter and the check that refuses an empty file both
+    read from here, so they cannot disagree about the count — a refusal that
+    fires when the file would not have been empty is its own kind of wrong.
+    """
+    patched, skipped = [], []
+    for i in plot["instruments"]:
+        ch, addr = i.get("channel"), i.get("address")
+        why = _unpatchable(ch, addr)
+        if why:
+            skipped.append((i, why))
+        else:
+            patched.append((int(ch), _addr_text(addr), i))
+    return patched, skipped
+
+
+def eos_patch_refusal(plot: Dict[str, Any]):
+    """Why this plot cannot make a patch file at all, or None if it can.
+
+    🔴 IT USED TO EXPORT NOTHING, QUIETLY. A plot whose rig has not been
+    addressed yet produced a valid file with an empty `Patch 1` block. Eos
+    imports it without a murmur and patches nothing, and the reason — every
+    unit listed as NOT PATCHED — sits in a comment at the top of a file nobody
+    opens. An evening went into deciding the ASCII format was wrong before
+    anyone opened the file and found it was simply empty.
+
+    A crash at least tells you something happened. This said nothing at all,
+    which is the worst failure this program has. So it refuses now, and says
+    why, in front of the user.
+    """
+    patched, skipped = _partition(plot)
+    if patched:
+        return None
+    if not skipped:
+        return "there are no instruments on this plot to patch."
+    n = len(skipped)
+    no_addr = sum(1 for _, why in skipped if "address" in why)
+    detail = (f"{no_addr} of them have no usable address"
+              if no_addr else "none of them can be patched")
+    return (f"the patch would be empty — {detail}, out of {n} "
+            f"instrument{'s' if n != 1 else ''}. Eos imports an empty patch "
+            f"without complaining and patches nothing, so this is refused "
+            f"rather than exported. Assign addresses and try again.")
+
+
 def eos_patch(plot: Dict[str, Any]) -> str:
     """USITT ASCII patch: channel < address.
 
@@ -245,14 +292,7 @@ def eos_patch(plot: Dict[str, Any]) -> str:
          "!   from Eos and diff — that settles it in minutes.",
          "!"]
 
-    patched, skipped = [], []
-    for i in plot["instruments"]:
-        ch, addr = i.get("channel"), i.get("address")
-        why = _unpatchable(ch, addr)
-        if why:
-            skipped.append((i, why))
-        else:
-            patched.append((int(ch), _addr_text(addr), i))
+    patched, skipped = _partition(plot)
 
     if skipped:
         L.append("! Not patched:")
