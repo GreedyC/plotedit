@@ -11,6 +11,7 @@ import { parseFeet } from "./feet.js";
 import { fmtFt, fmtFc } from "./geometry.js";
 import type { Store } from "./store.js";
 import type { Computed } from "./render.js";
+import type { DmxTable } from "./api.js";
 
 export interface Field {
   key: keyof Instrument;
@@ -18,6 +19,12 @@ export interface Field {
   kind: "number" | "text" | "select" | "list";
   /** Does changing it change the light? */
   photometric?: boolean;
+  /** 🔴 Does the SERVER have to work the row out again? Photometric fields do.
+   *  So do the patch fields — the address RANGE is computed in Python, so
+   *  changing a personality from HSI to Direct without this repainted the old
+   *  range and looked like the dropdown did nothing. A field whose value the
+   *  server turns into text belongs here. */
+  recompute?: boolean;
   options?: string[];
   step?: number;
   hint?: string;
@@ -32,8 +39,22 @@ export const FIELDS: Field[] = [
   { key: "channel", label: "Channel", kind: "number", step: 1 },
   { key: "circuit", label: "Circuit", kind: "text",
     hint: "The HOUSE circuit. Never generated — circuits depend on the house and have no set order" },
-  { key: "dimmer", label: "Dimmer", kind: "number", step: 1 },
-  { key: "address", label: "Address", kind: "number", step: 1 },
+  { key: "dimmer", label: "Dimmer", kind: "number", step: 1, recompute: true },
+  // 🔴 TEXT, not number. A universe address is "2/21" and type="number"
+  // silently discards it — exactly as it discards 1'6" in a feet field, which
+  // this file already warns about below. The field went empty and the handler
+  // read that as "clear this field", so a perfectly good address unset itself.
+  { key: "address", label: "Address", kind: "text", recompute: true,
+    hint: "45, or 2/21 for a universe. The START address" },
+  // ⭐ The specific fixture, and the personality it is set to (Jerry,
+  // 2026.09.26). Type above is the photometric key, which a Series 1 and a
+  // Series 2 share; these two decide how many addresses the unit occupies.
+  { key: "model", label: "Model", kind: "select", recompute: true,
+    hint: "The specific fixture. Personalities differ between models, so the "
+        + "address range depends on this" },
+  { key: "profile", label: "DMX personality", kind: "select", recompute: true,
+    hint: "What the fixture is set to at its own display. The same instrument "
+        + "can be on a different personality from the one beside it" },
   { key: "type", label: "Type", kind: "select", photometric: true },
   { key: "position", label: "Position", kind: "select" },
   { key: "purpose", label: "Purpose", kind: "text" },
@@ -51,13 +72,37 @@ export const FIELDS: Field[] = [
     hint: "R52+R119 stacks · R52/R119 is a split frame" },
   { key: "gobo", label: "Gobo", kind: "text" },
   { key: "lamp", label: "Lamp", kind: "select", photometric: true },
-  { key: "mode", label: "LED mode", kind: "select", photometric: true },
+  { key: "mode", label: "LED mode", kind: "select", photometric: true,
+    hint: "The PHOTOMETRIC output mode — how bright. Not the DMX personality" },
   { key: "lensRotation", label: "Lens angle", kind: "number", step: 15,
     hint: "Oval-beam units (PARNel): degrees the lens is turned" },
   { key: "accessories", label: "Accessories", kind: "list",
     hint: "Separate with + — \"top hat + gobo\". Barn doors, hats, gobo, iris, rotator" },
   { key: "notes", label: "Notes", kind: "text" },
 ];
+
+/** The specific models this unit's fixture type could be. */
+function modelsFor(inst: Instrument, deps: InspectorDeps): string[] {
+  const fam = deps.familyOf?.(inst.type);
+  return (fam && deps.dmx?.family_models[fam]) || [];
+}
+
+/** The personalities this unit can be set to.
+ *
+ *  ⚠ A personality whose channel count nobody published is still OFFERED — the
+ *  fixture has it, and a designer who is on RGB Plus 7 must be able to record
+ *  that. It is marked so, and the range is simply not drawn for it. Leaving it
+ *  out of the list would make the plot unable to describe a real rig. */
+function profilesFor(inst: Instrument, deps: InspectorDeps): string[] {
+  const model = inst.model || modelsFor(inst, deps)[0];
+  if (!model || !deps.dmx) return [];
+  // ⚠ PLAIN NAMES. The select builder uses each string as BOTH the option value
+  // and its label, so decorating a name here would store the decoration — and
+  // "RGB Plus 7 (channels not published)" matches nothing in the table. The
+  // cell's hover already says when a count is unpublished.
+  return [...(deps.dmx.profiles[model] ?? []),
+          ...(deps.dmx.unpublished[model] ?? [])].sort();
+}
 
 /** Is this unit hung on a boom, box boom, ladder or tormentor? */
 function onVerticalPosition(store: Store, inst: Instrument): boolean {
@@ -69,6 +114,12 @@ function onVerticalPosition(store: Store, inst: Instrument): boolean {
 
 export interface InspectorDeps {
   fixtures: string[];
+  /** The DMX table, once it has arrived. Undefined until then — the two
+   *  personality dropdowns simply offer nothing rather than guessing. */
+  dmx?: DmxTable;
+  /** The photometric family of a fixture type, for choosing which models to
+   *  offer. Undefined for a type the server does not know. */
+  familyOf?: (type: string) => string | undefined;
   /** Say why an entry was refused. Optional so other callers still compile. */
   onStatus?: (msg: string, bad?: boolean) => void;
   lamps: string[];
@@ -123,6 +174,22 @@ export function renderInspector(
     label.htmlFor = id;
     label.textContent = f.label;
     if (f.hint) label.title = f.hint;
+    // ⭐ Jerry, 2026.09.26: "if we say 2/1 it should expand to 2/1-X". It
+    // expands HERE, beside the label, and NOT in the box.
+    //
+    // ⚠ The input keeps the START address. Putting "2/1-2/15" in the box would
+    // make the next edit store that string as the address, and nothing matches
+    // it — the unit would quietly stop being patched. A range is something the
+    // program worked out; the address is what the designer typed, and the two
+    // must not share an editable field.
+    if (f.key === "address" && c?.patch && c.patch !== String(inst.address ?? "")
+        && c.patch.includes("-")) {
+      const span = document.createElement("span");
+      span.className = "muted";
+      span.textContent = ` ${c.patch}`;
+      span.title = c.patch_note ?? "";
+      label.appendChild(span);
+    }
 
     let input: HTMLInputElement | HTMLSelectElement;
     if (f.kind === "select") {
@@ -130,6 +197,8 @@ export function renderInspector(
       const opts = f.key === "type" ? deps.fixtures
         : f.key === "lamp" ? deps.lamps
         : f.key === "mode" ? deps.modes
+        : f.key === "model" ? modelsFor(inst, deps)
+        : f.key === "profile" ? profilesFor(inst, deps)
         : store.plot.positions.map(p => p.name);
       const blank = document.createElement("option");
       blank.value = ""; blank.textContent = "—";
@@ -168,7 +237,7 @@ export function renderInspector(
         const parts = raw.split(/\s*[+,]\s*/).map(t => t.trim()).filter(Boolean);
         store.begin(null);
         store.update(i, { [f.key]: parts.length ? parts : undefined } as Partial<Instrument>);
-        f.photometric ? deps.onPhotometricChange() : deps.onPaperworkChange();
+        (f.photometric || f.recompute) ? deps.onPhotometricChange() : deps.onPaperworkChange();
         return;
       }
       else if (f.kind2 === "feet") {
@@ -198,7 +267,7 @@ export function renderInspector(
       const patch: Record<string, unknown> = { [f.key]: value };
       if (f.key === "trim" && onVerticalPosition(store, inst)) patch.height = value;
       store.update(i, patch as Partial<Instrument>);
-      f.photometric ? deps.onPhotometricChange() : deps.onPaperworkChange();
+      (f.photometric || f.recompute) ? deps.onPhotometricChange() : deps.onPaperworkChange();
     };
     // change, not input — committing on blur or Enter, so half-typed values
     // never reach the server

@@ -8,6 +8,12 @@ export async function compute(plot: Plot, poolPlane?: number): Promise<Computed[
     trim: i.trim, focus_x: i.focusX, focus_y: i.focusY, focus_h: i.focusH ?? 5.5,
     color: i.color, lamp: i.lamp, mode: i.mode,
     position: i.position, purpose: i.purpose,
+    // ⚠ THIS LIST IS EXPLICIT, so a field that is not named here does not reach
+    // the server at all. The patch column came back "not patched to anything"
+    // for a plot where every unit had an address, because address, dimmer and
+    // profile were simply never sent — and the server was right about what it
+    // was given. Anything /compute has to reason about belongs in this list.
+    address: i.address, dimmer: i.dimmer, profile: i.profile, model: i.model,
   }));
   const r = await fetch("/api/compute", {
     method: "POST",
@@ -344,4 +350,22 @@ export async function serverVersion(): Promise<string> {
   } catch {
     return "unknown";
   }
+}
+
+
+/** The DMX personalities, as the server holds them. ⭐ FETCHED, NEVER PORTED —
+ *  the channel counts live in dmx.py so they cannot drift from the exporter. */
+export interface DmxTable {
+  family_models: Record<string, string[]>;
+  profiles: Record<string, string[]>;
+  /** Personalities the fixture has but whose channel count nobody published. */
+  unpublished: Record<string, string[]>;
+  suggested: Record<string, string>;
+  sources: Record<string, string>;
+}
+
+export async function dmxTable(): Promise<DmxTable> {
+  const r = await fetch("/api/dmx");
+  if (!r.ok) throw new Error(`cannot load the DMX table: ${r.status}`);
+  return r.json();
 }

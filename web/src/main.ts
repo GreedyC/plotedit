@@ -23,7 +23,8 @@ import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          positionLabels, savePlot, listPlots, loadPlot, pdfPages, pdfPaths,
          serverVersion,
          type FixtureRow, type ExportKind, type DxfPaths, type SymbolPrim,
-         type BoomElevation, type PositionLabel } from "./api.js";
+         type BoomElevation, type PositionLabel,
+         dmxTable, type DmxTable } from "./api.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
@@ -36,6 +37,9 @@ const svg = $<HTMLElement>("plot") as unknown as SVGSVGElement;
 let store: Store;
 let computed: Computed[] = [];
 let fixtureTable: Record<string, FixtureRow> = {};
+/** The DMX personalities. ⚠ Undefined until it arrives, and the two dropdowns
+ *  offer nothing rather than guessing in the meantime. */
+let dmxTable_: DmxTable | undefined;
 let basePlan: DxfPaths | null = null;
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
@@ -149,7 +153,12 @@ function fillTable() {
     const tr = document.createElement("tr");
     tr.dataset.index = String(i);
     if (i === store.selected) tr.classList.add("sel");
-    const [patchText, patchWhat] = patchCell(inst);
+    // ⭐ The server's answer wins. patchCell is the fallback for the moment
+    // before the first compute returns, and it knows nothing about footprints —
+    // it can show a start address but never a range.
+    const [fallback, fallbackWhy] = patchCell(inst);
+    const patchText = c?.patch ?? fallback;
+    const patchWhat = c?.patch_note ?? fallbackWhy;
     const cells: [string, boolean, string?][] = [
       [inst.position ?? "", false], [String(inst.unit), false],
       [inst.channel !== undefined ? String(inst.channel) : "", false],
@@ -198,6 +207,10 @@ function drawInspector() {
   });
   renderInspector($("inspector"), store, computed, {
     fixtures: Object.keys(fixtureTable).sort(),
+    dmx: dmxTable_,
+    // ⭐ The FAMILY decides which specific models to offer, and it is the
+    // server's answer, not a list kept here.
+    familyOf: (t: string) => fixtureTable[t]?.family,
     lamps: ["HPL 750", "HPL 575", "HPL 575X"],
     modes: ["Boost Full", "Regulated Full", "Regulated 3200K", "Regulated 5600K"],
     onStatus: (msg, bad) => status(msg, bad),
@@ -743,6 +756,13 @@ async function boot() {
 
     store = new Store(opened);
     fixtureTable = await fixtures();
+    // ⚠ Not fatal. A missing DMX table means the Model and personality lists
+    // come up empty; it must not stop the editor opening a plot.
+    try {
+      dmxTable_ = await dmxTable();
+    } catch (e) {
+      console.warn("DMX personalities unavailable:", e);
+    }
 
     paintChrome();
     // ⚠ The room's provenance and the plot notes are not shown in the app at

@@ -19,8 +19,19 @@ export interface Instrument {
    *  ⚠ Never generated. Circuits depend on the house and have no set order
    *  (Jerry, 2026.09.23) — the only source is the venue's own circuit map. */
   circuit?: number | string;
-  dimmer?: number;
-  address?: number;
+  dimmer?: number | string;
+  /** The START address. ⚠ A number for a plain address, a string for the
+   *  universe form — "2/21" — which is why this is not just a number. */
+  address?: number | string;
+  /** The SPECIFIC fixture, e.g. "Source Four LED Series 2". ⚠ `type` is the
+   *  photometric key and a Series 1 and a Series 2 share it — same optics.
+   *  Their personalities are not the same, so the footprint depends on this. */
+  model?: string;
+  /** The DMX personality the fixture is set to, e.g. "HSI Plus 7". ⚠ NOT the
+   *  same thing as `mode`, which is the photometric output mode. This one
+   *  decides how many addresses the fixture occupies; that one decides how
+   *  bright it is. */
+  profile?: string;
   universe?: number;
   /** A key in the server's FIXTURES table, e.g. "S4 26". */
   type: string;

@@ -16,13 +16,14 @@ import json
 import os
 import tempfile
 import unicodedata
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from . import dmx
 from . import photometrics as ph
 from . import positions as P
 from . import exports, dxf_bridge, pdf_bridge, symbols as sym
@@ -66,6 +67,25 @@ class Instrument(BaseModel):
     color: Optional[str] = Field(None, description='"R52+R119" stacks, "R52/R119" splits')
     lamp: Optional[str] = Field(None, description='e.g. "HPL 575" for a tungsten rig')
     mode: Optional[str] = Field(None, description='LED output mode, e.g. "Regulated 3200K"')
+    # ⚠ `mode` above is the PHOTOMETRIC output mode — Regulated 3200K, Boost
+    # Full — and has nothing to do with DMX. `profile` is the DMX personality
+    # the fixture is set to, which is what decides how many addresses it eats.
+    # The two are easy to confuse and answer completely different questions.
+    profile: Optional[str] = Field(None, description='DMX personality, e.g. "HSI Plus 7"')
+    # ⭐ The SPECIFIC fixture (Jerry, 2026.09.26). `type` above is the
+    # photometric key — "Lustr 26 EDLT" — which a Series 1 and a Series 2 share
+    # because their optics are the same. Their personalities are not, so the
+    # footprint is looked up by THIS.
+    model: Optional[str] = Field(None, description='Specific fixture, e.g. "Source Four LED Series 2"')
+    # 🔴 str OR int. Plots in the wild carry BOTH — samples/demo.plot.json
+    # writes plain addresses as numbers and universe addresses as "2/21" — and
+    # typing this as str alone made pydantic reject the whole request with a
+    # 422. That did not just blank the patch column: /compute returns throws,
+    # pools and footcandles in the same call, so one wrong annotation emptied
+    # the entire schedule. Everything downstream str()s it anyway.
+    address: Optional[Union[str, int]] = Field(
+        None, description='45 or "2/21"; the START address')
+    dimmer: Optional[Union[str, int]] = None
     position: Optional[str] = None
     purpose: Optional[str] = None
 
@@ -144,6 +164,73 @@ def gels() -> Dict[str, Any]:
     }
 
 
+def _patch_cell(inst) -> tuple:
+    """What this unit is plugged into, and what that number actually is.
+
+    An address and a dimmer are alternatives, not a pair, and the address wins
+    when a unit carries both, because that is the number the console uses.
+
+    ⚠ A range is only ever shown when the footprint is KNOWN. A fixture whose
+    profile nobody wrote down shows its start address and says why there is no
+    range — an invented range is how the next unit gets patched into the tail
+    of this one.
+    """
+    addr = inst.address.strip() if isinstance(inst.address, str) else inst.address
+    dim = inst.dimmer.strip() if isinstance(inst.dimmer, str) else inst.dimmer
+    if addr in (None, ""):
+        if dim in (None, ""):
+            return "—", "no dimmer and no address — this unit is not patched to anything"
+        return str(dim), "dimmer"
+
+    spec = ph.FIXTURES.get(inst.type)
+    if spec is None:
+        # ⚠ AN UNRECOGNISED TYPE IS NOT A CONVENTIONAL ONE. Falling through to
+        # "one address" here would quietly call an unknown LED a dimmer, which
+        # is the direction of this guess that costs somebody a patch.
+        return str(addr), (f"address (start) — {inst.type!r} is not a fixture this "
+                           f"knows, so its footprint cannot be looked up")
+    # ⭐ The LAMP says whether this is an LED fixture, not a list of family names
+    # typed here. A hand-written list is a second place for the truth to live,
+    # and it goes stale the first time a fixture is added to the photometrics.
+    is_led = str(spec.get("ref_lamp", "")).upper().startswith("LED")
+    if not is_led:
+        # A Source Four on a dimmer occupies the one address of that dimmer.
+        # There is no profile and nothing to look up.
+        return str(addr), "address — a conventional fixture is one address"
+
+    model, assumed = dmx.resolve_model(spec.get("family"), inst.model)
+    if model is None:
+        return str(addr), f"address (start) — {assumed}"
+    n, why = dmx.channels(model, inst.profile)
+    if assumed:
+        why = f"{why} ({assumed})"
+    if not n:
+        return str(addr), f"address (start) — {why}"
+    rng = dmx.span(addr, n)
+    if rng is None:
+        # ⚠ Known footprint, unusable range: the span runs past 512, or the
+        # address is not a number. Saying "start" and stopping would hide a
+        # patch that cannot physically exist.
+        return str(addr), (f"address (start) — {why}, but {n} channels from here "
+                           f"runs past the end of the universe. Check the patch.")
+    return rng, f"address, {why}"
+
+
+@app.get("/dmx")
+def dmx_table() -> Dict[str, Any]:
+    """The DMX personalities, so the inspector can offer them.
+
+    ⭐ Served, never ported. The channel counts live in dmx.py and the browser
+    is given them — a second copy in TypeScript would drift from the exporter,
+    which is the mistake docs/SYMBOLS.md exists to warn about.
+    """
+    return {"family_models": dmx.FAMILY_MODELS,
+            "profiles": {m: sorted(t) for m, t in dmx.MODELS.items()},
+            "unpublished": {m: sorted(v) for m, v in dmx.UNPUBLISHED.items()},
+            "suggested": dmx.SUGGESTED,
+            "sources": dmx.SOURCES}
+
+
 @app.post("/compute")
 def compute(req: ComputeRequest) -> Dict[str, Any]:
     """Throw, elevation, pan, pools and footcandles for each instrument.
@@ -163,6 +250,15 @@ def compute(req: ComputeRequest) -> Dict[str, Any]:
         # skipped un-aimed units would under-report the circuit they are on.
         _w, _wnote = ph.watts_for(inst.type, inst.lamp, inst.mode)
         row["watts"], row["watts_note"] = _w, _wnote
+        # ⭐ The patch, here with the watts and for the same reason: what a unit
+        # is plugged into is a fact about the rig, not about where it is aimed,
+        # so it must not sit behind the early returns that a unit with no focus
+        # point takes.
+        #
+        # ⭐ COMPUTED HERE AND NOWHERE ELSE. The browser renders the string it
+        # is given. A copy of this rule in TypeScript would drift from the Eos
+        # exporter, which is the mistake docs/SYMBOLS.md exists to warn about.
+        row["patch"], row["patch_note"] = _patch_cell(inst)
         if inst.type not in ph.FIXTURES:
             row["note"] = f"{inst.type} is not in the fixture table"
             results.append(row); continue
