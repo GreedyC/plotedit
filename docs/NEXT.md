@@ -830,13 +830,35 @@ at the moment they export.
 
 ⚠ **An address and a dimmer are alternatives, not a pair.** A conventional unit
 in a dimmer-per-circuit house has a dimmer and no DMX address of its own; an LED
-unit has an address and no dimmer. Either is a complete answer. Warn only when
-there is neither. `_patch_target` in `exports.py` already encodes this rule and
-is the one place it should live.
+unit has an address and no dimmer. Either is a complete answer.
 
-Open question: where does the warning go? Candidates are the instrument
-inspector, a count in the status line, and the schedule. Probably all three
-eventually, but the schedule is where an ME would look.
+### 🔴 REVISED 2026.09.28 — warn on the CHANNEL, not on the patch
+
+**Jerry: the LD may not know the address the electrician wants to put the
+instrument into.** So the warning above, as written, is wrong, and it was never
+built — which is lucky.
+
+**A channel number is the designer's.** It is how the board is laid out, it is
+theirs to decide, and a mounted instrument without one is an omission only they
+can fix. **⭐ That is worth warning about while drawing.**
+
+**An address is the electrician's.** On most jobs the designer hands over a plot
+and the ME decides what goes where in the patch — so a plot full of blank
+addresses is not an unfinished plot, it is **the normal state of a finished
+design.** A warning there would fire on every honest drawing and be trained away
+within a day, which is worse than no warning: it teaches people to ignore the
+place warnings appear.
+
+**✅ What stays.** The export refusal, which fires when a patch file would be
+empty. That is not a drawing-time nag — it is the moment a file is about to go
+to a console, where the address genuinely has to exist by then.
+
+**➡ So the item is: warn on a mounted instrument with no channel number.** There
+is no such warning today; the memory of one is this roadmap entry, not code.
+
+Open question: where does it go? Candidates are the instrument inspector, a count
+in the status line, and the schedule. Probably all three eventually, but the
+schedule is where an ME would look.
 
 **2. Instrument types in the patch.** *Deferred deliberately — keep it simple
 for now.* The patch exports `channel<address` and nothing else, so every unit

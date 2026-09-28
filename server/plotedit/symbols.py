@@ -779,14 +779,16 @@ def for_type(kind, lens_rotation=None):
 CONTROL_MODELS = ("dimmer-per-circuit", "hard-and-soft-patch", "no-soft-patch")
 
 
-def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None,
+def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=None,
              color=None, purpose=None, unit=None, wattage=None,
              control="dimmer-per-circuit", rotate_deg=0.0, body_center=0.0,
              size=0.42, gap=0.30, above=1.0):
     """§6.14.1 — the SHAPE of the container carries the meaning.
 
-        hexagon    circuit
-        rectangle  dimmer (in a patch-panel house)
+        hexagon    circuit — or, on a unit with an address and no dimmer, the
+                   ADDRESS, because that is what controls it (see below)
+        rectangle  dimmer (in a patch-panel house), or the circuit when the
+                   hexagon has been given to an address
         circle     channel
 
     ⭐ How many containers there are depends on the HOUSE, per §6.14.1:
@@ -916,6 +918,26 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None,
             circuit, dimmer = dimmer, None
         elif dimmer is not None and str(dimmer) == str(circuit):
             dimmer = None
+
+    # ⭐ THE HEXAGON CARRIES WHAT CONTROLS THE UNIT, THE RECTANGLE WHAT POWERS
+    # IT. Jerry, 2026.09.28: "hexagon carries dimmer or address. rectangle
+    # carries circuit — which would be an exception."
+    #
+    # RP-2 §6.14.1 reads the other way round, and it held until LEDs. The plates
+    # assume the circuit and the dimmer ARE the control path, which is why a
+    # dimmer-per-circuit house collapses them into one hexagon above. A unit on a
+    # circuit for POWER and an address for CONTROL is two facts about two
+    # different things, and the standard has one container for them.
+    #
+    # ⚠ Before this, an addressed unit drew NOTHING here. On an all-LED plot the
+    # drawing said nothing at all about what anything was plugged into.
+    #
+    # ⚠ The address arrives universe-qualified from `dmx.plot_number`, which is
+    # the disambiguation: a hexagon reading "45" is dimmer 45 and one reading
+    # "1/45" is an address. The instrument key names both, so a stranger reading
+    # the sheet is told rather than left to infer.
+    if address is not None and dimmer is None:
+        circuit, dimmer = address, (circuit if circuit is not None else None)
 
     # The containers themselves stay UPRIGHT and the text horizontal (RP-2 p.1:
     # "the associated text should be properly oriented with the rest of the text

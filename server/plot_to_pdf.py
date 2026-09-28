@@ -155,6 +155,7 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                    lens_rotation=inst.get("lensRotation"),
                    accessories=inst.get("accessories"),
                    circuit=inst.get("circuit"), dimmer=inst.get("dimmer"),
+                   address=inst.get("address"),
                    control=plot.get("control", "dimmer-per-circuit"),
                    wattage=inst.get("wattage"),
                    symbol_angle=plot.get("symbolAngle", "orthogonal"),

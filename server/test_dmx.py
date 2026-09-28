@@ -283,6 +283,31 @@ check("a fixture nobody has looked up says only that",
       "publishes no DMX footprint" in dmx.channels("Some Other Light", "x")[1], False)
 
 print()
+print("what goes in the hexagon on the drawing")
+
+# ⭐ Jerry, 2026.09.28: the hexagon carries what CONTROLS the unit. RP-2 assumed
+# circuit and dimmer were that path, which held until a fixture sat on a circuit
+# for power and an address for control.
+check("an address keeps its universe", dmx.plot_number("2/21", None), "2/21")
+# ⚠ THE WHOLE DISAMBIGUATION. A hexagon reading "45" is dimmer 45; one reading
+# "1/45" is an address. A one-universe house still gets the "1/" so the two can
+# never be confused on a mixed plot.
+check("a bare address is given one", dmx.plot_number("45", None), "1/45")
+check("a dimmer never gets a universe", dmx.plot_number(None, "7"), "7")
+check("nothing patched draws nothing", dmx.plot_number(None, None), None)
+# ⚠ A unit should never carry both. If the data says otherwise, this must agree
+# with whatever decides the schedule — the first draft let the dimmer win while
+# the schedule gave the address priority, which would have put one number on the
+# drawing and a different one on the paperwork for the same unit.
+check("the address wins, as it does everywhere else",
+      dmx.plot_number("2/21", "7"), "2/21")
+# ⭐ And the two functions are asserted against EACH OTHER, not merely against
+# the same expectation written twice. This is the pair that would put one number
+# on the drawing and a different one on the schedule.
+check("...and patch_cell agrees with it",
+      dmx.patch_cell(None, "whatever", "2/21", "7")[0], "2/21")
+
+print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

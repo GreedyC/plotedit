@@ -302,3 +302,37 @@ def patch_cell(spec, type_name, address, dimmer, model=None, profile=None):
         return str(addr), (f"address (start) — {why}, but {n} channels from here "
                            f"runs past the end of the universe. Check the patch."), None
     return rng, f"address, {why}", n
+
+def plot_number(address, dimmer=None):
+    """What goes in the hexagon on the drawing, universe-qualified.
+
+    ⭐ Jerry, 2026.09.28: "hexagon carries dimmer or address." RP-2 assumed the
+    circuit and the dimmer WERE the control path, which held until LEDs — a unit
+    on a circuit for power and an address for control is two facts about two
+    different things, and the standard has one container for them. So the
+    hexagon carries what CONTROLS the unit and the rectangle what powers it.
+
+    ⚠ AN ADDRESS ALWAYS CARRIES ITS UNIVERSE, a bare dimmer never does. That is
+    the whole disambiguation: on a mixed plot a hexagon reading "45" is dimmer
+    45 and one reading "1/45" is an address, and nobody has to be told. A plain
+    address in a one-universe house gets the "1/" precisely so it cannot be
+    mistaken for a dimmer.
+
+    ⚠ THE START ONLY. "2/21-2/35" beside a symbol is more characters than the
+    space has, and the range belongs on the schedule where there is a column
+    for it.
+
+    ⚠ THE ADDRESS WINS when a unit somehow carries both, exactly as
+    `patch_cell` decides it — a unit should never have both, but if the data
+    says otherwise the two functions must not disagree about which number is
+    real. The first draft of this let the dimmer win and contradicted the
+    schedule on the same plot.
+    """
+    addr = address.strip() if isinstance(address, str) else address
+    if addr not in (None, ""):
+        text = str(addr)
+        return text if "/" in text else f"1/{text}"
+    dim = dimmer.strip() if isinstance(dimmer, str) else dimmer
+    if dim in (None, ""):
+        return None
+    return str(dim)

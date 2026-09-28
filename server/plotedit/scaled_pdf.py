@@ -682,7 +682,7 @@ class Sheet:
 
     def unit(self, x, y, num, ch=None, kind="", color_gel=None, focus_to=None, r=None, color_tier=0,
              trim=None, focus_h=5.5, lamp=None, mode=None, lens_rotation=None,
-             accessories=None, circuit=None, dimmer=None, wattage=None,
+             accessories=None, circuit=None, dimmer=None, address=None, wattage=None,
              control="dimmer-per-circuit", symbol_angle="orthogonal",
              pool_plane=None, show_pool=True, show_focus=True, show_labels=True,
              annotate=False, in_plan=True):
@@ -799,8 +799,11 @@ class Sheet:
             # further out, not somewhere else.
             _step = (7.0 / self.pt_per_ft if self.pt_per_ft else 0.39) * 1.5
             _above = _clear + (color_tier or 0) * _step
+            from . import dmx as _dmx
             _sym.notation(self, x, y, unit=num, channel=ch, color=color_gel,
-                          circuit=circuit, dimmer=dimmer, wattage=wattage,
+                          circuit=circuit, dimmer=dimmer,
+                          address=_dmx.plot_number(address, dimmer) if address else None,
+                          wattage=wattage,
                           control=control, rotate_deg=draw_deg,
                           body_center=_center, above=_above)
         result = None
