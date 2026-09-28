@@ -171,55 +171,13 @@ def gels() -> Dict[str, Any]:
 
 
 def _patch_cell(inst) -> tuple:
-    """What this unit is plugged into, and what that number actually is.
-
-    An address and a dimmer are alternatives, not a pair, and the address wins
-    when a unit carries both, because that is the number the console uses.
-
-    ⚠ A range is only ever shown when the footprint is KNOWN. A fixture whose
-    profile nobody wrote down shows its start address and says why there is no
-    range — an invented range is how the next unit gets patched into the tail
-    of this one.
-    """
-    addr = inst.address.strip() if isinstance(inst.address, str) else inst.address
-    dim = inst.dimmer.strip() if isinstance(inst.dimmer, str) else inst.dimmer
-    if addr in (None, ""):
-        if dim in (None, ""):
-            return "—", "no dimmer and no address — this unit is not patched to anything"
-        return str(dim), "dimmer"
-
-    spec = ph.FIXTURES.get(inst.type)
-    if spec is None:
-        # ⚠ AN UNRECOGNISED TYPE IS NOT A CONVENTIONAL ONE. Falling through to
-        # "one address" here would quietly call an unknown LED a dimmer, which
-        # is the direction of this guess that costs somebody a patch.
-        return str(addr), (f"address (start) — {inst.type!r} is not a fixture this "
-                           f"knows, so its footprint cannot be looked up")
-    # ⭐ The LAMP says whether this is an LED fixture, not a list of family names
-    # typed here. A hand-written list is a second place for the truth to live,
-    # and it goes stale the first time a fixture is added to the photometrics.
-    is_led = str(spec.get("ref_lamp", "")).upper().startswith("LED")
-    if not is_led:
-        # A Source Four on a dimmer occupies the one address of that dimmer.
-        # There is no profile and nothing to look up.
-        return str(addr), "address — a conventional fixture is one address"
-
-    model, assumed = dmx.resolve_model(spec.get("family"), inst.model)
-    if model is None:
-        return str(addr), f"address (start) — {assumed}"
-    n, why = dmx.channels(model, inst.profile)
-    if assumed:
-        why = f"{why} ({assumed})"
-    if not n:
-        return str(addr), f"address (start) — {why}"
-    rng = dmx.span(addr, n)
-    if rng is None:
-        # ⚠ Known footprint, unusable range: the span runs past 512, or the
-        # address is not a number. Saying "start" and stopping would hide a
-        # patch that cannot physically exist.
-        return str(addr), (f"address (start) — {why}, but {n} channels from here "
-                           f"runs past the end of the universe. Check the patch.")
-    return rng, f"address, {why}"
+    """Thin wrapper: the decision lives in `dmx.patch_cell`, which the CSV
+    exports call too. It was here once, and the exports quietly wrote a bare
+    start address while this returned a range."""
+    text, why, _n = dmx.patch_cell(ph.FIXTURES.get(inst.type), inst.type,
+                                   inst.address, inst.dimmer,
+                                   inst.model, inst.profile)
+    return text, why
 
 
 @app.get("/dmx")
