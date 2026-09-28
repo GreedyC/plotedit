@@ -127,8 +127,12 @@ for model, profiles in dmx.MODELS.items():
 
 for fam, models in dmx.FAMILY_MODELS.items():
     for m in models:
-        if m not in dmx.MODELS:
-            fail(f"FAMILY_MODELS[{fam!r}]", f"offers {m!r}, which has no profiles")
+        # ⚠ A model with no profiles is legal ONLY if NO_FOOTPRINT says why.
+        # Otherwise it is an entry someone started and did not finish, and the
+        # dropdown offers a choice that answers nothing.
+        if m not in dmx.MODELS and m not in dmx.NO_FOOTPRINT:
+            fail(f"FAMILY_MODELS[{fam!r}]",
+                 f"offers {m!r}, which has no profiles and no NO_FOOTPRINT reason")
     if fam not in P.FAMILY_WATTS:
         warn(f"FAMILY_MODELS[{fam!r}]", "is not a family the wattage table knows")
 

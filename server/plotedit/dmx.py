@@ -109,6 +109,12 @@ FAMILY_MODELS: Dict[str, list] = {
     # the zoom assemblies for the body, and the DMX profiles belong to the body.
     # `photometrics.FAMILY_WATTS` already makes exactly this call for wattage.
     "ColorSource Zoom": ["ColorSource Spot"],
+    # ⚠ THESE HAVE NO PROFILES, AND THAT IS THE POINT. Listing them puts them in
+    # the inspector's model dropdown, which is the only way a user can reach the
+    # NO_FOOTPRINT explanation. Left out, the schedule fell back to "the model is
+    # not recorded" — true, useless, and unfixable, because there was nothing to
+    # record. Found by running the app, not by reading the code.
+    "Cyc": ["Altman Spectra Cyc 50", "Altman Spectra Cyc 100"],
 }
 
 SOURCES: Dict[str, str] = {
