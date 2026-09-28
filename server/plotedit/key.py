@@ -172,6 +172,20 @@ def draw(sheet, plot, x, y, width=11.0, line=0.85, title="INSTRUMENT KEY"):
             ("number in the body", "unit number")]
     if control == "hard-and-soft-patch":
         rows.insert(1, ("rectangle", "dimmer"))
+
+    # ⭐ SAY IT ON THE SHEET WHEN THE PLOT USES IT. On a plot with addressed
+    # units the hexagon carries the address and the rectangle the circuit, which
+    # reads backwards to anyone who knows the RP-2 plates — so a reader who has
+    # not been told will read a rectangle as a dimmer. Explained only when there
+    # is something to explain; a legend line for notation nobody used is clutter.
+    _addressed = [i for i in plot.get("instruments", [])
+                  if str(i.get("address") or "").strip()
+                  and not str(i.get("dimmer") or "").strip()]
+    if _addressed:
+        rows[0] = ("hexagon", "dimmer — or the DMX ADDRESS, which always carries "
+                              "its universe (1/45)")
+        rows.insert(1, ("rectangle", "circuit, where a unit is addressed rather "
+                                     "than dimmed"))
     # ⭐ §6.15's shaded rear means "arc source"; Jerry uses it for a 750W lamp.
     # ONE MARK, TWO MEANINGS — so the key must say which, and only when the plot
     # actually uses it. A shaded symbol nobody explained is read as the other
