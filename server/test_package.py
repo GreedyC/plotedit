@@ -51,7 +51,7 @@ os.makedirs(out, exist_ok=True)
 pdf, dxf = os.path.join(out, "smoke.pdf"), os.path.join(out, "smoke.dxf")
 s = Sheet(pdf, page="TABLOID", scale="1/4", landscape=False, show="smoke test", dxf=dxf)
 s.origin(ft(3), ft(5))
-s.rect(0, 0, ft(33), ft(38), width=1.5)     # the Bluver, which needs portrait at 1/4"
+s.rect(0, 0, ft(33), ft(38), width=1.5)     # the test room, which needs portrait at 1/4"
 s.finish()
 check("DXF written alongside", os.path.exists(dxf), True)
 check("1-inch check bar", round(pdf_check(pdf), 2), 72.0)
@@ -178,7 +178,7 @@ check("an explicit flag still wins",
       P.is_foh({"name": "X", "y1": 16.0, "foh": True}, 10.0), True)
 
 # ⭐ A BLACK BOX HAS NO PLASTER LINE — no proscenium, so nothing for "downstage
-# of" to mean. What divides house from stage is the SEATING, and at the Bluver
+# of" to mean. What divides house from stage is the SEATING, and at the test room
 # the risers move per production. So the flag is the designer's statement, not
 # something geometry can work out.
 check("with no plaster line, geometry cannot decide", P.is_foh({"name": "X", "y1": 4.0}), False)
@@ -210,7 +210,7 @@ check("a position outside the room is caught",
       any("OUTSIDE the room" in m for m in P.check_foh(
           {**_room, "positions": [{"name": "C", "y1": -11.0}]})), True)
 check("the sample itself is now consistent",
-      P.check_foh(_json.load(open("testdata/bluver.plot.json"))), [])
+      P.check_foh(_json.load(open("testdata/blackbox.plot.json"))), [])
 
 # The catwalk is still a WALKWAY — three distinct lines, pipe inboard.
 _half = _cat["width"] / 2
@@ -562,13 +562,13 @@ _dx, _dy = _nose(14, 16, 24)
 check("aiming upstage points it upstage", _dx > 0 and _dy < 0, True)
 check("aiming straight down points straight down", _nose(14, 16, 16), (0.0, -1.0))
 
-_s, _drawn = _sec.render("testdata/bluver.plot.json",
+_s, _drawn = _sec.render("testdata/blackbox.plot.json",
                          __import__("tempfile").mkstemp(suffix=".pdf")[1])
 # ⚠ Derived from the plot, not hardcoded. This asserted `3`, which was the
 # number of horizontal positions the sample happened to have — so adding a pipe
 # to the sample failed a test about the SECTION. The property is one governing
 # luminaire per horizontal position that carries units; count those.
-_secplot = _json.load(open("testdata/bluver.plot.json"))
+_secplot = _json.load(open("testdata/blackbox.plot.json"))
 _hasunits = {(i.get("position") or "").strip().lower() for i in _secplot["instruments"]}
 _horiz = [q for q in _secplot["positions"]
           if not P.is_vertical(q) and (q.get("name") or "").strip().lower() in _hasunits]
@@ -669,7 +669,7 @@ check("radius() handles a fill prim", sym.radius(_sh + list(_body)) > 0, True)
 # breaks when someone reorders them.
 from plotedit import key as _key
 import json as _js
-_p = _js.load(open("testdata/bluver.plot.json"))
+_p = _js.load(open("testdata/blackbox.plot.json"))
 check("the key explains the mark when it is used", _key.shaded_used(_p), True)
 check("...and does not when it is not",
       _key.shaded_used({"instruments": [{"type": "S4 26", "lamp": "HPL 575"}]}), False)
@@ -766,7 +766,7 @@ print("\nthe instrument key — RP-2 §5.1, and only what is ON the plot")
 from plotedit import key as _K
 import json as _json
 
-_plot = _json.load(open("testdata/bluver.plot.json"))
+_plot = _json.load(open("testdata/blackbox.plot.json"))
 _types = _K.types_used(_plot)
 check("one row per fixture type", len(_types), 5)
 # Ordered BY FIXTURE, smallest lens first — how a reader looks something up,
@@ -956,7 +956,7 @@ import re as _re
 import tempfile as _tf
 import plot_to_pdf as _P
 
-_SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
+_SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "blackbox.plot.json")
 _tmp = _tf.mkdtemp()
 
 def _render(page, landscape, scale):

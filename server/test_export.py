@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from plotedit.api import app
 from plotedit import exports
 
-SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
+SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "blackbox.plot.json")
 plot = json.load(open(SAMPLE))
 client = TestClient(app)
 FAILS = []

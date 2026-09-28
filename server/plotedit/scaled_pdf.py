@@ -10,7 +10,7 @@ Real-world input is FEET. Convert with ft(feet, inches=0).
 
     from plotedit.scaled_pdf import Sheet, ft
     s = Sheet("plan.pdf", page="ARCH_D", scale="1/4", landscape=True,
-              show="Without Consent", venue="Louis Bluver Theatre at the Drake",
+              show="The Test Show", venue="Black Box Studio",
               sheet="Light Plot — plan", rev="A")
     s.origin(ft(2), ft(2))                    # where real-world (0,0) sits on the page
     s.rect(0, 0, ft(33), ft(38), label="Stage floor 33' x 38'")
@@ -905,7 +905,7 @@ class Sheet:
         and runs as far as it likes.
 
         ⚠ The caller used to cut the string to a fixed character count instead.
-        On the Drake plot that ended the room note at "— InterAct renta", and
+        On the test plot that ended the room note mid-word, and
         the words it dropped were the ones naming where the dimension came from
         and saying it may not be quoted. A note cut mid-word does not look
         truncated; it looks like the sentence ended, so nobody goes looking for

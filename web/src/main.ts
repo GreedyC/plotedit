@@ -744,7 +744,7 @@ async function boot() {
     }
 
     if (!opened) {
-      // ⚠ The DEMO, not the test fixture. server/testdata/bluver.plot.json is
+      // ⚠ The DEMO, not the test fixture. server/testdata/blackbox.plot.json is
       // what the suites assert against — it lives outside the public dir on
       // purpose, so it is not served and does not ship in the download.
       // demo.plot.json is the one a stranger should meet first.

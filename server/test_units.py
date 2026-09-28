@@ -99,7 +99,7 @@ import json as _json, os as _os, re as _re, tempfile as _tf
 import fitz as _fitz
 from plot_to_pdf import render as _render
 
-_SAMPLE = _os.path.join(_os.path.dirname(__file__), "testdata", "bluver.plot.json")
+_SAMPLE = _os.path.join(_os.path.dirname(__file__), "testdata", "blackbox.plot.json")
 _src = _json.load(open(_SAMPLE))
 _FEET = _re.compile(r"-?\d+'-\d+\"|-?\d+'(?!\w)")
 _METRES = _re.compile(r"-?\d+\.\d+\s?m\b")

@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from plotedit.api import app
 from plot_to_pdf import render
 
-SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
+SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "blackbox.plot.json")
 OUT = os.path.join(os.path.dirname(__file__), "..", "out", "agreement.pdf")
 
 plot = json.load(open(SAMPLE))
@@ -74,7 +74,7 @@ import json as _json
 from plotedit.scaled_pdf import Sheet as _S
 import plot_to_pdf as _p2p
 
-_plot = _json.load(open("testdata/bluver.plot.json"))
+_plot = _json.load(open("testdata/blackbox.plot.json"))
 
 def _numbers(mode):
     import tempfile, os
@@ -206,7 +206,7 @@ print()
 _meas = lambda t: len(t) * 0.26
 
 # 🔴 THE RULE ITSELF, on cases built to make it fail. Checking only that the
-# Bluver plot comes out clean proved nothing: breaking the fitter on purpose
+# test plot comes out clean proved nothing: breaking the fitter on purpose
 # still passed, because that plot has slack everywhere. These do not.
 _first = [(0.0, 10.0, "left"), (0.0, 4.0, "left")]      # preferred, then fallback
 _blocked = _L.place([{"candidates": _first, "w": 3.0, "h": 0.4}],

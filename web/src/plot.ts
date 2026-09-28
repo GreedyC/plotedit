@@ -264,7 +264,7 @@ export function isVertical(p: Position): boolean {
 /** Front of house — DOWNSTAGE OF THE PLASTER LINE.
  *
  * ⚠ Corrected 2026.09.24. This used to mean "negative y", assuming `room` was
- * the stage and the house lay beyond it. The room is the WHOLE room: the Bluver
+ * the stage and the house lay beyond it. The room is the WHOLE room: the test room
  * is 33' x 38' with its plaster line at y = 10, so the house is y 0–10 and the
  * stage 10–38, both inside one rectangle. An FOH position belongs inside it.
  */

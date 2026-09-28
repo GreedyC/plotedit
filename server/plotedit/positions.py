@@ -415,7 +415,7 @@ def is_foh(pos: Dict[str, Any], plaster_line: Optional[float] = None) -> bool:
     catwalk would need to be inside the room."
 
     He is right, and in a black box it is obvious once said: **the room is the
-    whole room.** The Bluver is 33' x 38' with its plaster line at y = 10, so the
+    whole room.** The test room is 33' x 38' with its plaster line at y = 10, so the
     house is y 0–10 and the stage is 10–38 — both inside one rectangle. Placing
     an FOH position at negative y put it outside a room that already had space
     for it, and made the drawing invent paper it did not need.
@@ -424,7 +424,7 @@ def is_foh(pos: Dict[str, Any], plaster_line: Optional[float] = None) -> bool:
 
     ⚠ And in a BLACK BOX there is no plaster line at all (Jerry, 2026.09.24) —
     no proscenium, so nothing for "downstage of" to mean. What divides house from
-    stage there is the SEATING, and the seating moves; at the Bluver the risers
+    stage there is the SEATING, and the seating moves; at the test room the risers
     are repositioned per production, which is why the configuration is part of
     the design rather than a property of the room. So with no plaster line the
     `foh` flag is the only answer, and it is the DESIGNER'S statement rather than
