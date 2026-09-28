@@ -31,7 +31,7 @@ from plotedit import photometrics as ph
 from plot_to_pdf import render
 from plotedit.scaled_pdf import Sheet
 
-SAMPLE = os.path.join(os.path.dirname(__file__), "..", "samples", "bluver.plot.json")
+SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
 plot = json.load(open(SAMPLE))
 client = TestClient(app)
 FAILS = []

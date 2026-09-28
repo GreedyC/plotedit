@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render the legend / instrument key on its own sheet — RP-2 §5.
 
-    cd server && python3 plot_to_key.py ../samples/bluver.plot.json ../out/key.pdf
+    cd server && python3 plot_to_key.py testdata/bluver.plot.json ../out/key.pdf
 
 §5.0 allows the key anywhere "that does not conflict with other information".
 A sheet of its own always satisfies that, and it is what to hand an electrician
@@ -30,7 +30,7 @@ def render(plot_path, pdf_path, scale="1/2", page="ARCH_C", landscape=False):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    s = render(a[0] if a else "../samples/bluver.plot.json",
+    s = render(a[0] if a else "testdata/bluver.plot.json",
                a[1] if len(a) > 1 else "../out/key.pdf")
     for w in s.warnings:
         print("⚠", w)

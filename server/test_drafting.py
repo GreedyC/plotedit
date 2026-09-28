@@ -26,7 +26,7 @@ from plotedit.scaled_pdf import (LINE_STYLES, HEAVY, Sheet, resolve_styles,
                                  _feet_label)
 from plot_to_pdf import render
 
-SAMPLE = os.path.join(os.path.dirname(__file__), "..", "samples", "bluver.plot.json")
+SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
 plot = json.load(open(SAMPLE))
 FAILS = []
 

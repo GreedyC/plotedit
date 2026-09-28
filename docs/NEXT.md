@@ -64,7 +64,7 @@ Vite + TypeScript, SVG, no interaction yet.
 | `web/src/render.ts` | SVG drawing: room, positions, symbols, focus, pools, USITT annotation |
 | `web/src/api.ts` | talks to the Python |
 | `web/src/main.ts` | loads the sample, computes, draws, fills the schedule |
-| `samples/bluver.plot.json` | ten instruments in the Bluver |
+| `server/testdata/bluver.plot.json` | ten instruments in the Bluver |
 | `server/plot_to_pdf.py` | the same file through `scaled_pdf` — the start of step 5 |
 
 **Run it:** `cd server && uvicorn plotedit.api:app` and `cd web && npm run dev`

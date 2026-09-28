@@ -744,8 +744,9 @@ async function boot() {
     }
 
     if (!opened) {
-      // ⚠ The DEMO, not the test fixture. samples/bluver.plot.json is what the
-      // suites assert against and it is labelled "test data, not a design";
+      // ⚠ The DEMO, not the test fixture. server/testdata/bluver.plot.json is
+      // what the suites assert against — it lives outside the public dir on
+      // purpose, so it is not served and does not ship in the download.
       // demo.plot.json is the one a stranger should meet first.
       const r = await fetch("/demo.plot.json");
       if (!r.ok) throw new Error(`cannot load the demo plot: ${r.status}`);
