@@ -301,6 +301,11 @@ check("nothing patched draws nothing", dmx.plot_number(None, None), None)
 # drawing and a different one on the paperwork for the same unit.
 check("the address wins, as it does everywhere else",
       dmx.plot_number("2/21", "7"), "2/21")
+# ⭐ And the two functions are asserted against EACH OTHER, not merely against
+# the same expectation written twice. This is the pair that would put one number
+# on the drawing and a different one on the schedule.
+check("...and patch_cell agrees with it",
+      dmx.patch_cell(None, "whatever", "2/21", "7")[0], "2/21")
 
 print()
 if FAILS:
