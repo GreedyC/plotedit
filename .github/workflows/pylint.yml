@@ -27,6 +27,14 @@ jobs:
         working-directory: server
         run: |
           for t in test_*.py; do echo "--- $t"; python "$t"; done
+      - name: Every fixture is sourced, consistent and reachable
+        # ⭐ This is what makes a contributed fixture reviewable. A diff does not
+        # show that a field angle is narrower than its beam, or that an alias
+        # points at a fixture that was renamed. A person checks what they think
+        # to check; this checks the same things every time.
+        working-directory: server
+        run: python validate_fixtures.py
+
       - name: Verify the suites actually fail when broken
         # ⚠ Twice in one day a suite printed its verdict in the MIDDLE of the
         # file, so anything appended ran without affecting the exit code — it

@@ -65,6 +65,7 @@ works immediately, on your plots, tonight. The pull request is only how the
 fixture reaches everyone else. Nobody has to wait on review to get their show
 drafted.
 
+
 ### ⭐ First — check whether you need a symbol at all
 
 **Your fixture almost certainly draws already.** `symbols.for_type` falls back to
@@ -103,6 +104,24 @@ is safe. A borrowed number is not, and it looks exactly as authoritative.
 **3. Only then, a new symbol** — and only when the fixture genuinely looks
 different on paper: a moving light, a cyc unit, a striplight, something RP-2
 draws its own way. A 26° ERS from another maker does not; it is already right.
+
+### Two scripts that do the boring half
+
+**`python server/new_fixture.py "Maker Model 26"`** prints the stub for every
+table a fixture type has to appear in, with the required fields present and
+empty and a note saying what each one needs. It prints rather than edits, on
+purpose: pasting takes ten seconds and leaves you looking at the neighbouring
+entries, which is where you will notice that every one of them names a document.
+
+**`python server/validate_fixtures.py`** checks what a reviewer reading a diff
+cannot see — that every entry cites a source, that a field angle is not narrower
+than its beam, that an alias points at a fixture that still exists, that a DMX
+footprint is between 1 and 512, and that a profile is not listed as both
+published and unpublished. **It runs in CI**, so an entry pasted in and left
+unfinished fails the build instead of shipping as a guess.
+
+⚠ **Neither checks that the symbol is the right shape.** Nothing automatic can.
+Draw it on a plot, put it beside the RP-2 plate, and look at it.
 
 ### What happens after you open the pull request
 
