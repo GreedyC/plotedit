@@ -92,6 +92,65 @@ it:
   `HSI Plus 7` mistake into six wrong addresses on paperwork instead of a caught
   test failure.
 
+### 🔴 A layout is not a property of the model — CH-A / CH-B, found 2026.09.28
+
+**Jerry, 2026.09.28: most LED fixtures have multiple personalities.** That is the
+normal case, not an awkward one, and `dmx.py` was built for it — the profile is
+recorded per instrument rather than per model, because a Series 2 in HSI and a
+Series 2 in Direct are the same fixture answering differently.
+
+**⚠ But one real manual goes further than that, and breaks the design above.**
+
+A SHEHDS 250W LEKO manual carries a menu item, `CHpatter`, that changes **the
+order of the channels** inside a mode:
+
+| | Layout |
+|---|---|
+| **CH-A** *(default)* | Dim · Strobe · Auto · Speed · R · G · B · W |
+| **CH-B** | Dim · R · G · B · W · Zoom · Strobe · Auto · Speed |
+
+**Same fixture. Same mode. Same channel count. Two different layouts, chosen on
+the fixture's own display.**
+
+**🔴 That is the worst possible failure mode for a shape.** The count is right,
+the address range is right, nothing errors — the colours simply land on the wrong
+parameters. On a rig it reads as a broken light rather than a wrong patch, which
+is an hour of somebody's evening at exactly the moment nobody has an hour.
+
+**➡ What follows for the design:**
+
+- **A shape cannot be keyed on model and profile alone.** For this maker it also
+  depends on a setting in a unit standing in the room, which is a fact about the
+  instrument and not about the type.
+- **⭐ The cheapest fix needs no new field.** The plot already records `profile`
+  per instrument, and the inspector already offers it as a dropdown. Make the
+  profile string carry the pattern — `8CH (CH-A)` and `8CH (CH-B)` as two
+  entries — rather than adding a parallel field that every consumer has to learn
+  about. Two rows in a table against a change to the schema, the API, the
+  inspector and the export.
+- **⚠ And it has to be asked for.** A fixture set to CH-B and recorded as CH-A is
+  worse than one with no profile at all, because the second says it does not know.
+
+### ⚠ The documents are not trustworthy, which changes the earlier advice
+
+That same manual, in twelve pages, says the fixture has 8/4 channels on page 8,
+lists a nine-entry CH-A layout ending in `9. Zoom` on page 11, and gives an
+eight-channel summary with no Zoom on page 12. The CH-A list numbers its channels
+`5R 6G 5B 6W` — five and six twice.
+
+**Against that, the grandMA and Avolites personality files for the sibling
+fixture look like the better source**, even though they disagree with each other
+about one channel — grandMA calls it UV with a violet colour value, Avolites
+calls it "Hue" with a null colour, and grandMA is almost certainly right.
+
+**🔴 This is an argument for reading vendor files rather than typing from
+datasheets, which is the opposite of the position taken above.** It does not
+settle it — a personality file is one console vendor's reading, and the grandMA
+file for the six-in-one also declares it a `Wash` at 35° when the manufacturer's
+own page calls it a 19° profile spotlight. **Every source here is wrong about
+something.** Which is the real finding: whatever plotedit records, it has to name
+which document it came from, because the documents do not agree.
+
 ### ➡ Suggested position
 
 **Write the shape table. Do not put it on screen yet.**
@@ -101,6 +160,13 @@ its own. But nothing in the app consumes a shape today, and a field in the
 inspector that nothing reads is a promise the export cannot keep. **Build the
 consumer first** — an Eos export that can carry a personality, or a patch sheet
 that says what each address controls — and let the shape arrive with it.
+
+⚠ **Revised after CH-A / CH-B.** Coverage still comes before structure — four LED
+families have no channel counts at all, which is a plainer problem than one
+family having unstructured ones. But when shapes are written, **the pattern goes
+in the profile string**, and the first entry written should be one where the
+layout is user-selectable, so the design meets that case on day one rather than
+being retrofitted around it.
 
 ---
 
