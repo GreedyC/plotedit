@@ -186,6 +186,11 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **❓ Adding a fixture type — open discussion in `docs/FIXTURE-TYPES.md`.**
+  Address shapes instead of bare channel counts, whether a type could arrive as
+  a package rather than as code, and a four-rung ladder for making it easier.
+  **Nothing decided.** Opened 2026.09.28.
+
 - **⚠ Before printing a `_source` string anywhere, read it first.**
   The photometric tables carry a `_source` beside every figure, and it is
   documentation that happens to live in a dict — **nothing in the codebase reads
