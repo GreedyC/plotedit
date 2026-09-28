@@ -168,6 +168,49 @@ Which reframes the question. It was never *SVG or code*. It is **can a fixture
 type be data rather than code** — and if the answer is yes, the format should be
 chosen on its merits, not because SVG is what a drawing program exports.
 
+### 🔴 And the format may already exist: GDTF
+
+**Raised 2026.09.28** by the developer of another plot application, in a
+conversation about where the two might interoperate. He was explaining why he
+would not want to duplicate fixture and DMX logic between projects: **his
+application treats GDTF and MVR as its canonical source** for fixture and scene
+data.
+
+**⭐ GDTF is the bundle this document was speculating about.** It is an industry
+format — a zip carrying a description of the fixture, its geometry, its DMX
+modes and its photometrics — and it is published by manufacturers rather than
+written by whoever wants the fixture drawn.
+
+Which answers two of the three questions above at once:
+
+- **The bundle format does not need inventing.** Section 2 asks whether a fixture
+  type could arrive as a package. One already does.
+- **Channel functions are the address shapes.** Section 1 proposes `RGBI` and
+  friends as reusable layouts. **A GDTF DMX mode describes exactly that**,
+  per channel, from the maker rather than from our reading of a datasheet.
+
+⚠ **It does not settle it, and the seven-row table above still applies.** GDTF is
+heavy, it is XML in a zip, and reading one is a real dependency rather than an
+afternoon. The line weights, the yoke origin and the RP-2 beam designation are
+still ours to decide, because GDTF describes a fixture and not a plot symbol. And
+a GDTF's photometrics come with the maker's word rather than a page number, which
+is not the same standard as `FIXTURES` holds itself to today.
+
+**➡ But it changes the question.** Not *"should we design a format?"* but
+*"should we read the one the rest of the industry already publishes?"* — which is
+a better question, and it arrived from someone with no stake in the answer.
+
+**❓ What to find out before deciding:**
+
+- **How much of a GDTF is actually usable** without trusting it. Which figures
+  carry a source, and which are the maker's assertion.
+- **Whether the fixtures Jerry works with have GDTF files at all.** ETC do. A
+  SHEHDS 350W from a marketplace may not, and it is exactly the awkward fixture
+  that made `dmx.py` necessary.
+- **Whether reading GDTF makes the symbol problem better or worse.** A file that
+  answers the DMX question but not the drawing question may leave the hard half
+  exactly where it is.
+
 ---
 
 ## 3. Making it easier, in the order the steps actually pay
@@ -219,3 +262,7 @@ a bundle from a forum.
 - **Which consumer comes first** — the Eos export carrying a personality, or a
   patch sheet that says what each address does? The shape table should be built
   to serve whichever it is.
+- **Is a shape table worth writing at all if GDTF is read later?** Possibly yes —
+  a shape is small, it makes today's counts testable, and it is what a GDTF DMX
+  mode would be read *into*. But it should be designed as a target for that, not
+  as a rival to it.
