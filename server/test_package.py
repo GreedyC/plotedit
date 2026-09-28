@@ -210,7 +210,7 @@ check("a position outside the room is caught",
       any("OUTSIDE the room" in m for m in P.check_foh(
           {**_room, "positions": [{"name": "C", "y1": -11.0}]})), True)
 check("the sample itself is now consistent",
-      P.check_foh(_json.load(open("../samples/bluver.plot.json"))), [])
+      P.check_foh(_json.load(open("testdata/bluver.plot.json"))), [])
 
 # The catwalk is still a WALKWAY — three distinct lines, pipe inboard.
 _half = _cat["width"] / 2
@@ -562,13 +562,13 @@ _dx, _dy = _nose(14, 16, 24)
 check("aiming upstage points it upstage", _dx > 0 and _dy < 0, True)
 check("aiming straight down points straight down", _nose(14, 16, 16), (0.0, -1.0))
 
-_s, _drawn = _sec.render("../samples/bluver.plot.json",
+_s, _drawn = _sec.render("testdata/bluver.plot.json",
                          __import__("tempfile").mkstemp(suffix=".pdf")[1])
 # ⚠ Derived from the plot, not hardcoded. This asserted `3`, which was the
 # number of horizontal positions the sample happened to have — so adding a pipe
 # to the sample failed a test about the SECTION. The property is one governing
 # luminaire per horizontal position that carries units; count those.
-_secplot = _json.load(open("../samples/bluver.plot.json"))
+_secplot = _json.load(open("testdata/bluver.plot.json"))
 _hasunits = {(i.get("position") or "").strip().lower() for i in _secplot["instruments"]}
 _horiz = [q for q in _secplot["positions"]
           if not P.is_vertical(q) and (q.get("name") or "").strip().lower() in _hasunits]
@@ -669,7 +669,7 @@ check("radius() handles a fill prim", sym.radius(_sh + list(_body)) > 0, True)
 # breaks when someone reorders them.
 from plotedit import key as _key
 import json as _js
-_p = _js.load(open("../samples/bluver.plot.json"))
+_p = _js.load(open("testdata/bluver.plot.json"))
 check("the key explains the mark when it is used", _key.shaded_used(_p), True)
 check("...and does not when it is not",
       _key.shaded_used({"instruments": [{"type": "S4 26", "lamp": "HPL 575"}]}), False)
@@ -766,7 +766,7 @@ print("\nthe instrument key — RP-2 §5.1, and only what is ON the plot")
 from plotedit import key as _K
 import json as _json
 
-_plot = _json.load(open("../samples/bluver.plot.json"))
+_plot = _json.load(open("testdata/bluver.plot.json"))
 _types = _K.types_used(_plot)
 check("one row per fixture type", len(_types), 5)
 # Ordered BY FIXTURE, smallest lens first — how a reader looks something up,
@@ -956,7 +956,7 @@ import re as _re
 import tempfile as _tf
 import plot_to_pdf as _P
 
-_SAMPLE = os.path.join(os.path.dirname(__file__), "..", "samples", "bluver.plot.json")
+_SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
 _tmp = _tf.mkdtemp()
 
 def _render(page, landscape, scale):

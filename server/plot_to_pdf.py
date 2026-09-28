@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render a .plot.json through scaled_pdf — the same file the browser draws.
 
-    cd server && python3 plot_to_pdf.py ../samples/bluver.plot.json ../out/bluver.pdf
+    cd server && python3 plot_to_pdf.py testdata/bluver.plot.json ../out/bluver.pdf
 
 This is step 3's proof: the screen and the paper must agree. It is also the
 beginning of step 5's export, so it lives in the package rather than in a test.
@@ -198,7 +198,7 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
 
 
 if __name__ == "__main__":
-    plot_path = sys.argv[1] if len(sys.argv) > 1 else "../samples/bluver.plot.json"
+    plot_path = sys.argv[1] if len(sys.argv) > 1 else "testdata/bluver.plot.json"
     pdf_path = sys.argv[2] if len(sys.argv) > 2 else "../out/bluver.pdf"
     s, rows = render(plot_path, pdf_path)
     print(f"wrote {pdf_path}")
