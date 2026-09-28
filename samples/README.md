@@ -9,5 +9,7 @@ it.
 to open.
 
 ⚠ **Test fixtures do NOT belong here.** They live in `server/testdata/`, which is
-not served. `bluver.plot.json` sat here until 2026.09.28 and went out in every
-download, naming a real venue and a show that had not been designed yet.
+not served. The renderer's fixture sat here until 2026.09.28 and went out in
+every download — and it described a real room, which is a second reason it does
+not belong in front of a stranger. It is now `server/testdata/blackbox.plot.json`
+and the room it describes is invented.

@@ -29,7 +29,7 @@ check("10 feet at 10 px/ft", len(10, v), 100);
 check("panning does not change a length", len(10, { ...v, panX: 99, panY: -7 }), 100);
 
 console.log("\nfitView");
-const f = fitView(33, 38, 800, 600);      // the Bluver
+const f = fitView(33, 38, 800, 600);      // the test room
 check("scale fits the tall axis", +f.scale.toFixed(4), +(600 / 44).toFixed(4));
 const c1 = toScreen({ x: 0, y: 0 }, f), c2 = toScreen({ x: 33, y: 38 }, f);
 check("room is inside the surface", c1.x > 0 && c2.x < 800 && c2.y > 0 && c1.y < 600, true);
@@ -51,7 +51,7 @@ console.log();
 // was a wrong model, and Jerry named it: "the FOH catwalk would need to be
 // inside the room."
 //
-// The room is the WHOLE room. The Bluver is 33' x 38' with its plaster line at
+// The room is the WHOLE room. The test room is 33' x 38' with its plaster line at
 // y = 10, so the house is y 0–10 and the stage 10–38 — one rectangle holding
 // both. An FOH position belongs INSIDE it, and a view fitted to the room shows
 // it without any extension at all.

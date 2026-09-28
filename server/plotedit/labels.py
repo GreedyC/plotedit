@@ -3,7 +3,7 @@
 
 ⭐ RP-2 §2.1 wants every hanging position identified; it does not say where the
 name goes, because on a drawing that is a fitting problem, not a standard. The
-name went at the pipe's stage-left end, always, and on the Bluver plot that put
+name went at the pipe's stage-left end, always, and on the test plot that put
 `CAT 1  (FOH)` and `HOUSE LEFT BOX BOOM 1` on top of each other and both across
 the box boom's symbol — three pieces of ink in one place, and the one an
 electrician needs first is the one underneath.

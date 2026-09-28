@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draw the lighting SECTION from a .plot.json, to RP-2 §3's checklist.
 
-    cd server && python3 plot_to_section.py testdata/bluver.plot.json ../out/sec.pdf
+    cd server && python3 plot_to_section.py testdata/blackbox.plot.json ../out/sec.pdf
 
 ⭐ A section answers two questions the plan cannot: **how low can this pipe go,
 and does the light reach the actor's face.** That is why RP-2 asks for two things
@@ -259,7 +259,7 @@ def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    s, drawn = render(args[0] if args else "testdata/bluver.plot.json",
+    s, drawn = render(args[0] if args else "testdata/blackbox.plot.json",
                       args[1] if len(args) > 1 else "../out/section.pdf")
     for w in s.warnings:
         print("⚠", w)

@@ -6,8 +6,8 @@ IN:  a venue's exported .dxf (from Vectorworks, AutoCAD, whatever) becomes the
      base drawing under the plot, in real feet, on the right sheet at the
      right scale — no Vectorworks licence needed.
 
-     dxf_info("bluver.dxf")                       # units, layers, extents — read this first
-     s.import_dxf("bluver.dxf", layers=["WALLS","GRID"], units="in")
+     dxf_info("blackbox.dxf")                       # units, layers, extents — read this first
+     s.import_dxf("blackbox.dxf", layers=["WALLS","GRID"], units="in")
 
      Units come from the file's $INSUNITS header; override with units= when
      the header is missing or wrong (it often is). Sanity-check against one

@@ -31,7 +31,7 @@ from plotedit import photometrics as ph
 from plot_to_pdf import render
 from plotedit.scaled_pdf import Sheet
 
-SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "bluver.plot.json")
+SAMPLE = os.path.join(os.path.dirname(__file__), "testdata", "blackbox.plot.json")
 plot = json.load(open(SAMPLE))
 client = TestClient(app)
 FAILS = []
@@ -150,9 +150,9 @@ check("an unknown field is still not a reason to refuse a plot",
 
 print()
 print("the room note reaches the paper whole")
-# It used to be cut to 110 characters. On the Drake plot that ended it at
-# "— InterAct renta", losing the half that named the source and said the
-# dimension may not be quoted. A note cut mid-word does not LOOK truncated.
+# It used to be cut to 110 characters, which ended the room note mid-word
+# and lost the half that named the source and said the dimension may not be
+# quoted. A note cut mid-word does not LOOK truncated.
 _src = plot["room"]["source"]
 _p = os.path.join(tempfile.mkdtemp(), "note.pdf")
 render(SAMPLE, _p, scale="1/4")
