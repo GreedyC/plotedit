@@ -46,6 +46,48 @@ MODELS: Dict[str, Dict[str, int]] = {
         # = 13 from the prose and was wrong by two.
         "HSI Plus 7": 15,
     },
+    # ⭐ ETC PUBLISH THE SHAPE, NOT JUST THE COUNT. The datasheet's "Modes
+    # (Footprint)" row names each mode by the letters it controls — IRGBS is
+    # intensity, red, green, blue, strobe — and gives the count in brackets.
+    # Every letter string here matches its number, which is the check the
+    # Series 2 table has no way to make.
+    "ColorSource CYC": {
+        "1 channel": 1,     # I
+        "RGB": 3,           # RGB
+        "5 channel": 5,     # IRGBS
+        "Direct": 7,        # IRGBILS
+    },
+    # ⭐ THE FULLEST SOURCE ON FILE. ETC give this one channel by channel rather
+    # than as a letter string, so the layout is published and not inferred:
+    #   5ch  1 Intensity  2 Red  3 Green  4 Blue        5 Strobe
+    #   Dir  1 Intensity  2 Red  3 Green  4 Blue/Indigo 5 Lime  6 Strobe
+    #   RGB  1 Red        2 Green 3 Blue
+    #   1ch  1 Intensity  (Preset 1 only)
+    #
+    # ⚠ Channel 4 is BLUE on the standard fixture and INDIGO on the Deep Blue
+    # variant — same footprint, different emitter behind the same address. And
+    # in 5ch the lime is mixed by the fixture, so a five-channel ColorSource is
+    # a four-colour light being driven as three.
+    "ColorSource Spot": {
+        "1ch": 1,
+        "RGB": 3,
+        "5ch": 5,
+        "Dir": 6,
+    },
+}
+
+# Real fixtures whose makers do not publish a footprint at all, and what was
+# read before saying so. ⚠ NOT the same as UNPUBLISHED, which is a profile that
+# is named but uncounted; these have no published mode list of any kind.
+NO_FOOTPRINT: Dict[str, str] = {
+    "Altman Spectra Cyc 50":
+        "Altman SSCYC50 datasheet rev2 2020-10-08 and specification 2020-07-31: "
+        "both describe 8/16-bit operation, a Master Channel that can be switched "
+        "on or off, and 'user selected personalities' — and neither lists one. "
+        "Read the count off the fixture's display.",
+    "Altman Spectra Cyc 100":
+        "Altman SSCYC100 datasheet and specification: same as the 50 — "
+        "personalities are referred to but never enumerated.",
 }
 
 # Profiles that exist but whose channel count the datasheet does not publish.
@@ -61,11 +103,28 @@ UNPUBLISHED: Dict[str, set] = {
 # means that is the only one whose datasheet has been read.
 FAMILY_MODELS: Dict[str, list] = {
     "Lustr": ["Source Four LED Series 2"],
+    "ColorSource CYC": ["ColorSource CYC"],
+    "ColorSource": ["ColorSource Spot"],
+    # ⚠ The zoom is the same light engine with a different lens tube — ETC sell
+    # the zoom assemblies for the body, and the DMX profiles belong to the body.
+    # `photometrics.FAMILY_WATTS` already makes exactly this call for wattage.
+    "ColorSource Zoom": ["ColorSource Spot"],
+    # ⚠ THESE HAVE NO PROFILES, AND THAT IS THE POINT. Listing them puts them in
+    # the inspector's model dropdown, which is the only way a user can reach the
+    # NO_FOOTPRINT explanation. Left out, the schedule fell back to "the model is
+    # not recorded" — true, useless, and unfixable, because there was nothing to
+    # record. Found by running the app, not by reading the code.
+    "Cyc": ["Altman Spectra Cyc 50", "Altman Spectra Cyc 100"],
 }
 
 SOURCES: Dict[str, str] = {
     "Source Four LED Series 2":
         "ETC Source Four LED Series 2 datasheet, p.11 'DMX Input Channel Profiles'",
+    "ColorSource CYC":
+        "ETC ColorSource CYC datasheet p.2, 'Modes (Footprint)'",
+    "ColorSource Spot":
+        "ETC ColorSource Spot datasheet Rev P 2021-09, p.8, "
+        "'DMX Input Channel Profiles'",
 }
 
 # ⚠ ETC's own Quick Setup called "Stage" is HSI with Plus 7 enabled, and the
@@ -73,7 +132,13 @@ SOURCES: Dict[str, str] = {
 # curve and a 3200 K white point. It is the profile a theatre is most likely to
 # be on — but "most likely" is not "recorded", so this is NEVER applied
 # silently. The inspector uses it to order the list, nothing more.
-SUGGESTED: Dict[str, str] = {"Source Four LED Series 2": "HSI Plus 7"}
+SUGGESTED: Dict[str, str] = {
+    "Source Four LED Series 2": "HSI Plus 7",
+    # ⭐ Unlike the Series 2 entry above, this one is not a reading of what a
+    # theatre probably does — ETC's own table labels 5ch "(Default)". It still
+    # only orders the list; a fixture on site can be set to anything.
+    "ColorSource Spot": "5ch",
+}
 
 
 def models_for(family: Optional[str]) -> list:
@@ -110,6 +175,12 @@ def channels(model: Optional[str], profile: Optional[str]) -> Tuple[Optional[int
     """
     table = MODELS.get(model or "")
     if not table:
+        # ⭐ Say WHY there is no table when that is known. "No profile table" and
+        # "the maker does not publish one" are different answers, and only the
+        # second one tells the reader to go and look at the fixture.
+        why = NO_FOOTPRINT.get(model or "")
+        if why:
+            return None, f"{model} publishes no DMX footprint — {why}"
         # Not an error. A conventional fixture has no profile, and the caller
         # decides whether one address is the right assumption for it.
         return None, f"no DMX profile table for {model or 'this fixture'}"
@@ -124,7 +195,8 @@ def channels(model: Optional[str], profile: Optional[str]) -> Tuple[Optional[int
     if n is None:
         return None, (f"{profile!r} is not a profile this fixture has "
                       f"({', '.join(sorted(table))})")
-    return n, f"{profile}, {n} channels — {SOURCES.get(model or '', 'source not recorded')}"
+    return n, (f"{profile}, {n} channel{'' if n == 1 else 's'} — "
+               f"{SOURCES.get(model or '', 'source not recorded')}")
 
 
 def _parts(addr: str):

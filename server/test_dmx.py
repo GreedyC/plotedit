@@ -221,6 +221,68 @@ check("...and the two ranges do not overlap",
       all(a[1] < b[0] for a, b in zip(_spans, _spans[1:])), True)
 
 print()
+print("the ColorSource CYC, whose datasheet publishes the SHAPE as well as the count")
+
+# ⭐ ETC write each mode as the letters it controls plus a bracketed count —
+# "IRGBS (5)". So the count can be checked against the shape, which is the one
+# thing the Series 2 table cannot do: its first draft had HSI Plus 7 as 13 and
+# the truth was 15, and no letter string existed to contradict it.
+_SHAPES = {"1 channel": "I", "RGB": "RGB", "5 channel": "IRGBS", "Direct": "IRGBILS"}
+for _prof, _letters in _SHAPES.items():
+    _n, _why = dmx.channels("ColorSource CYC", _prof)
+    check(f"   {_prof} is {len(_letters)} channels, as {_letters} says",
+          _n, len(_letters))
+    check("   ...and it cites the datasheet", "ColorSource CYC datasheet" in _why, True)
+
+_n, _why = dmx.channels("ColorSource CYC", None)
+check("no profile recorded gives no number", _n, None)
+check("...and says the range it could be", "1 to 7 channels" in _why, True)
+
+check("one channel is not 'channels'",
+      dmx.channels("ColorSource CYC", "1 channel")[1].startswith("1 channel, 1 channel —"),
+      True)
+
+print()
+print("the ColorSource Spot, published channel by channel")
+
+# ⭐ ETC give this one as an assignment list, not a letter string, so the shape
+# is on file rather than inferred. The counts below are the length of that list.
+_CS = {"1ch": 1, "RGB": 3, "5ch": 5, "Dir": 6}
+for _prof, _n in _CS.items():
+    check(f"   {_prof} is {_n}", dmx.channels("ColorSource Spot", _prof)[0], _n)
+check("   ...and cites the revision, not just the maker",
+      "Rev P 2021-09" in dmx.channels("ColorSource Spot", "5ch")[1], True)
+
+# ⚠ The zoom is the same light engine with a different lens tube, which is the
+# call photometrics already makes for wattage. If that is ever wrong it is wrong
+# in both places, and this is where it would be noticed.
+check("the zoom resolves to the same engine",
+      dmx.models_for("ColorSource Zoom"), ["ColorSource Spot"])
+check("...and the plain family does too",
+      dmx.models_for("ColorSource"), ["ColorSource Spot"])
+check("...and an unrecorded model says it is assuming",
+      "assuming" in (dmx.resolve_model("ColorSource Zoom", None)[1] or ""), True)
+
+# ETC label 5ch "(Default)", so this suggestion is the maker's, not a guess.
+check("the suggested profile is the one ETC call default",
+      dmx.SUGGESTED.get("ColorSource Spot"), "5ch")
+
+print()
+print("a maker who publishes no footprint at all")
+
+# ⚠ Altman refer to "user selected personalities" in the specification and never
+# list them. That is a different answer from "we have no table for this", and the
+# reader needs the second half of it: go and read the fixture's display.
+for _m in ("Altman Spectra Cyc 50", "Altman Spectra Cyc 100"):
+    _n, _why = dmx.channels(_m, "anything")
+    check(f"{_m} returns no count", _n, None)
+    check("   ...and says the maker publishes none",
+          "publishes no DMX footprint" in _why, True)
+
+check("a fixture nobody has looked up says only that",
+      "publishes no DMX footprint" in dmx.channels("Some Other Light", "x")[1], False)
+
+print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:
