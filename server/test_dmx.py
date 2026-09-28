@@ -221,6 +221,43 @@ check("...and the two ranges do not overlap",
       all(a[1] < b[0] for a, b in zip(_spans, _spans[1:])), True)
 
 print()
+print("the ColorSource CYC, whose datasheet publishes the SHAPE as well as the count")
+
+# ⭐ ETC write each mode as the letters it controls plus a bracketed count —
+# "IRGBS (5)". So the count can be checked against the shape, which is the one
+# thing the Series 2 table cannot do: its first draft had HSI Plus 7 as 13 and
+# the truth was 15, and no letter string existed to contradict it.
+_SHAPES = {"1 channel": "I", "RGB": "RGB", "5 channel": "IRGBS", "Direct": "IRGBILS"}
+for _prof, _letters in _SHAPES.items():
+    _n, _why = dmx.channels("ColorSource CYC", _prof)
+    check(f"   {_prof} is {len(_letters)} channels, as {_letters} says",
+          _n, len(_letters))
+    check("   ...and it cites the datasheet", "ColorSource CYC datasheet" in _why, True)
+
+_n, _why = dmx.channels("ColorSource CYC", None)
+check("no profile recorded gives no number", _n, None)
+check("...and says the range it could be", "1 to 7 channels" in _why, True)
+
+check("one channel is not 'channels'",
+      dmx.channels("ColorSource CYC", "1 channel")[1].startswith("1 channel, 1 channel —"),
+      True)
+
+print()
+print("a maker who publishes no footprint at all")
+
+# ⚠ Altman refer to "user selected personalities" in the specification and never
+# list them. That is a different answer from "we have no table for this", and the
+# reader needs the second half of it: go and read the fixture's display.
+for _m in ("Altman Spectra Cyc 50", "Altman Spectra Cyc 100"):
+    _n, _why = dmx.channels(_m, "anything")
+    check(f"{_m} returns no count", _n, None)
+    check("   ...and says the maker publishes none",
+          "publishes no DMX footprint" in _why, True)
+
+check("a fixture nobody has looked up says only that",
+      "publishes no DMX footprint" in dmx.channels("Some Other Light", "x")[1], False)
+
+print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:
