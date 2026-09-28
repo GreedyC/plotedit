@@ -863,3 +863,62 @@ export it, but that's another day."
 ⚠ Eos asks on import whether to bring fixtures in as **Library** or **Custom**;
 ETC's manual recommends Custom. That prompt is asking how to resolve fixture
 records the file does not currently contain.
+
+### ⭐ It is not an Eos format — investigated 2026.09.28
+
+**Jerry: "theoretically the export works for other ASCII consoles."** That is
+right, and the code agrees, but not as written.
+
+**USITT ASCII v3.0 dates from 1992 and exists precisely to move a show between
+consoles of different makes.** It has been implemented by Strand (LightPalette 90
+through LightPort, later ShowPort), AVAB, NSI, Compulite, ETC's own Expression
+and Insight offline editors, Track-Master, QLC+ and others, as well as the Eos
+family. ⚠ **USITT does not police or test implementations**, so each is as good
+as the manufacturer made it — two consoles reading the same file is a hope, not a
+guarantee.
+
+**What `eos_patch()` writes today splits cleanly in two.**
+
+| Portable | ETC-specific |
+|---|---|
+| `Ident 3:0` | `Manufacturer ETC` |
+| `!` comment lines | `Console Eos` |
+| `Patch 1` and the `channel<address` entries | `$$Format 3.10` |
+| `Enddata` | `$$Title` |
+| | `$ChanLabel` |
+
+The patch body is the standard. **Everything that identifies the file, and every
+channel label, is in the extension vocabulary** — which is the part the standard
+lets each manufacturer invent, and therefore the part another console is free to
+ignore.
+
+**🔴 So the likely outcome on a non-ETC console is: the patch arrives and the
+labels vanish.** `exports.py` calls those labels "the whole value of exporting a
+patch rather than typing it." Worth knowing before somebody discovers it at a
+tech.
+
+**⚠ And the file claims to be something it is not.** `Manufacturer ETC` /
+`Console Eos` says this came off an ETC desk. It did not. That is untrue on its
+face, it is the first thing another console reads, and it costs nothing to fix.
+
+**❓ Three things to settle, none of which need a console to start:**
+
+- **What should the header say?** Naming plotedit as the manufacturer is honest
+  and may be safer. But a console that whitelists known manufacturers would then
+  reject a file it would otherwise have read — which is an argument for lying,
+  and worth finding out before deciding.
+- **`Ident 3:0` says version 3.0; `$$Format 3.10` says 3.10.** Two different
+  version claims in the same header. At least one is wrong.
+- **Is there a standard way to label a channel?** If the vocabulary has one, the
+  labels should go out in it and `$ChanLabel` should be the addition rather than
+  the only carrier.
+
+**➡ This does not replace the Eos test.** It widens who can run it: **any console
+that reads USITT ASCII can tell us something**, not only Eos and Nomad. Several
+testers have Strand and other desks.
+
+Sources: westsidesystems.com/alq/ascii.html (the standard's history and the
+implementation list, written by the author of LightPort) and
+khroma.eu/digimedia/htmlhelp/html/hs155.htm (v3.0, 1992, purpose and scope).
+**The official document is USITT's and costs about $25** — worth buying before
+changing the header on reasoning alone.
