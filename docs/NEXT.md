@@ -186,6 +186,19 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **⚠ Before printing a `_source` string anywhere, read it first.**
+  The photometric tables carry a `_source` beside every figure, and it is
+  documentation that happens to live in a dict — **nothing in the codebase reads
+  it.** So it has never been checked for what a stranger should see. At least one
+  cites a real production by name (`FAMILY_WATTS["SHEHDS"]`), and others quote
+  datasheet page numbers verbatim.
+
+  Printing provenance on the paperwork is a good idea and very much this
+  project's habit — *every figure names its source*. **The day it is built, these
+  strings stop being notes to ourselves and become published text**, and they
+  should be read through once with that in mind rather than discovered on a plot
+  in a theatre.
+
 - ~~Fixture names from paperwork do not match the photometric table keys.~~
   ✅ **Done 2026.09.23 — `server/plotedit/fixture_names.py`.** Measured against
   the real archive first: **none of the 38 distinct names matched**, so an
