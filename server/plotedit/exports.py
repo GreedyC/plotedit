@@ -24,6 +24,7 @@ import re
 from typing import Any, Dict, List
 
 from . import photometrics as ph
+from . import dmx
 
 
 # --------------------------------------------------------------- helpers
@@ -56,8 +57,12 @@ def _csv(rows: List[List[Any]]) -> str:
 
 # --------------------------------------------------------------- paperwork
 
+# ⭐ "Thru" sits beside Address rather than folding the range into one cell, so
+# the sheet still sorts and filters on a plain start address. It is blank for a
+# one-address fixture and blank when the footprint is unknown — never a guess.
 SCHEDULE_COLUMNS = ["Position", "Unit", "Channel", "Circuit", "Dimmer", "Address",
-                    "Type", "Wattage", "Color", "Gobo", "Purpose", "Accessory", "Notes"]
+                    "Thru", "Type", "Wattage", "Color", "Gobo", "Purpose",
+                    "Accessory", "Notes"]
 
 
 def _accessories(inst) -> str:
@@ -126,6 +131,23 @@ def _load_total(instruments: List[Dict[str, Any]]) -> List[List[Any]]:
     return rows
 
 
+def _patch_cells(i: Dict[str, Any]) -> tuple:
+    """(address, thru) for a sheet with two columns.
+
+    ⭐ Through `dmx.patch_cell`, the same call the inspector and the on-screen
+    schedule make. ⚠ `thru` is blank when the footprint is not known, never a
+    guess — a Thru an electrician cannot rely on is worse than an empty cell,
+    because an empty cell makes them ask.
+    """
+    text, _why, n = dmx.patch_cell(ph.FIXTURES.get(i.get("type")), i.get("type"),
+                                   i.get("address"), i.get("dimmer"),
+                                   i.get("model"), i.get("profile"))
+    addr = i.get("address") or ""
+    if not addr or n in (None, 1):
+        return addr, ""
+    return addr, (dmx.end_address(addr, n) or "")
+
+
 def schedule_csv(plot: Dict[str, Any]) -> str:
     """The instrument schedule: what hangs where, in hanging order."""
     rows: List[List[Any]] = [[f"{plot.get('show', '')} — Instrument Schedule"],
@@ -135,7 +157,7 @@ def schedule_csv(plot: Dict[str, Any]) -> str:
                              [], SCHEDULE_COLUMNS]
     for i in _sorted_for_schedule(plot["instruments"]):
         rows.append([i.get("position", ""), i.get("unit", ""), i.get("channel", ""),
-                     i.get("circuit", ""), i.get("dimmer", ""), i.get("address", ""),
+                     i.get("circuit", ""), i.get("dimmer", ""), *_patch_cells(i),
                      i.get("type", ""),
                      _watt_cell(_watts(i)[0]), i.get("color", ""), i.get("gobo", ""),
                      i.get("purpose", ""), _accessories(i), i.get("notes", "")])
@@ -144,7 +166,7 @@ def schedule_csv(plot: Dict[str, Any]) -> str:
 
 
 HOOKUP_COLUMNS = ["Channel", "Position", "Unit", "Type", "Watts", "Color",
-                  "Purpose", "Circuit", "Dimmer", "Address"]
+                  "Purpose", "Circuit", "Dimmer", "Address", "Thru"]
 
 
 def hookup_csv(plot: Dict[str, Any]) -> str:
@@ -158,7 +180,7 @@ def hookup_csv(plot: Dict[str, Any]) -> str:
         rows.append([i.get("channel", ""), i.get("position", ""), i.get("unit", ""),
                      i.get("type", ""), _watt_cell(_watts(i)[0]),
                      i.get("color", ""), i.get("purpose", ""),
-                     i.get("circuit", ""), i.get("dimmer", ""), i.get("address", "")])
+                     i.get("circuit", ""), i.get("dimmer", ""), *_patch_cells(i)])
     rows += _load_total(plot["instruments"])
     return _csv(rows)
 

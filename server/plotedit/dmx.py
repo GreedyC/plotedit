@@ -234,3 +234,71 @@ def span(address, n: Optional[int]) -> Optional[str]:
     if uni is not None:
         return f"{uni}/{start}-{uni}/{end}"
     return f"{start}-{end}"
+
+
+def end_address(address, n: Optional[int]) -> Optional[str]:
+    """The LAST address this fixture occupies, on its own.
+
+    `span` gives "2/21-2/26" for a sheet that wants one column. This gives
+    "2/26" for a sheet that wants two — and both go through the same arithmetic,
+    so a Thru column can never disagree with a range printed elsewhere.
+    """
+    rng = span(address, n)
+    if rng is None or "-" not in rng:
+        return None
+    return rng.split("-", 1)[1]
+
+
+def patch_cell(spec, type_name, address, dimmer, model=None, profile=None):
+    """What this unit is plugged into, what that number is, and how wide it is.
+
+    ⭐ THE ONE PLACE THIS IS DECIDED. The inspector, the on-screen schedule, the
+    exported schedule and the hookup all call it. It used to live in api.py, so
+    the CSV exports wrote a bare start address while the screen showed a range —
+    the designer saw the truth and the electrician got a number with nothing to
+    say anything followed it. `spec` is the photometric row for the type, passed
+    in so this module stays free of photometrics.
+
+    Returns (text, why, n) where n is the footprint, or None when it is unknown.
+
+    ⚠ A range is only ever shown when the footprint is KNOWN. A fixture whose
+    profile nobody wrote down shows its start address and says why there is no
+    range — an invented range is how the next unit gets patched into the tail of
+    this one.
+    """
+    addr = address.strip() if isinstance(address, str) else address
+    dim = dimmer.strip() if isinstance(dimmer, str) else dimmer
+    if addr in (None, ""):
+        if dim in (None, ""):
+            return "—", "no dimmer and no address — this unit is not patched to anything", None
+        return str(dim), "dimmer", None
+
+    if spec is None:
+        # ⚠ AN UNRECOGNISED TYPE IS NOT A CONVENTIONAL ONE. Falling through to
+        # "one address" here would quietly call an unknown LED a dimmer, which
+        # is the direction of this guess that costs somebody a patch.
+        return str(addr), (f"address (start) — {type_name!r} is not a fixture this "
+                           f"knows, so its footprint cannot be looked up"), None
+    # ⭐ The LAMP says whether this is an LED fixture, not a list of family names
+    # typed here. A hand-written list is a second place for the truth to live,
+    # and it goes stale the first time a fixture is added to the photometrics.
+    if not str(spec.get("ref_lamp", "")).upper().startswith("LED"):
+        # A Source Four on a dimmer occupies the one address of that dimmer.
+        return str(addr), "address — a conventional fixture is one address", 1
+
+    resolved, assumed = resolve_model(spec.get("family"), model)
+    if resolved is None:
+        return str(addr), f"address (start) — {assumed}", None
+    n, why = channels(resolved, profile)
+    if assumed:
+        why = f"{why} ({assumed})"
+    if not n:
+        return str(addr), f"address (start) — {why}", None
+    rng = span(addr, n)
+    if rng is None:
+        # ⚠ Known footprint, unusable range: the span runs past 512, or the
+        # address is not a number. Saying "start" and stopping would hide a
+        # patch that cannot physically exist.
+        return str(addr), (f"address (start) — {why}, but {n} channels from here "
+                           f"runs past the end of the universe. Check the patch."), None
+    return rng, f"address, {why}", n

@@ -280,6 +280,48 @@ else:
 # The suite's verdict comes LAST, so anything added after it still counts. It
 # used to sit in the middle, which meant an appended check could fail while the
 # suite exited 0 — the same defect found in test_package.py the same day.
+# --- the patch, on the screen and on the paperwork -------------------------
+#
+# 🔴 THE DEFECT THIS EXISTS FOR. The screen showed "2/40-2/54" and the exported
+# schedule wrote "2/40", because schedule_csv read the raw address and never
+# asked dmx how wide the fixture was. The designer saw the truth and the
+# electrician got a start address with nothing to say anything followed it —
+# which is how the next unit gets patched into the tail of this one.
+import csv as _csv_mod
+from io import StringIO as _SIO
+from plotedit import exports as _ex
+
+print()
+print("the patch agrees between the screen and the paperwork")
+
+_patch_plot = dict(plot)
+_api = client.post("/compute", json={"instruments": plot["instruments"]}).json()["instruments"]
+_screen = {r["channel"]: r["patch"] for r in _api}
+
+for _name, _csv_text, _acol, _tcol in (
+        ("schedule", _ex.schedule_csv(_patch_plot), "Address", "Thru"),
+        ("hookup", _ex.hookup_csv(_patch_plot), "Address", "Thru")):
+    _rows = list(_csv_mod.reader(_SIO(_csv_text)))
+    _hdr = next(r for r in _rows if _acol in r)
+    _ai, _ti, _ci = _hdr.index(_acol), _hdr.index(_tcol), _hdr.index("Channel")
+    for _r in _rows[_rows.index(_hdr) + 1:]:
+        if len(_r) <= _ti or not _r[_ci].strip().isdigit():
+            continue
+        _ch = int(_r[_ci])
+        if _ch not in _screen:
+            continue
+        # The two columns must reconstruct exactly what the screen prints, with
+        # ONE deliberate exception. An unpatched unit reads "—" on screen, where
+        # a blank field looks broken, and is left EMPTY on the sheet, where an
+        # em dash is not a value: it would sort, filter and import as text in a
+        # column of numbers. Same fact, two audiences.
+        _paper = f"{_r[_ai]}-{_r[_ti]}" if _r[_ti] else _r[_ai]
+        _want = "" if _screen[_ch] == "—" else _screen[_ch]
+        if _paper != _want:
+            fails.append(f"{_name} ch{_ch}: paper says {_paper!r}, screen says "
+                         f"{_screen[_ch]!r}")
+    print(f"  ok   {_name} agrees with the screen on every channel")
+
 print()
 if fails:
     print(f"{len(fails)} DISAGREEMENTS")
