@@ -243,6 +243,31 @@ check("one channel is not 'channels'",
       True)
 
 print()
+print("the ColorSource Spot, published channel by channel")
+
+# ⭐ ETC give this one as an assignment list, not a letter string, so the shape
+# is on file rather than inferred. The counts below are the length of that list.
+_CS = {"1ch": 1, "RGB": 3, "5ch": 5, "Dir": 6}
+for _prof, _n in _CS.items():
+    check(f"   {_prof} is {_n}", dmx.channels("ColorSource Spot", _prof)[0], _n)
+check("   ...and cites the revision, not just the maker",
+      "Rev P 2021-09" in dmx.channels("ColorSource Spot", "5ch")[1], True)
+
+# ⚠ The zoom is the same light engine with a different lens tube, which is the
+# call photometrics already makes for wattage. If that is ever wrong it is wrong
+# in both places, and this is where it would be noticed.
+check("the zoom resolves to the same engine",
+      dmx.models_for("ColorSource Zoom"), ["ColorSource Spot"])
+check("...and the plain family does too",
+      dmx.models_for("ColorSource"), ["ColorSource Spot"])
+check("...and an unrecorded model says it is assuming",
+      "assuming" in (dmx.resolve_model("ColorSource Zoom", None)[1] or ""), True)
+
+# ETC label 5ch "(Default)", so this suggestion is the maker's, not a guess.
+check("the suggested profile is the one ETC call default",
+      dmx.SUGGESTED.get("ColorSource Spot"), "5ch")
+
+print()
 print("a maker who publishes no footprint at all")
 
 # ⚠ Altman refer to "user selected personalities" in the specification and never

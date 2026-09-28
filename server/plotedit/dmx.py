@@ -57,6 +57,23 @@ MODELS: Dict[str, Dict[str, int]] = {
         "5 channel": 5,     # IRGBS
         "Direct": 7,        # IRGBILS
     },
+    # ⭐ THE FULLEST SOURCE ON FILE. ETC give this one channel by channel rather
+    # than as a letter string, so the layout is published and not inferred:
+    #   5ch  1 Intensity  2 Red  3 Green  4 Blue        5 Strobe
+    #   Dir  1 Intensity  2 Red  3 Green  4 Blue/Indigo 5 Lime  6 Strobe
+    #   RGB  1 Red        2 Green 3 Blue
+    #   1ch  1 Intensity  (Preset 1 only)
+    #
+    # ⚠ Channel 4 is BLUE on the standard fixture and INDIGO on the Deep Blue
+    # variant — same footprint, different emitter behind the same address. And
+    # in 5ch the lime is mixed by the fixture, so a five-channel ColorSource is
+    # a four-colour light being driven as three.
+    "ColorSource Spot": {
+        "1ch": 1,
+        "RGB": 3,
+        "5ch": 5,
+        "Dir": 6,
+    },
 }
 
 # Real fixtures whose makers do not publish a footprint at all, and what was
@@ -71,10 +88,6 @@ NO_FOOTPRINT: Dict[str, str] = {
     "Altman Spectra Cyc 100":
         "Altman SSCYC100 datasheet and specification: same as the 50 — "
         "personalities are referred to but never enumerated.",
-    "ColorSource Spot":
-        "Only the ETC ColorSource Spot Photometry Guide is on file, and its "
-        "'Mode' columns are output modes, not DMX profiles. The channel "
-        "profiles are in the user manual, which has not been fetched.",
 }
 
 # Profiles that exist but whose channel count the datasheet does not publish.
@@ -91,6 +104,11 @@ UNPUBLISHED: Dict[str, set] = {
 FAMILY_MODELS: Dict[str, list] = {
     "Lustr": ["Source Four LED Series 2"],
     "ColorSource CYC": ["ColorSource CYC"],
+    "ColorSource": ["ColorSource Spot"],
+    # ⚠ The zoom is the same light engine with a different lens tube — ETC sell
+    # the zoom assemblies for the body, and the DMX profiles belong to the body.
+    # `photometrics.FAMILY_WATTS` already makes exactly this call for wattage.
+    "ColorSource Zoom": ["ColorSource Spot"],
 }
 
 SOURCES: Dict[str, str] = {
@@ -98,6 +116,9 @@ SOURCES: Dict[str, str] = {
         "ETC Source Four LED Series 2 datasheet, p.11 'DMX Input Channel Profiles'",
     "ColorSource CYC":
         "ETC ColorSource CYC datasheet p.2, 'Modes (Footprint)'",
+    "ColorSource Spot":
+        "ETC ColorSource Spot datasheet Rev P 2021-09, p.8, "
+        "'DMX Input Channel Profiles'",
 }
 
 # ⚠ ETC's own Quick Setup called "Stage" is HSI with Plus 7 enabled, and the
@@ -105,7 +126,13 @@ SOURCES: Dict[str, str] = {
 # curve and a 3200 K white point. It is the profile a theatre is most likely to
 # be on — but "most likely" is not "recorded", so this is NEVER applied
 # silently. The inspector uses it to order the list, nothing more.
-SUGGESTED: Dict[str, str] = {"Source Four LED Series 2": "HSI Plus 7"}
+SUGGESTED: Dict[str, str] = {
+    "Source Four LED Series 2": "HSI Plus 7",
+    # ⭐ Unlike the Series 2 entry above, this one is not a reading of what a
+    # theatre probably does — ETC's own table labels 5ch "(Default)". It still
+    # only orders the list; a fixture on site can be set to anything.
+    "ColorSource Spot": "5ch",
+}
 
 
 def models_for(family: Optional[str]) -> list:
