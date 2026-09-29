@@ -248,6 +248,35 @@ LAMP_MF = {
                  # Same table, HPL 575/115X row: .56 across all four lenses.
                  "S4 EA PAR VNSP": 0.56, "S4 EA PAR NSP": 0.56,
                  "S4 EA PAR MFL": 0.56, "S4 EA PAR WFL": 0.56},
+
+    # ⭐ THE RETROFIT BURNERS. Pull the HPL, drop a 4WRD in, and the same Source
+    # Four is an LED — same tube, same angles — so it is a LAMP, and these are
+    # its multipliers against the HPL 750 the candela was measured at.
+    #
+    # ⭐ COMPUTED FROM CANDELA, NOT LUMENS, WHICH IS THE WHOLE POINT. The 4WRD
+    # datasheet publishes lumens per lens beside the HPL's, and dividing those
+    # two columns looks like exactly this table. It is not: the lumen ratio and
+    # the candela ratio differ by 13–16% here, because an LED array and a
+    # filament do not fill a lens the same way. These are from ETC's own IES.
+    #
+    # ⚠ TWO ETC SOURCES DIVIDED BY EACH OTHER. The numerator is a Light Lab IES
+    # file; the denominator is the candela already in FIXTURES, off ETC's
+    # published tables. Both are ETC's figures for the same lens, which is the
+    # best available — but it is a ratio ACROSS documents, not a multiplier ETC
+    # printed, and that is worth knowing before quoting it to two decimals.
+    #
+    # ⚠ 120 V ONLY; the 230 V unit was not computed. Gallery and Daylight
+    # Gallery draw the same 150 W and are dimmer — the 90+ CRI costs about 15%
+    # of the light, which is the trade a designer is actually making.
+    "Source 4WRD II": {
+        "S4 19": 0.61, "S4 26": 0.56, "S4 36": 0.64, "S4 50": 0.69,
+        "S4 26 EDLT": 0.63, "S4 36 EDLT": 0.64},
+    "Source 4WRD II Gallery": {
+        "S4 19": 0.52, "S4 26": 0.48, "S4 36": 0.54, "S4 50": 0.59,
+        "S4 26 EDLT": 0.50, "S4 36 EDLT": 0.54},
+    "Source 4WRD II Daylight Gallery": {
+        "S4 19": 0.55, "S4 26": 0.51, "S4 36": 0.57, "S4 50": 0.62,
+        "S4 26 EDLT": 0.58, "S4 36 EDLT": 0.58},
 }
 
 # ---------------------------------------------------------------- wattage
@@ -343,6 +372,11 @@ def watts_for(kind, lamp=None, mode=None):
 # is the source inside it. So it belongs here and NOT in FIXTURES, and the load
 # table is the only place it changes the answer.
 LAMP_WATTS = {
+    "Source 4WRD II Gallery": (150.0, "Same body and driver as the standard "
+        "unit — the datasheet gives one wattage for all three variants. The "
+        "90+ CRI array is dimmer, not thriftier."),
+    "Source 4WRD II Daylight Gallery": (150.0, "As the Gallery: same draw, "
+        "5900 K array."),
     "Source 4WRD II": (150.0,
         "ETC Source 4WRD II datasheet p.2: '150 W/1.2 W (120 V)'. ⚠ The 230 V "
         "version is 175 W. Gallery and Daylight Gallery draw the same as the "
