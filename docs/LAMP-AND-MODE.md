@@ -9,6 +9,10 @@ Opened 2026.09.29 at Jerry's request, after looking at the inspector panel:
 Two questions. The second one has a documented answer, so it goes first —
 because it changes what the first one should do.
 
+➡ **See also `MUTUALLY-EXCLUSIVE-FIELDS.md`**, which takes the rule this
+document arrives at and asks how far it reaches — lamp/mode is not the only pair
+in the panel that cannot both be true.
+
 ---
 
 ## 0. 🔴 HPL is not a wattage. It is the lamp type, and it comes in four.
