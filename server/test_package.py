@@ -352,10 +352,30 @@ check("...where the default is still 575",
 # an LED source and a filament do not fill a lens the same way: across the
 # barrel range that ratio runs 1.17 to 1.62, which is the proof it is not one
 # multiplier. The candela is in the separate Photometry Guide, unfetched.
+# ⭐ AND NOW IT DOES COMPUTE THEM, from ETC's own IES measurements.
 _fc, _why = ph.footcandles("S4 26", 20, lamp="Source 4WRD II")
-check("a retrofit gives no footcandles", _fc, None)
-check("...and says the multiplier is missing",
-      "no Source 4WRD II multiplier" in _why, True)
+check("a retrofit now gives a level", round(_fc), 246)
+check("...naming the lamp and its multiplier", "MF 0.56" in _why, True)
+
+# ⚠ THE 90+ CRI COSTS LIGHT, and that is the trade worth being able to see.
+_gal = ph.footcandles("S4 26", 20, lamp="Source 4WRD II Gallery")[0]
+check("the Gallery is dimmer than the standard array", _gal < _fc, True)
+check("...by about 15%", round(_gal / _fc, 2), 0.86)
+check("...while drawing the same watts",
+      ph.watts_for("S4 26", lamp="Source 4WRD II Gallery")[0], 150.0)
+
+# 🔴 THE ERROR THIS TABLE EXISTS TO AVOID. The datasheet's lumen columns give
+# 8941 / 13690 = 0.65 for the 26°, and the candela ratio is 0.56 — a 16% gap.
+# Had the multiplier been derived from lumens, every level on a retrofitted
+# plot would read high by that much, in the flattering direction.
+check("the candela multiplier is NOT the lumen ratio",
+      abs(ph.LAMP_MF["Source 4WRD II"]["S4 26"] - 8941 / 13690) > 0.05, True)
+
+# A lens with no HPL candela on file cannot have a ratio, and must not invent one.
+check("a lens with no reference candela has no multiplier",
+      ph.LAMP_MF["Source 4WRD II"].get("S4 90"), None)
+check("...so it refuses rather than guessing",
+      ph.footcandles("S4 90", 20, lamp="Source 4WRD II")[0], None)
 
 _load = [{"unit": u, "position": "E1", "circuit": 3, "type": "S4 26", "lamp": "HPL 575"}
          for u in (1, 2, 3, 4)]
