@@ -118,3 +118,41 @@ Revisit if a standards-correct symbol library ever exists in a form worth
 importing wholesale. Arbitrary user artwork in an RP-2 plot is what is refused
 here, not interchange.
 
+
+## 2026.09.29 — "Changed" means it differs from disk, not that you touched it
+
+Jerry asked it as a philosophical question: *"if someone selects a light and does
+nothing to it, should the plot be considered changed?"*
+
+**No — and the test is simple: if it isn't saved, it can't be unsaved.** Selection
+is not in the `.plot.json` at all, so there is no state on disk for it to differ
+from. Nothing you do that the file cannot record may set the dirty flag.
+
+Selecting was already clean. The same test applied one layer down was not:
+
+- **Writing a field back the way it was marked the plot changed.** Type `R5` into
+  the colour box, type `R52+R119` back, and the badge came on for a net change of
+  nothing. (Found on 2026.09.29 while testing the gel combo.)
+- **It also pushed a dead undo step** — press undo, nothing moves, press again —
+  and **threw away the redo stack** on the way past.
+- **Undoing back to the saved state stayed dirty.** You could return the document
+  to exactly what was on disk and still be warned you had something to lose.
+
+So `_dirty` was a flag for *activity*. It is now a comparison: `_seq` counts real
+changes, `_savedSeq` remembers where the file was written, and `dirty` is
+`_seq !== _savedSeq`. Undo and redo carry the revision back with the plot, which
+is what makes stepping back to the save point go clean. `update()` compares its
+patch first and, if nothing is new, unwinds the `begin()` that preceded it.
+
+**⚠ Why this is worth the code rather than a shrug.** A false "unsaved changes"
+is not cosmetic — it teaches you the discard prompt is noise, and you start
+clicking through it. The one evening it is real, you lose a tech session. The
+badge is worth exactly as much as its false-positive rate.
+
+**⭐ The precedent is dimmer-versus-address** (2026.09.28): the rule was enforced
+once, in one reader, with the tie-break written down, and nothing was hidden from
+the user. Same shape here — the store decides, and no caller has to remember.
+
+Selection remains view state everywhere except `snapshot()`, which captures it on
+purpose so undo puts your eye back on the unit that changed. That is a kindness,
+not a claim that selection is document state.

@@ -10,8 +10,24 @@ import type { Plot, Instrument, Position, Room } from "./plot.js";
 export type Listener = () => void;
 
 /** A snapshot is the plot plus which unit was selected when it was taken, so
- *  undo puts the selection back where the eye expects it. */
-interface Snapshot { plot: Plot; selected: number | null }
+ *  undo puts the selection back where the eye expects it — and the revision it
+ *  was taken at, which is what lets `dirty` answer honestly. See `_seq`. */
+interface Snapshot { plot: Plot; selected: number | null; seq: number }
+
+/** Is this patch actually saying anything new?
+ *
+ *  ⚠ null and undefined are the SAME ANSWER here. The inspector writes
+ *  `undefined` for an emptied box and the .plot.json may hold `null` for a
+ *  field nobody filled, so treating them as different would make clearing an
+ *  already-empty field count as an edit — which is the exact bug this guards. */
+function same(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if ((a === undefined || a === null) && (b === undefined || b === null)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+  }
+  return false;
+}
 
 const HISTORY_LIMIT = 200;
 
@@ -20,7 +36,20 @@ export class Store {
   private _selected: number | null = null;      // index into instruments
   private _undo: Snapshot[] = [];
   private _redo: Snapshot[] = [];
-  private _dirty = false;
+  // ⭐ DIRTY IS A DIFFERENCE, NOT AN ACTIVITY. `_seq` counts real changes to the
+  // document and `_savedSeq` remembers where it stood when the file was
+  // written, so `dirty` asks "does this differ from disk?" rather than "did the
+  // user touch something?". Undo restores the seq along with the plot, which is
+  // what makes undoing back to the saved state go clean again.
+  //
+  // Jerry, 2026.09.29: "if someone selects a light and does nothing to it,
+  // should the plot be considered changed?" No — and nor should setting a field
+  // to the value it already had. See docs/DECISIONS.md.
+  private _seq = 0;
+  private _savedSeq = 0;
+  // What the last begin() did, so an edit that turns out to change nothing can
+  // put the history back exactly as it found it.
+  private lastBegin: { pushed: boolean; prevKey: string | null; redo: Snapshot[] } | null = null;
   private listeners = new Set<Listener>();
 
   constructor(plot: Plot) {
@@ -32,7 +61,7 @@ export class Store {
   get selectedInstrument(): Instrument | null {
     return this._selected === null ? null : this._plot.instruments[this._selected] ?? null;
   }
-  get dirty(): boolean { return this._dirty; }
+  get dirty(): boolean { return this._seq !== this._savedSeq; }
   get canUndo(): boolean { return this._undo.length > 0; }
   get canRedo(): boolean { return this._redo.length > 0; }
 
@@ -44,7 +73,29 @@ export class Store {
   private emit(): void { for (const fn of this.listeners) fn(); }
 
   private snapshot(): Snapshot {
-    return { plot: structuredClone(this._plot), selected: this._selected };
+    return { plot: structuredClone(this._plot), selected: this._selected, seq: this._seq };
+  }
+
+  /** One real change happened. */
+  private touch(): void {
+    this._seq++;
+    this.lastBegin = null;   // that begin() is spoken for; it cannot be undone now
+  }
+
+  /** The edit after begin() turned out to change nothing — put history back.
+   *
+   *  ⚠ If that push evicted the oldest entry at HISTORY_LIMIT, the eviction
+   *  stands: popping our own entry cannot bring it back. Two hundred edits deep
+   *  it is not worth a second data structure to avoid. */
+  private cancelBegin(): void {
+    const b = this.lastBegin;
+    this.lastBegin = null;
+    if (!b) return;
+    if (b.pushed) {
+      this._undo.pop();
+      this._redo = b.redo;
+    }
+    this.lastKey = b.prevKey;
   }
 
   /**
@@ -55,11 +106,20 @@ export class Store {
    */
   private lastKey: string | null = null;
   begin(coalesceKey: string | null = null): void {
-    if (coalesceKey !== null && coalesceKey === this.lastKey) return;
+    const prevKey = this.lastKey;
+    if (coalesceKey !== null && coalesceKey === this.lastKey) {
+      this.lastBegin = { pushed: false, prevKey, redo: this._redo };
+      return;
+    }
+    const redo = this._redo;
     this._undo.push(this.snapshot());
     if (this._undo.length > HISTORY_LIMIT) this._undo.shift();
-    this._redo.length = 0;
+    // ⚠ A NEW ARRAY, not `.length = 0`. cancelBegin() hands the old one back,
+    // so an edit that changes nothing must not have emptied it on the way past:
+    // undo, then tab through a field without altering it, and redo still works.
+    this._redo = [];
     this.lastKey = coalesceKey;
+    this.lastBegin = { pushed: true, prevKey, redo };
   }
 
   /** End a coalescing run, so the next edit starts a fresh undo entry. */
@@ -71,12 +131,24 @@ export class Store {
     this.emit();
   }
 
-  /** Change fields on one instrument. Caller calls begin() first. */
+  /** Change fields on one instrument. Caller calls begin() first.
+   *
+   *  ⭐ A PATCH THAT SAYS NOTHING NEW IS NOT AN EDIT. Typing a value back the
+   *  way it was, tabbing out of a field you only looked at, or dragging a unit
+   *  and dropping it where it started all arrive here — and all used to mark
+   *  the plot changed, push a dead undo entry and throw away the redo stack.
+   *  The undo entry was the worst of the three: you press undo, nothing moves,
+   *  and you press it again. */
   update(index: number, patch: Partial<Instrument>): void {
     const inst = this._plot.instruments[index];
     if (!inst) return;
+    const keys = Object.keys(patch) as (keyof Instrument)[];
+    if (keys.every(k => same(inst[k], patch[k]))) {
+      this.cancelBegin();
+      return;
+    }
     Object.assign(inst, patch);
-    this._dirty = true;
+    this.touch();
     this.emit();
   }
 
@@ -84,7 +156,7 @@ export class Store {
     this.begin(null);
     this._plot.instruments.push(inst);
     this._selected = this._plot.instruments.length - 1;
-    this._dirty = true;
+    this.touch();
     this.emit();
     return this._selected;
   }
@@ -98,7 +170,7 @@ export class Store {
   addPosition(pos: Position): number {
     this.begin(null);
     this._plot.positions.push(pos);
-    this._dirty = true;
+    this.touch();
     this.emit();
     return this._plot.positions.length - 1;
   }
@@ -118,7 +190,7 @@ export class Store {
     for (const inst of this._plot.instruments) {
       if ((inst.position ?? "").trim().toLowerCase() === name) inst.position = undefined;
     }
-    this._dirty = true;
+    this.touch();
     this.emit();
     return orphaned;
   }
@@ -134,7 +206,7 @@ export class Store {
   setMeta(patch: Partial<Plot>): void {
     this.begin(null);
     Object.assign(this._plot, patch);
-    this._dirty = true;
+    this.touch();
     this.emit();
   }
 
@@ -157,7 +229,7 @@ export class Store {
     }
     // An empty override block is noise in the file; drop it.
     if (Object.keys(w).length === 0) delete this._plot.lineWeights;
-    this._dirty = true;
+    this.touch();
     this.emit();
   }
 
@@ -168,7 +240,7 @@ export class Store {
   setRoom(patch: Partial<Room>): void {
     this.begin(null);
     Object.assign(this._plot.room, patch);
-    this._dirty = true;
+    this.touch();
     this.emit();
   }
 
@@ -179,7 +251,7 @@ export class Store {
     if (this._selected !== null && this._selected >= this._plot.instruments.length) {
       this._selected = this._plot.instruments.length ? this._plot.instruments.length - 1 : null;
     }
-    this._dirty = true;
+    this.touch();
     this.emit();
   }
 
@@ -189,7 +261,12 @@ export class Store {
     this._redo.push(this.snapshot());
     this._plot = s.plot;
     this._selected = s.selected;
-    this._dirty = true;
+    // ⭐ The revision comes back with the plot, so stepping back to where the
+    // file was written reports CLEAN. It used to assert dirty unconditionally:
+    // you could undo your way to exactly what was on disk and still be told
+    // there was something to lose.
+    this._seq = s.seq;
+    this.lastBegin = null;
     this.lastKey = null;
     this.emit();
   }
@@ -200,12 +277,17 @@ export class Store {
     this._undo.push(this.snapshot());
     this._plot = s.plot;
     this._selected = s.selected;
-    this._dirty = true;
+    // ⭐ The revision comes back with the plot, so stepping back to where the
+    // file was written reports CLEAN. It used to assert dirty unconditionally:
+    // you could undo your way to exactly what was on disk and still be told
+    // there was something to lose.
+    this._seq = s.seq;
+    this.lastBegin = null;
     this.lastKey = null;
     this.emit();
   }
 
-  markSaved(): void { this._dirty = false; this.emit(); }
+  markSaved(): void { this._savedSeq = this._seq; this.emit(); }
 }
 
 /**
