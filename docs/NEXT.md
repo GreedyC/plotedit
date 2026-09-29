@@ -186,7 +186,22 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
-- **🔴 THE GEL LIBRARY — the cheapest large win on this list.** *(Jerry,
+- **✅ THE GEL LIBRARY — done 2026.09.29, except the diffusions.** 11 gels became
+  **498**: 239 Roscolux and 259 LEE, each row citing the maker's own page.
+
+  ⚠ **What is still missing is one class, and it is the same class from both
+  makers: DIFFUSION.** 29 Roscolux (the R100 series — frosts, silks, spuns,
+  Rolux) and 43 LEE. **Neither publishes a transmission for them on the web.**
+
+  ⭐ **But Rosco's myColor app does.** R119, R114 and R132 are already on file at
+  0.893, 0.888 and 0.901, read off that app by Jerry on 2026.09.22 — figures the
+  product pages do not carry. **That is where the rest of the diffusions come
+  from**, and it is a hand job rather than a fetch.
+
+  **➡ Still open: whether a diffusion's transmission is the right number at
+  all** — see the measurement below. Entering 43 more of them does not answer it.
+
+- ~~**THE GEL LIBRARY — the cheapest large win on this list.**~~ *(Jerry,
   2026.09.28: the rest of Roscolux plus the Lee Designer's Edition "would take
   care of about 95% of the colour use I bet".)*
 
