@@ -186,6 +186,30 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **🔴 THE GEL LIBRARY — the cheapest large win on this list.** *(Jerry,
+  2026.09.28: the rest of Roscolux plus the Lee Designer's Edition "would take
+  care of about 95% of the colour use I bet".)*
+
+  **There are eleven gels on file.** Eight colours and three Hamburg frosts, in
+  `server/plotedit/gels.csv`. Every footcandle through anything else refuses.
+
+  **⭐ The work is data entry, not code.** The format is already right: one row
+  per gel — number, name, transmission, **source**, date — and `parse_gel` is
+  prefix-agnostic, so `L201+R119` reads correctly today without a change.
+
+  **➡ One wording fix comes with it.** An unknown gel says *"add it with Rosco's
+  transmission figure"*, which will be wrong the moment there are Lee numbers in
+  the file.
+
+  **❓ And one question worth settling while the data is in front of you: is a
+  frost's transmission enough?** A colour filter absorbs, so its transmission
+  scales candela uniformly and multiplying is exactly right. **A diffusion
+  scatters** — it widens the field and drops the peak by more than the
+  transmission figure alone implies. The three frosts already in the table are
+  multiplied like colours, which is the best available and may be understating
+  the effect at the centre of a beam. ⚠ Worth knowing before a plot promises a
+  level through a heavy frost.
+
 - **❓ THE SOURCE 4WRD II PHOTOMETRY GUIDE — the one document that would finish
   it.** *(2026.09.28.)* The 4WRD II is a retrofit burner: pull the HPL out of a
   Source Four, put this in, and the fixture is an LED. **Same lens tube, same
