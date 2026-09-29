@@ -333,6 +333,23 @@ def watts_for(kind, lamp=None, mode=None):
                f"for a capacity check use the highest mode. {table['_source']}")
 
 
+# ⭐ LAMPS WHOSE WATTAGE IS PUBLISHED RATHER THAN NAMED. Every tungsten lamp
+# carries its wattage in its name — HPL 575, FEL 1000 — which is why lamp_watts
+# can read it. A retrofit LED burner does not: "Source 4WRD II" says nothing, and
+# the number is in a datasheet like any other figure.
+#
+# ⚠ THIS IS A LAMP, NOT A FIXTURE. A Source Four with a 4WRD in it is still an
+# S4 26 — same lens tube, same field and beam angles, same symbol. What changed
+# is the source inside it. So it belongs here and NOT in FIXTURES, and the load
+# table is the only place it changes the answer.
+LAMP_WATTS = {
+    "Source 4WRD II": (150.0,
+        "ETC Source 4WRD II datasheet p.2: '150 W/1.2 W (120 V)'. ⚠ The 230 V "
+        "version is 175 W. Gallery and Daylight Gallery draw the same as the "
+        "standard unit; they differ in CRI and output, not in draw."),
+}
+
+
 def lamp_watts(lamp):
     """Watts from a lamp name — "HPL 575" is 575W, and that is exact.
 
@@ -353,6 +370,10 @@ def lamp_watts(lamp):
     """
     import re as _re
     t = str(lamp or "").strip()
+    # A published figure beats reading the name, and is the only way a retrofit
+    # LED burner can answer at all — nothing in "Source 4WRD II" is a wattage.
+    if t in LAMP_WATTS:
+        return LAMP_WATTS[t][0]
     if not t or _re.search(r"\d\s*K\b", t, _re.I):
         return None
     m = _re.match(r"^[A-Za-z]{2,4}[\s-]*(\d{2,4})", t)
