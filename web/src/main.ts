@@ -24,7 +24,7 @@ import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          serverVersion,
          type FixtureRow, type ExportKind, type DxfPaths, type SymbolPrim,
          type BoomElevation, type PositionLabel,
-         dmxTable, type DmxTable } from "./api.js";
+         dmxTable, gelList, type DmxTable } from "./api.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
@@ -40,6 +40,7 @@ let fixtureTable: Record<string, FixtureRow> = {};
 /** The DMX personalities. ⚠ Undefined until it arrives, and the two dropdowns
  *  offer nothing rather than guessing in the meantime. */
 let dmxTable_: DmxTable | undefined;
+let gelList_: { gel: string; name: string }[] | undefined;
 let basePlan: DxfPaths | null = null;
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
@@ -208,6 +209,7 @@ function drawInspector() {
   renderInspector($("inspector"), store, computed, {
     fixtures: Object.keys(fixtureTable).sort(),
     dmx: dmxTable_,
+    gels: gelList_,
     // ⭐ The FAMILY decides which specific models to offer, and it is the
     // server's answer, not a list kept here.
     familyOf: (t: string) => fixtureTable[t]?.family,
@@ -773,6 +775,13 @@ async function boot() {
       dmxTable_ = await dmxTable();
     } catch (e) {
       console.warn("DMX personalities unavailable:", e);
+    }
+    // ⚠ Also not fatal. Without it the Color box is a plain text field, which
+    // is exactly what it was before the suggestions existed.
+    try {
+      gelList_ = await gelList();
+    } catch (e) {
+      console.warn("gel suggestions unavailable:", e);
     }
 
     paintChrome();
