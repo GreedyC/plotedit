@@ -213,17 +213,26 @@ function drawInspector() {
     // ⭐ The FAMILY decides which specific models to offer, and it is the
     // server's answer, not a list kept here.
     familyOf: (t: string) => fixtureTable[t]?.family,
-    // ⚠ STILL HARDCODED, AND STILL WRONG. The lamps live in LAMP_MF in
-    // Python and this list is a second copy of them kept by hand, so it
-    // drifts: the three Source 4WRD retrofit burners have had multipliers
-    // since v0.1.19 and are not offered here. See docs/LAMP-AND-MODE.md.
+    // ⚠ STILL HARDCODED. The lamps live in LAMP_MF in Python and this is a
+    // second copy of them kept by hand, so it drifts — it drifted for a whole
+    // release. Keep the two in step until docs/LAMP-AND-MODE.md is acted on
+    // and the server answers this the way it already answers `fixtures`.
     //
     // ⭐ HPL 550/77 is the DIMMER DOUBLING lamp (Jerry, 2026.09.29) — 550W
     // at 77 volts, and the low voltage is the point. Nothing on the plot
     // yet says which circuits are doubled, so choosing it here is a
     // statement about the lamp only. HPL 375 next to it is an ordinary
     // 115V lamp you fit to halve the load; the two are not the same trick.
-    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 375", "HPL 550/77"],
+    //
+    // ⭐ THE LAST THREE ARE NOT LAMPS IN THE USUAL SENSE (Jerry, 2026.09.29).
+    // Pull the HPL out of a Source Four, drop a 4WRD in, and the barrel is an
+    // LED — same tube, same angles, 150W instead of 575. They belong on this
+    // list because that is how you ORDER them and how the rig is built, and
+    // because the photometrics key off the lamp. The three are separate part
+    // numbers, not modes of one product, which is why there are three.
+    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 375", "HPL 550/77",
+            "Source 4WRD II", "Source 4WRD II Gallery",
+            "Source 4WRD II Daylight Gallery"],
     modes: ["Boost Full", "Regulated Full", "Regulated 3200K", "Regulated 5600K"],
     onStatus: (msg, bad) => status(msg, bad),
     onPhotometricChange: () => { paint(); recompute(); },
