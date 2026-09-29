@@ -170,11 +170,12 @@ That is what makes it safe to build on.
 1. Should the lamp list carry **all 22 HPLs**, or the handful you actually
    stock? Twenty-two is complete and a nuisance to scroll; four is a guess about
    somebody else's rig.
-2. Does **HPL 375** belong in the default list? It is a real lamp with a
-   published factor and it is currently unreachable. Same for **HPL 550/77** —
-   though that one only matters if you still run Dimmer Doubling anywhere, and
-   putting a 77 V lamp in the list where someone might pick it by mistake on an
-   ordinary dimmer is its own hazard.
+2. ✅ **Answered 2026.09.29: both went in.** `HPL 550/77` and `HPL 375` are in
+   `LAMP_MF` and in the dropdown. The hazard raised here stands and was accepted
+   knowingly — a 77 V lamp picked on an ordinary dimmer still computes fine and
+   hangs dim, and the answer to that is notating doublers, deferred to
+   `NEXT.md`. **Still absent: the three 4WRD burners**, which is the hardcoded
+   list problem in §0 rather than a decision anyone made.
 3. When the type changes and a mode is dropped, should that be **silent, a
    notice, or a confirm**? The unit's brightness changes either way.
 4. Is the **Lamp row the right place for a 4WRD** at all, or should a retrofit
