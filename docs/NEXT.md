@@ -220,6 +220,34 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
   arrangement as *a* definition — the default one — so there is something for a
   second one to differ from. Until that exists, "configurable" has no shape.
 
+- **❓ SPEAKER PLACEMENT.** *(2026.09.28.)* A tester asked whether the plot
+  should carry audio and video as well as light — her shows are not
+  fixture-heavy and everything shares the same air. **Jerry has a sound designer
+  he works with, and they had already discussed adding speaker positions**, so
+  this is a considered direction rather than a request from outside.
+
+  **⭐ What makes it tractable is what it does NOT have to do.** A speaker has a
+  position, a trim, an aim and a footprint on the drawing. It does not need
+  photometrics, and **nothing here should attempt coverage prediction** — that is
+  a different discipline with its own physics, and the rule this project lives by
+  is that every figure names the document it came from. There is no datasheet
+  that makes a guessed dispersion pattern true.
+
+  ⚠ **So the line is: positions and clearance, not coverage.** Draw where it
+  hangs and what it occupies. Say nothing about what it sounds like.
+
+  **➡ And it is the same job as the clearance item already on this list.** The
+  app does not know about masking, scenery or rigging points, so it accepts a
+  trim that hangs a unit into a border. **Adding "what else is in the air" is one
+  piece of work whether the obstruction is a leg, a projector or a line array** —
+  which is an argument for building the general thing once rather than a speaker
+  feature on its own.
+
+  **❓ Still open:** whether a speaker is an instrument with a different symbol
+  or a different kind of object entirely. The schedule, the hookup and the patch
+  are all lighting paperwork, and a speaker that appears in a channel hookup
+  would be wrong.
+
 - **❓ Adding a fixture type — open discussion in `docs/FIXTURE-TYPES.md`.**
   Address shapes instead of bare channel counts, whether a type could arrive as
   a package rather than as code, and a four-rung ladder for making it easier.
