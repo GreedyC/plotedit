@@ -89,6 +89,26 @@ def check(instruments: List[Dict[str, Any]], positions: List[Dict[str, Any]],
                     f"house has a patch and the control model is wrong, or one of "
                     f"the two is a typo")
 
+    # ⭐ The same class of contradiction one house along. Where dimmer-per-circuit
+    # says the circuit and the dimmer are one number, dimmer-is-address says the
+    # DIMMER and the ADDRESS are — so a unit carrying both, differing, has
+    # recorded a patch this house does not have.
+    #
+    # ⚠ Compared on the bare number. An address is universe-qualified ("1/45")
+    # and a dimmer never is, so "45" and "1/45" are the SAME fact written two
+    # ways and must not be reported as a disagreement.
+    if control == "dimmer-is-address":
+        for i in instruments or []:
+            d, a = i.get("dimmer"), i.get("address")
+            if d in (None, "") or a in (None, ""):
+                continue
+            bare = str(a).split("/")[-1].strip()
+            if str(d).strip() != bare:
+                problems.append(
+                    f"unit {i.get('unit')}: dimmer {d} but address {a}. This house "
+                    f"is dimmer-is-address, so those are one number — clear the "
+                    f"dimmer and let the address carry it, or fix whichever is wrong")
+
     used: Dict[Tuple[str, Any], List[Any]] = {}
     labels: Dict[str, str] = {}
     for i in instruments or []:

@@ -163,6 +163,21 @@ def resolve_model(family: Optional[str], model: Optional[str]):
                   "between models")
 
 
+# ⭐ A DIMMER IS A DMX SHAPE (Jerry, 2026.09.29): "basically one address with the
+# value of intensity." That is exactly a personality — one channel, intensity —
+# and it belongs to no fixture model, because the dimmer is not the fixture. It
+# is what the fixture is plugged into, so it is offered to ANY unit rather than
+# living in MODELS beside the Series 2 profiles.
+#
+# ⚠ THIS WAS ALREADY THE BEHAVIOUR, JUST UNNAMED. `patch_cell` has always fallen
+# through to "a conventional fixture is one address" and a footprint of 1. What
+# changes is that the designer can now SAY it, instead of it being the answer
+# nobody chose — which matters because "nobody recorded a profile" and "this is
+# a dimmer" were the same silence.
+DIMMER = "Dimmer"
+UNIVERSAL: Dict[str, int] = {DIMMER: 1}
+
+
 def profiles_for(model: Optional[str]) -> Dict[str, int]:
     """Every profile with a published channel count for this model."""
     return dict(MODELS.get(model or "", {}))
@@ -173,6 +188,12 @@ def channels(model: Optional[str], profile: Optional[str]) -> Tuple[Optional[int
 
     Returns `(None, reason)` when it cannot be known, never a guess.
     """
+    # ⭐ The dimmer answers before the model is consulted, because it does not
+    # depend on one. A Source Four, a PAR and a striplight on a dimmer are all
+    # one address of intensity, and none of them has a model to look up.
+    if profile == DIMMER:
+        return 1, ("Dimmer, 1 channel — a dimmer is one address carrying "
+                   "intensity (Jerry, 2026.09.29)")
     table = MODELS.get(model or "")
     if not table:
         # ⭐ Say WHY there is no table when that is known. "No profile table" and
@@ -272,6 +293,21 @@ def patch_cell(spec, type_name, address, dimmer, model=None, profile=None):
         if dim in (None, ""):
             return "—", "no dimmer and no address — this unit is not patched to anything", None
         return str(dim), "dimmer", None
+
+    # ⭐ A RECORDED DIMMER ANSWERS BEFORE ANYTHING IS LOOKED UP, including for a
+    # type nothing recognises. It is the one profile that does not depend on
+    # knowing the fixture: whatever is hanging there, a dimmer gives it one
+    # address of intensity. Jerry, 2026.09.29.
+    #
+    # 🔴 AND THE NOTE MATTERS MORE THAN THE NUMBER. Without this, a unit set to
+    # "Dimmer" fell through to the conventional-fixture default below and read
+    # "a conventional fixture is one address" — the same words as a unit whose
+    # profile nobody recorded. Same footprint, but one is the designer saying so
+    # and the other is the app assuming, and the schedule could not tell them
+    # apart. That is the whole point of naming the personality.
+    if profile == DIMMER:
+        n, why = channels(None, DIMMER)
+        return str(addr), f"address — {why}", n
 
     if spec is None:
         # ⚠ AN UNRECOGNISED TYPE IS NOT A CONVENTIONAL ONE. Falling through to

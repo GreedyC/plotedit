@@ -1,6 +1,12 @@
 # Which fields cannot both be true
 
-**Status: DISCUSSION. Nothing here is built.** Written 2026.09.29 at Jerry's
+**Status: PARTLY BUILT, 2026.09.29.** Jerry answered questions 1 and 2 the day
+this was written and the inspector now greys the rows out — see
+`DECISIONS.md`, "Fields that do not apply go inert, not hidden". §1.3's gap
+is closed too: a Source Four's personality dropdown offers `Dimmer` in a
+dimmer-is-address house. **What is still only argued here is §5's first two
+steps** — the server saying which fields apply, rather than the browser
+working it out from tables it happens to have. Written 2026.09.29 at Jerry's
 request, after he put the rule plainly:
 
 > if there is an LED then there is no Lamp. A Lustr means it is an LED so having
@@ -191,11 +197,18 @@ cursor), the fallback is to leave both rows and make the reader authoritative.
 
 ## Open questions for Jerry
 
-1. When the type changes and a mode is dropped, should that be **silent, a
-   notice, or a confirm**? The unit's brightness changes either way.
-2. Should a row **disappear**, or stay and go **inert with a reason**? Disappearing
-   is cleaner; a panel that changes shape as you change Type is its own
-   annoyance.
+1. ✅ **Answered 2026.09.29 — it does not arise.** Nothing is cleared, because
+   nothing is hidden. A mode that no longer applies goes grey and keeps its
+   value, so there is no silent drop to warn about.
+
+   ⭐ **And the photometrics were already safe, which was checked rather than
+   assumed.** A `Lustr 26 EDLT` computes 165.3 fc at 18 ft on `Regulated 3200K`
+   whether or not a stray `HPL 575` is attached, and an `S4 26` computes 423.7 fc
+   on its HPL whether or not a stray `Boost Full` is attached. **The number that
+   does not apply is ignored in both directions.** So a greyed field is inert on
+   the screen *and* in the arithmetic; the only trace it leaves is a line in the
+   file.
+2. ✅ **Answered 2026.09.29: inert.** *"lets try having unused fields greyed-out."*
 3. Is a **gate** worth modelling — which fixtures can take a gobo at all? It
    would make the gobo field honest, at the cost of a flag per fixture.
 4. The **SHEHDS** has no lamps, no modes and no models: it is under-described

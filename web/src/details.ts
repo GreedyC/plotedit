@@ -39,6 +39,9 @@ const CONTROL: { value: ControlModel; label: string }[] = [
   { value: "dimmer-per-circuit", label: "Dimmer per circuit (most houses)" },
   { value: "hard-and-soft-patch", label: "Hard and soft patch" },
   { value: "no-soft-patch", label: "No soft patch" },
+  // ⭐ Jerry, 2026.09.29: a dimmer is one DMX address carrying intensity, so
+  // the dimmer number and the address are the same fact.
+  { value: "dimmer-is-address", label: "Dimmer = address (ETC)" },
 ];
 
 function field(

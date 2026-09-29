@@ -105,15 +105,79 @@ function modelsFor(inst: Instrument, deps: InspectorDeps): string[] {
  *  fixture has it, and a designer who is on RGB Plus 7 must be able to record
  *  that. It is marked so, and the range is simply not drawn for it. Leaving it
  *  out of the list would make the plot unable to describe a real rig. */
-function profilesFor(inst: Instrument, deps: InspectorDeps): string[] {
+function profilesFor(inst: Instrument, deps: InspectorDeps, control?: string): string[] {
+  if (!deps.dmx) return [];
+  // ⭐ "Dimmer" belongs to no model, so it is offered before one is looked up —
+  // a Source Four on a dimmer has no model to name and must still be able to
+  // say what it is patched as. Only in a house where that is true: elsewhere a
+  // dimmer number is not an address and offering it would invite a wrong patch.
+  const universal = control === "dimmer-is-address" ? (deps.dmx.universal ?? []) : [];
   const model = inst.model || modelsFor(inst, deps)[0];
-  if (!model || !deps.dmx) return [];
+  if (!model) return [...universal];
   // ⚠ PLAIN NAMES. The select builder uses each string as BOTH the option value
   // and its label, so decorating a name here would store the decoration — and
   // "RGB Plus 7 (channels not published)" matches nothing in the table. The
   // cell's hover already says when a count is unpublished.
-  return [...(deps.dmx.profiles[model] ?? []),
-          ...(deps.dmx.unpublished[model] ?? [])].sort();
+  return [...universal,
+          ...[...(deps.dmx.profiles[model] ?? []),
+              ...(deps.dmx.unpublished[model] ?? [])].sort()];
+}
+
+/** Why this field does not apply to this unit — or null when it does.
+ *
+ *  ⭐ INERT, NOT HIDDEN (Jerry, 2026.09.29: "lets try having unused fields
+ *  greyed-out"). A row that vanishes takes its explanation with it and changes
+ *  the panel's shape under the cursor; a greyed row with a reason on hover says
+ *  what the rig is. The field keeps its value — see `docs/DECISIONS.md` on why
+ *  a hidden field holding a live value is the worst of the three options.
+ *
+ *  ⚠ This DISABLES INPUT ONLY. It is not a filter on the data: a unit that
+ *  already carries a contradictory value still shows it, greyed, because
+ *  hiding it is how it survives to the load-in. */
+function inertBecause(
+  f: Field, inst: Instrument, deps: InspectorDeps, control?: string,
+): string | null {
+  if (f.key === "dimmer" && inst.profile === "Dimmer") {
+    return "This unit is patched as a Dimmer, and in a dimmer-is-address house "
+         + "that number IS the address — set it there instead.";
+  }
+  if (f.key === "dimmer" && control === "dimmer-is-address" && inst.address) {
+    return "This house is dimmer-is-address, and this unit has one — the "
+         + "address carries the dimmer number.";
+  }
+  // 🔴 THE PAIR JERRY STATED: "if there is an LED then there is no Lamp. A
+  // Lustr means it is an LED so having an HPL 575 makes no sense." Both
+  // directions, from the server's own table rather than a list of names typed
+  // here — docs/MUTUALLY-EXCLUSIVE-FIELDS.md §1.1.
+  if (f.key === "mode" && !modesApply(inst, deps)) {
+    return "An output mode belongs to an LED engine. This unit takes a lamp.";
+  }
+  if (f.key === "lamp" && modesApply(inst, deps)) {
+    return "This is an LED engine — there is no lamp in it. Its output is set "
+         + "by the mode below.";
+  }
+  // ⚠ An empty dropdown looks like missing DATA. It is usually missing
+  // KNOWLEDGE, and the two send you to different places: one to the plot, one
+  // to the fixture's own display.
+  if (f.key === "model" && modelsFor(inst, deps).length === 0) {
+    return "No specific models are on file for this fixture type, so there is "
+         + "nothing to choose between.";
+  }
+  if (f.key === "profile" && profilesFor(inst, deps, control).length === 0) {
+    return "No DMX personalities are published for this fixture. If it is on a "
+         + "dimmer, set the house to dimmer-is-address and pick Dimmer.";
+  }
+  if (f.key === "lensRotation" && !/parnel|oval/i.test(inst.type ?? "")) {
+    return "Only an oval-beam unit has a lens to turn.";
+  }
+  return null;
+}
+
+/** Does this unit have output modes at all? An LED engine does; a barrel with a
+ *  lamp in it does not, and the two never overlap — see
+ *  docs/MUTUALLY-EXCLUSIVE-FIELDS.md. */
+function modesApply(inst: Instrument, deps: InspectorDeps): boolean {
+  return (deps.modesFor?.(inst.type) ?? []).length > 0;
 }
 
 /** Is this unit hung on a boom, box boom, ladder or tormentor? */
@@ -136,6 +200,10 @@ export interface InspectorDeps {
   /** The photometric family of a fixture type, for choosing which models to
    *  offer. Undefined for a type the server does not know. */
   familyOf?: (type: string) => string | undefined;
+  /** The OUTPUT modes this fixture type has, from the server's own table. An
+   *  empty list means it is not an LED engine, which is what greys the mode
+   *  row out — see docs/MUTUALLY-EXCLUSIVE-FIELDS.md. */
+  modesFor?: (type: string) => string[];
   /** Say why an entry was refused. Optional so other callers still compile. */
   onStatus?: (msg: string, bad?: boolean) => void;
   lamps: string[];
@@ -150,6 +218,9 @@ export function renderInspector(
   host.replaceChildren();
   const i = store.selected;
   const inst = store.selectedInstrument;
+  // The HOUSE's control model. It decides whether a dimmer number is a
+  // separate fact from the address or the same one written twice.
+  const control = store.plot.control ?? "dimmer-per-circuit";
   if (i === null || !inst) {
     const p = document.createElement("p");
     p.className = "muted";
@@ -214,7 +285,7 @@ export function renderInspector(
         : f.key === "lamp" ? deps.lamps
         : f.key === "mode" ? deps.modes
         : f.key === "model" ? modelsFor(inst, deps)
-        : f.key === "profile" ? profilesFor(inst, deps)
+        : f.key === "profile" ? profilesFor(inst, deps, control)
         : store.plot.positions.map(p => p.name);
       const blank = document.createElement("option");
       blank.value = ""; blank.textContent = "—";
@@ -276,6 +347,17 @@ export function renderInspector(
     }
     input.id = id;
     if (f.hint) input.title = f.hint;
+
+    // ⭐ INERT, NOT HIDDEN. The row keeps its place and its value; it stops
+    // taking input and says why on hover. A field that does not apply is a
+    // fact about the rig, and the panel should show facts rather than shrink.
+    const why = inertBecause(f, inst, deps, control);
+    if (why) {
+      input.disabled = true;
+      input.title = why;
+      label.classList.add("inert");
+      label.title = why;
+    }
 
     const apply = () => {
       const raw = input.value.trim();
