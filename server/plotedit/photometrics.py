@@ -244,6 +244,32 @@ LAMP_MF = {
                 # three of the four.
                 "S4 EA PAR VNSP": 0.92, "S4 EA PAR NSP": 0.88,
                 "S4 EA PAR MFL": 0.80, "S4 EA PAR WFL": 0.75},
+    # ⭐ THE DIMMER DOUBLING LAMP (Jerry, 2026.09.29). 550 W at SEVENTY-SEVEN
+    # VOLTS — the low voltage is the whole point, not a typo. ETC Dimmer
+    # Doubling runs two fixtures off one dimmer on opposite half-cycles, and a
+    # 77 V burner is what makes full output from the halved RMS voltage.
+    #
+    # 🔴 IT IS NOT THE 375. Both are ways of getting more rig out of less
+    # dimmer, which is why they get mixed up, but a 375 simply draws less on an
+    # ordinary 115 V circuit. ETC's own table marks the difference: the asterisk
+    # sits on the 77 V lamps and the footnote reads "77 Volt HPL lamps are for
+    # use with ETC Dimmer Doubling technology only."
+    #
+    # ⚠ PUT ONE OF THESE ON AN ORDINARY DIMMER AND THE PAPERWORK LIES. The
+    # footcandles below come out right, the rig comes out dim, and nothing here
+    # can tell the difference — a doubled dimmer is a property of the CIRCUIT,
+    # which the plot has no way to say yet. Noting doublers is on NEXT.md.
+    "HPL 550/77": {"S4 19": 0.87, "S4 26": 0.77, "S4 36": 0.68, "S4 50": 0.81,
+                   # ETC Source Four 19/26/36/50 datasheets, "Lamps" table, row
+                   # HPL 550/77* (ETC part RT112), Cd MF column — and the same
+                   # four confirmed independently by the Source Four EDLT
+                   # 19-26-36-50 datasheet p4, which prints all four lenses in
+                   # one row. Both agree to the digit.
+                   #
+                   # ⚠ NO PAR FIGURES. The PAR EA datasheet is not on file, so
+                   # an EA PAR on a 550/77 computes nothing rather than guessing
+                   # — see the warning above this table.
+                   },
     "HPL 575X": {"S4 36": 0.56,          # long-life; other S4 tubes not extracted
                  # Same table, HPL 575/115X row: .56 across all four lenses.
                  "S4 EA PAR VNSP": 0.56, "S4 EA PAR NSP": 0.56,

@@ -211,7 +211,16 @@ function drawInspector() {
     // ⭐ The FAMILY decides which specific models to offer, and it is the
     // server's answer, not a list kept here.
     familyOf: (t: string) => fixtureTable[t]?.family,
-    lamps: ["HPL 750", "HPL 575", "HPL 575X"],
+    // ⚠ STILL HARDCODED, AND STILL WRONG. The lamps live in LAMP_MF in
+    // Python and this list is a second copy of them kept by hand, so it
+    // drifts: the three Source 4WRD retrofit burners have had multipliers
+    // since v0.1.19 and are not offered here. See docs/LAMP-AND-MODE.md.
+    //
+    // ⭐ HPL 550/77 is the DIMMER DOUBLING lamp (Jerry, 2026.09.29) — 550W
+    // at 77 volts, and the low voltage is the point. Nothing on the plot
+    // yet says which circuits are doubled, so choosing it here is a
+    // statement about the lamp only.
+    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 550/77"],
     modes: ["Boost Full", "Regulated Full", "Regulated 3200K", "Regulated 5600K"],
     onStatus: (msg, bad) => status(msg, bad),
     onPhotometricChange: () => { paint(); recompute(); },
