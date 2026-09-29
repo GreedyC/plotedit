@@ -186,6 +186,30 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **🔴 NOTATING DIMMER DOUBLERS — raised by Jerry 2026.09.29, deliberately
+  deferred.** The `HPL 550/77` lamp went in the same day, so a doubled rig can
+  now be described *at the lamp*. **It cannot be described at the circuit**, and
+  that is the half that matters.
+
+  ETC Dimmer Doubling runs **two fixtures off one dimmer** on opposite
+  half-cycles. So a doubled dimmer is a property of the CIRCUIT, not the
+  instrument: two units, one dimmer, two separate control channels.
+
+  ⚠ **Until it is notated, the paperwork is quietly wrong in three places:**
+
+  - **The load table.** `circuits.py` totals watts per dimmer. Two doubled units
+    read as 1100 W on one dimmer, which is the arithmetic but not the situation
+    — and a doubler has its own capacity limit that nothing here knows about.
+  - **The hookup.** Two channels sharing a dimmer is exactly the thing a hookup
+    exists to show, and there is no column that can say it.
+  - **The plot.** RP-2 has no symbol for it that we have found, so the notation
+    may have to be Jerry's own. Worth checking §6.14 before inventing one.
+
+  ⭐ **And the reverse mistake is the dangerous one:** a `HPL 550/77` picked on
+  an ORDINARY dimmer computes perfectly reasonable footcandles and hangs a rig
+  that comes out dim. Nothing can catch that until the circuit can say whether
+  it is doubled.
+
 - **✅ THE GEL LIBRARY — done 2026.09.29, except the diffusions.** 11 gels became
   **498**: 239 Roscolux and 259 LEE, each row citing the maker's own page.
 
