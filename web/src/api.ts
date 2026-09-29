@@ -51,6 +51,20 @@ export async function fixtures(): Promise<Record<string, FixtureRow>> {
   return (await r.json()).fixtures as Record<string, FixtureRow>;
 }
 
+/** Gel numbers and names, for the colour suggestions.
+ *
+ *  ⚠ Numbers only as the VALUE. The table is keyed on "R52", and a name in the
+ *  value would match nothing. The name is the label the browser shows beside
+ *  it. */
+export async function gelList(): Promise<{ gel: string; name: string }[]> {
+  const r = await fetch("/api/gels");
+  if (!r.ok) throw new Error(`gels failed: ${r.status}`);
+  const gels = (await r.json()).gels as Record<string, { name: string }>;
+  return Object.entries(gels)
+    .map(([gel, v]) => ({ gel, name: v.name }))
+    .sort((a, b) => a.gel.localeCompare(b.gel, undefined, { numeric: true }));
+}
+
 // ------------------------------------------------------------------ export
 
 export type ExportKind = "pdf" | "dxf" | "schedule" | "hookup" | "eos";
