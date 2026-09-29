@@ -37,6 +37,9 @@ export interface Field {
 export const FIELDS: Field[] = [
   { key: "unit", label: "Unit", kind: "number", step: 1 },
   { key: "channel", label: "Channel", kind: "number", step: 1 },
+  // ⭐ Right under the channel (Jerry, 2026.09.29). What a light is FOR is what
+  // you read next after what it answers to — not a footnote below the patch.
+  { key: "purpose", label: "Purpose", kind: "text" },
   { key: "circuit", label: "Circuit", kind: "text",
     hint: "The HOUSE circuit. Never generated — circuits depend on the house and have no set order" },
   { key: "dimmer", label: "Dimmer", kind: "number", step: 1, recompute: true },
@@ -57,7 +60,21 @@ export const FIELDS: Field[] = [
         + "can be on a different personality from the one beside it" },
   { key: "type", label: "Type", kind: "select", photometric: true },
   { key: "position", label: "Position", kind: "select" },
-  { key: "purpose", label: "Purpose", kind: "text" },
+  // ⭐ THE TYPED FIELDS COME FIRST (Jerry, 2026.09.29). Colour, gobo and
+  // accessories are entered by hand, over and over. X, Y, trim and focus below
+  // them USUALLY ARE NOT — they arrive by dragging the unit on the plot and by
+  // focusing it, and the boxes are there to read back and to correct. So the
+  // panel is ordered by what you actually type into, not by what matters.
+  //
+  // ⭐ A COMBO, NOT A SELECT. The value is often a COMBINATION — "R52+R119" is
+  // stacked and "R52/R119" is a split frame — and neither is an entry in any
+  // list. A fixed dropdown would make Jerry's own most-used colour, on 105
+  // units of the archive, impossible to choose. So: suggestions you can ignore.
+  { key: "color", label: "Color", kind: "combo", photometric: true,
+    hint: "R52+R119 stacks · R52/R119 is a split frame" },
+  { key: "gobo", label: "Gobo", kind: "text" },
+  { key: "accessories", label: "Accessories", kind: "list",
+    hint: "Separate with + — \"top hat + gobo\". Barn doors, hats, gobo, iris, rotator" },
   { kind2: "feet", key: "x", label: "X (ft)", kind: "number", step: 0.0833, photometric: true },
   { kind2: "feet", key: "y", label: "Y (ft)", kind: "number", step: 0.0833, photometric: true },
   { kind2: "feet", key: "trim", label: "Trim (ft)", kind: "number", step: 0.5, photometric: true,
@@ -68,20 +85,11 @@ export const FIELDS: Field[] = [
   { kind2: "feet", key: "focusY", label: "Focus Y", kind: "number", step: 0.5, photometric: true },
   { kind2: "feet", key: "focusH", label: "Focus height", kind: "number", step: 0.5, photometric: true,
     hint: "Head height, 5'-6\" unless the light lands somewhere else" },
-  // ⭐ A COMBO, NOT A SELECT. The value is often a COMBINATION — "R52+R119" is
-  // stacked and "R52/R119" is a split frame — and neither is an entry in any
-  // list. A fixed dropdown would make Jerry's own most-used colour, on 105
-  // units of the archive, impossible to choose. So: suggestions you can ignore.
-  { key: "color", label: "Color", kind: "combo", photometric: true,
-    hint: "R52+R119 stacks · R52/R119 is a split frame" },
-  { key: "gobo", label: "Gobo", kind: "text" },
   { key: "lamp", label: "Lamp", kind: "select", photometric: true },
   { key: "mode", label: "LED mode", kind: "select", photometric: true,
     hint: "The PHOTOMETRIC output mode — how bright. Not the DMX personality" },
   { key: "lensRotation", label: "Lens angle", kind: "number", step: 15,
     hint: "Oval-beam units (PARNel): degrees the lens is turned" },
-  { key: "accessories", label: "Accessories", kind: "list",
-    hint: "Separate with + — \"top hat + gobo\". Barn doors, hats, gobo, iris, rotator" },
   { key: "notes", label: "Notes", kind: "text" },
 ];
 
