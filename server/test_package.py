@@ -336,6 +336,27 @@ check("an LED mode is NOT a lamp", ph.lamp_watts("Regulated 3200K"), None)
 check("nor is a bare colour temperature", ph.lamp_watts("5600K"), None)
 check("nor is a mode with no number", ph.lamp_watts("Boost"), None)
 
+# ⭐ A RETROFIT LED BURNER IS A LAMP. A Source Four with a 4WRD in it is still an
+# S4 26 — same lens tube, same angles, same symbol — so it belongs in the lamp
+# table and not in FIXTURES. Nothing in the name is a wattage, so the figure has
+# to be published like any other.
+check("a retrofit burner has a published wattage",
+      ph.lamp_watts("Source 4WRD II"), 150.0)
+check("...and the fixture answers with it, not the HPL",
+      ph.watts_for("S4 26", lamp="Source 4WRD II")[0], 150.0)
+check("...where the default is still 575",
+      ph.watts_for("S4 26")[0], 575.0)
+# ⚠ AND IT STILL REFUSES TO COMPUTE LEVELS. The datasheet publishes LUMENS per
+# lens, not candela, and LAMP_MF is a candela multiplier — ETC's own "Cd MF"
+# columns. A lumen ratio through the same lens is not the same number, because
+# an LED source and a filament do not fill a lens the same way: across the
+# barrel range that ratio runs 1.17 to 1.62, which is the proof it is not one
+# multiplier. The candela is in the separate Photometry Guide, unfetched.
+_fc, _why = ph.footcandles("S4 26", 20, lamp="Source 4WRD II")
+check("a retrofit gives no footcandles", _fc, None)
+check("...and says the multiplier is missing",
+      "no Source 4WRD II multiplier" in _why, True)
+
 _load = [{"unit": u, "position": "E1", "circuit": 3, "type": "S4 26", "lamp": "HPL 575"}
          for u in (1, 2, 3, 4)]
 _rows, _notes = C.load(_load, _pp, dimmer_watts=2400)

@@ -186,6 +186,37 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **❓ THE SOURCE 4WRD II PHOTOMETRY GUIDE — the one document that would finish
+  it.** *(2026.09.28.)* The 4WRD II is a retrofit burner: pull the HPL out of a
+  Source Four, put this in, and the fixture is an LED. **Same lens tube, same
+  field and beam angles, same symbol** — so it is a LAMP in this codebase, not a
+  fixture, and it now sits in `LAMP_WATTS` at 150 W.
+
+  **⚠ What the datasheet does NOT let us do is compute levels**, and the reason
+  is worth writing down because the arithmetic looks so available. Page 5 gives
+  **lumens per lens** for the 4WRD beside the HPL 575 and 750 — a whole table,
+  same document, same measurement. It is tempting to divide one column by the
+  other and call it a lamp multiplier.
+
+  **🔴 `LAMP_MF` is a CANDELA multiplier** — ETC's own "Cd MF" columns — and a
+  lumen ratio is not that number. An LED source and a filament do not fill a lens
+  the same way, and the table proves it: the ratio to HPL 575 runs **1.17 at the
+  26° and 1.62 at the 90°**. If it were one property of the lamp it would be one
+  number. It is not, so a derived multiplier would be wrong by up to a third at
+  the ends, in a figure someone would point a dimmer check at.
+
+  ⭐ **A real fact fell out of it anyway:** the 4WRD does relatively better in
+  WIDE lenses than narrow ones. That is source geometry, and it is the kind of
+  thing a designer choosing between a retrofit and a new fixture would want to
+  know.
+
+  **➡ The datasheet points at a "Source 4WRD II Photometry Guide" at
+  etcconnect.com.** That is where the candela lives. Same shape as the
+  ColorSource Spot: the guide on file had output modes and the DMX profiles were
+  in a different document entirely. **Until it is fetched, an S4 with a 4WRD
+  gives a load figure and refuses to give a level** — which is the right answer,
+  but only half of one.
+
 - **❓ A LABEL DEFINITION — what goes in which container, editable.** *(Jerry,
   2026.09.28.)* **A popular drafting package lets you define a label legend**: an
   editor where any field can be assigned to almost any position around the
