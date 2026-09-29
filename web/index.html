@@ -185,8 +185,13 @@
        nine-inch instrument is easy to grab, and this rule was filling it —
        selecting a unit dropped a solid blob over the plot, hiding the very
        symbol it was meant to be pointing at. It was there before, in blue. */
-    /* The yoke dot — the one point that says where the unit actually IS. */
-    svg .instrument.selected circle:not(.hit):not(.halo) { fill:var(--primary); }
+    /* ⭐ THE YOKE DOT IS GONE (Jerry, 2026.09.29) and this rule went with it.
+       It existed to tint that one dot — but it matched EVERY circle on the unit,
+       so selecting a Lustr also turned its seven §6.16 colour dots green and a
+       gobo'd unit turned its gate mark green. Those dots are NOTATION: the
+       count is the fixture's colour count, and recolouring them made the
+       selection bleed into what the plot is saying. The halo is the selection
+       signal and it is enough. */
     /* 🔴 :not(.hit) here too, and for a worse reason than the fill. The hit disc
        carries no stroke-width, so it took SVG's default of 1 — and one user
        unit is one FOOT. A 0.9ft ring with a 1ft stroke is a solid blob nearly
