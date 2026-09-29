@@ -1201,9 +1201,49 @@ _ign = open(_os.path.join(_os.path.dirname(__file__), "..", ".gitignore"),
             encoding="utf-8").read()
 check("VERSION is gitignored", "server/plotedit/VERSION" in _ign, True)
 
+# ⭐ A RETROFIT IS THE SAME BARREL WITH A DIFFERENT SOURCE (Jerry, 2026.09.29).
+# USITT's Lighting Documentation Recommended Practice (Feb 2025) draws an LED
+# ellipsoidal as the ordinary ERS body with §6.16 dots at the lamp housing — its
+# own key lists "CONVENTIONAL ERS 26-DEGREE" and "LED ERS 26-DEGREE" as one
+# shape, one with dots.
+print("\na 4WRD draws the same barrel with a source mark")
+_plain = sym.for_type("S4 26")
+_wrd = sym.for_type("S4 26", None, "Source 4WRD II")
+_hpl = sym.for_type("S4 26", None, "HPL 575")
+
+check("a tungsten lamp changes nothing", _hpl, _plain)
+check("an unknown lamp changes nothing", sym.for_type("S4 26", None, "FEL 1000"), _plain)
+check("the 4WRD adds exactly one mark", len(_wrd) - len(_plain), 1)
+# 🔴 THE OUTLINE MUST NOT MOVE. Same barrel, same lens tube, same beam angle —
+# if the body changed, the plot would be claiming a different fixture hangs there.
+check("...and the body is untouched", _wrd[:len(_plain)], _plain)
+
+_dot = _wrd[-1]
+check("the mark is a filled dot", (_dot[0], _dot[3]), ("circle", True))
+# ⚠ AT THE LAMP END. +a is the back; the lens is at -a. A dot at the front would
+# be drawing the source where the light comes out, and would land on top of
+# §6.1.11's gate mark for a gobo.
+_lo, _hi = sym._extent(_plain)
+check("...at the lamp housing, not the lens", _dot[1][0] > (_lo + _hi) / 2, True)
+check("...and inside the body", _dot[1][0] < _hi, True)
+check("...on the axis", _dot[1][1], 0.0)
+
+# ⚠ The gobo mark and the source dot must not land on each other — the reason
+# the yoke dot was dropped on the same day.
+_gobo, _ = sym.with_accessories(_plain, ["gobo"])
+_gate = [p for p in _gobo if p[0] == "circle"][0]
+check("the gobo mark sits clear of the source dot",
+      round(abs(_gate[1][0] - _dot[1][0]), 2) > 0.4, True)
+
+# ⭐ The COUNT comes from photometrics, so one table decides it.
+check("one colour, one dot", ph.lamp_colors("Source 4WRD II"), 1)
+check("Gallery too", ph.lamp_colors("Source 4WRD II Gallery"), 1)
+check("an HPL is not a source to draw", ph.lamp_colors("HPL 575"), None)
+
 print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
+
     for f in FAILS:
         print("   ", f)
     sys.exit(1)

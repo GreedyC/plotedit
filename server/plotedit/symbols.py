@@ -465,6 +465,40 @@ def _extent(prims):
     return (min(vals), max(vals)) if vals else (0.0, 0.0)
 
 
+def with_led_source(prims, colors, width=0.625):
+    """Add §6.16 source dots at the LAMP HOUSING of an existing symbol.
+
+    ⭐ THE SYMBOL DOES NOT CHANGE. A Source Four with a 4WRD in it is the same
+    barrel, the same lens tube and the same beam angle — so it keeps the same
+    outline and gains the dots that say what is making the light. That is how
+    USITT's Lighting Documentation Recommended Practice (February 2025) draws
+    it: its fixture key lists "CONVENTIONAL ERS 26-DEGREE" and "LED ERS
+    26-DEGREE" as the same body, one with dots at the back.
+
+    ⚠ AT THE BACK, WHICH IS WHERE THE LAMP IS. +a is toward the lamp housing;
+    the lens is at -a. Putting them at the front would be drawing the source at
+    the end the light comes out of, and would also land them on top of §6.1.11's
+    gate mark for a gobo.
+    """
+    n = max(1, int(colors))
+    front_a, back_a = _extent(prims)
+    span = back_a - front_a
+    # Just inside the tapered back — far enough forward that the dots sit on
+    # full-width body rather than in the chamfer.
+    a = back_a - 0.10 * span
+    r = width * 0.045
+    w = width / 2
+    out = list(prims)
+    if n == 1:
+        out.append(("circle", (a, 0.0), r, True))
+        return out
+    # More than one: a row across the body, the way the §6.16 plate lays them.
+    for i in range(n):
+        c = -w * 0.45 + i * (w * 0.9 / (n - 1))
+        out.append(("circle", (a, c), r, True))
+    return out
+
+
 def with_accessories(prims, accessories, size=0.5):
     """Return prims plus every accessory, each drawn where RP-2 puts it.
 
@@ -718,11 +752,17 @@ def _black():
 
 # ------------------------------------------------------ §6.14 luminaire notation
 
-def for_type(kind, lens_rotation=None):
+def for_type(kind, lens_rotation=None, lamp=None):
     """Pick a symbol from a fixture-table key like "S4 26" or "Lustr 26 EDLT".
 
     lens_rotation (degrees) is used by oval-beam units — a PARNel's lens turns,
     and the angle is information the electrician needs, not decoration.
+
+    ⭐ `lamp` is here because a RETROFIT changes what is making the light without
+    changing the fixture (Jerry, 2026.09.29). Pull the HPL out of a Source Four,
+    drop a 4WRD in, and the plot used to draw a tungsten unit — indistinguishable
+    from the one beside it that still has an HPL. The barrel is the same; the
+    source is not, and §6.16 has a way to say so.
     """
     k = (kind or "").strip()
     # Resolve a paperwork name to a table key first — "ETC Source4 36deg" should
@@ -767,9 +807,26 @@ def for_type(kind, lens_rotation=None):
     if "mac" in low or "mover" in low or "moving" in low or "aura" in low:
         return moving_head("wash")
     if "zoom" in low:
-        return ers_zoom(deg)
+        return _with_lamp(ers_zoom(deg), lamp)
     # default: an ellipsoidal at whatever angle the name carries
-    return enhanced_ers(deg)
+    return _with_lamp(enhanced_ers(deg), lamp)
+
+
+def _with_lamp(prims, lamp):
+    """Dots at the lamp housing when the lamp is an LED retrofit.
+
+    ⚠ HOW MANY comes from photometrics, not from a list here — the same reason
+    the footprint and the multipliers do. A second copy of "a 4WRD is one
+    colour" is a second thing to keep in step.
+    """
+    if not lamp:
+        return prims
+    try:
+        from . import photometrics as _ph
+        n = _ph.lamp_colors(lamp)
+    except Exception:
+        return prims
+    return with_led_source(prims, n) if n else prims
 
 
 # §6.14.1 gives THREE house control models, and they are notated differently.

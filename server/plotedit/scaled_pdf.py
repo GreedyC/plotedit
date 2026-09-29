@@ -748,7 +748,10 @@ class Sheet:
         if (symbol_angle or "orthogonal").startswith("orth"):
             draw_deg = round(pan / 90.0) * 90.0
 
-        _base = _sym.for_type(kind, lens_rotation)
+        # ⚠ THE LAMP IS PASSED. A retrofit draws §6.16 dots at the lamp
+        # housing, and leaving it out here is how the paper would have gone
+        # on drawing a tungsten unit while the screen drew an LED.
+        _base = _sym.for_type(kind, lens_rotation, lamp)
         # The centre comes from the BARE instrument. Accessories hang off the
         # nose, so measuring the accessorised symbol would drag the "centre"
         # forward out of the body and put the number on a barn door.
@@ -760,6 +763,11 @@ class Sheet:
         # arc sources; Jerry uses the same mark for a 750W Source Four, which is
         # the only place he has seen a wattage called out on a plot at all.
         # Inserted FIRST so the body's own outline is stroked back over it.
+        #
+        # ⚠ A BLACKENED REAR WOULD SWALLOW THE §6.16 SOURCE DOTS, which sit in
+        # the same place. Today the two cannot both happen — shading needs a
+        # lamp above 575W and every retrofit burner is 150W — so this is a note
+        # for whoever adds a high-wattage LED source, not a live bug.
         if _shade_rear_for(kind, lamp):
             _prims = _sym.shade_rear(_base) + list(_base)
 
