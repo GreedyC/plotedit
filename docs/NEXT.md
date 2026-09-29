@@ -210,6 +210,23 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
   the effect at the centre of a beam. ⚠ Worth knowing before a plot promises a
   level through a heavy frost.
 
+  **⭐ AND IT IS MEASURABLE, in about fifteen minutes, with a meter.** No
+  manufacturer publishes this because it depends on the beam the diffusion is
+  sitting in, so a real reading beats any amount of reading around it:
+
+  1. Point a Source Four at a wall and note the **centre-beam footcandles**.
+  2. Drop an **R119** in the frame and read it again.
+  3. **If the ratio is about 0.89** — the transmission on file — then absorption
+     is the whole story and multiplying is right.
+  4. **If it is materially lower**, say 0.75, the scatter is costing more at the
+     centre than the number implies, and every level through a frost is
+     currently overstated.
+
+  ⚠ **Change nothing on one reading.** Do it at two throws and on two lens
+  tubes: if scatter is the cause, the loss should grow with the width of the
+  beam, and if it does not then something else is going on. **Jerry has an R119
+  to hand** *(2026.09.28)*; what is not confirmed is a light meter.
+
 - **❓ THE SOURCE 4WRD II PHOTOMETRY GUIDE — the one document that would finish
   it.** *(2026.09.28.)* The 4WRD II is a retrofit burner: pull the HPL out of a
   Source Four, put this in, and the fixture is an LED. **Same lens tube, same
