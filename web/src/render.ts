@@ -429,8 +429,21 @@ function symbol(inst: Instrument, c: Computed | undefined,
                                     stroke: "#111", "stroke-width": 0.07 }));
   }
   paintPrims(body, prims);
-  // the yoke point — where the unit actually is, per RP-2 2.2
-  body.appendChild(el("circle", { cx: 0, cy: 0, r: 0.09, fill: "#111" }));
+  // ⭐ NO YOKE DOT (Jerry, 2026.09.29: "I don't think I've seen them before").
+  // RP-2 §2.2 says the SYMBOL is placed at the hanging point — "the symbol
+  // should be placed so that its location reflects its exact hanging point" —
+  // it never asks for a mark there, and no plot in the archive draws one.
+  //
+  // 🔴 And it was colliding. A filled black dot at the origin sat 5mm from the
+  // filled black dot §6.1.11 puts in the body for a GOBO, at 0.090 against
+  // 0.085 — indistinguishable on paper, and telling them apart depended on the
+  // symbol's length, so they moved relative to each other between a 19° and a
+  // 50°. RP-2 spends filled dots on gobos and on §6.16 colour counts; this one
+  // was ours, and it was spending the same ink on something the standard does
+  // not ask to be drawn.
+  //
+  // ⚠ The PDF never drew it. Removing it makes the screen agree with the paper
+  // rather than disagreeing quietly — see test_agreement.py.
   g.appendChild(body);
   return g;
 }
