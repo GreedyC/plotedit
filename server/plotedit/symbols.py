@@ -776,7 +776,8 @@ def for_type(kind, lens_rotation=None):
 # Jerry, 2026.09.23: "most houses have circuit per dimmer" — so that is the
 # default here, and it is the one where the third container is WRONG rather than
 # merely absent.
-CONTROL_MODELS = ("dimmer-per-circuit", "hard-and-soft-patch", "no-soft-patch")
+CONTROL_MODELS = ("dimmer-per-circuit", "hard-and-soft-patch", "no-soft-patch",
+                  "dimmer-is-address")
 
 
 def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=None,
@@ -804,6 +805,17 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
       `no-soft-patch`        Hexagon (circuit) and circle (dimmer). The console
                              addresses dimmers directly; there is no channel
                              number distinct from the dimmer.
+      `dimmer-is-address`    Jerry, 2026.09.29: "in ETC world, a dimmer is a DMX
+                             shape — basically one address with the value of
+                             intensity." The dimmer NUMBER stops being a
+                             separate fact: it is the address, so the hexagon
+                             carries the address and the rectangle the circuit,
+                             exactly as it does for an LED. ⭐ The consequence
+                             is that a conventional rig and an LED rig are
+                             notated the same way, which is the point — on a
+                             mixed plot the reader stops having to know which
+                             kind of unit they are looking at to read the
+                             number.
 
     §6.14.2 stacks them below the symbol, with focus and color above it.
 
@@ -918,6 +930,17 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
             circuit, dimmer = dimmer, None
         elif dimmer is not None and str(dimmer) == str(circuit):
             dimmer = None
+
+    # ⭐ In a dimmer-is-address house the dimmer number IS the address, so a unit
+    # that carries both is stating one fact twice. The address is the one that
+    # gets drawn — it is universe-qualified, so it cannot be misread as a
+    # dimmer — and the dimmer is dropped rather than given a second container.
+    #
+    # ⚠ A unit with a dimmer and NO address still draws its dimmer. The house
+    # being addressable does not mean every unit's address was recorded, and
+    # drawing nothing would be worse than drawing the number we have.
+    if control == "dimmer-is-address" and address is not None:
+        dimmer = None
 
     # ⭐ THE HEXAGON CARRIES WHAT CONTROLS THE UNIT, THE RECTANGLE WHAT POWERS
     # IT. Jerry, 2026.09.28: "hexagon carries dimmer or address. rectangle

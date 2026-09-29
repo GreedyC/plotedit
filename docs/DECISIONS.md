@@ -156,3 +156,65 @@ the user. Same shape here — the store decides, and no caller has to remember.
 Selection remains view state everywhere except `snapshot()`, which captures it on
 purpose so undo puts your eye back on the unit that changed. That is a kindness,
 not a claim that selection is document state.
+
+## 2026.09.29 — A dimmer is a DMX personality, and a house can say so
+
+Jerry: *"in ETC world, a Dimmer is a DMX shape — basically one address with the
+value of intensity."*
+
+So it is a **personality**, not a model — the dimmer is not the fixture, it is
+what the fixture is plugged into. `dmx.UNIVERSAL` holds it, it belongs to no
+entry in `MODELS`, and it is offered to any unit.
+
+**This was already the behaviour; what changed is that it can now be said.**
+`patch_cell` has always fallen through to *"a conventional fixture is one
+address"* with a footprint of 1. 🔴 But that sentence was also what a unit got
+when **nobody had recorded a profile at all** — same number, same words, for a
+decision and for a silence. Naming the personality separates them, and
+`patch_cell` now answers a recorded `Dimmer` before it looks anything up.
+
+A fourth control model, **`dimmer-is-address`**, says the house works this way.
+In it:
+
+- The **personality list offers `Dimmer`** — which is also what finally fills the
+  gap in `MUTUALLY-EXCLUSIVE-FIELDS.md` §1.3, where a Source Four's personality
+  dropdown was permanently empty.
+- The **hexagon carries the address** and the rectangle the circuit, exactly as
+  for an LED. ⭐ A mixed rig then reads the same throughout: the reader stops
+  having to know which kind of unit they are looking at to read the number.
+- `circuits.check` gains the matching contradiction — a dimmer and an address
+  that disagree. ⚠ Compared on the bare number, because `45` and `1/45` are the
+  same fact written two ways.
+
+**⚠ A unit with a dimmer and no address still draws its dimmer.** The house being
+addressable does not mean every unit's address was recorded.
+
+## 2026.09.29 — Fields that do not apply go inert, not hidden
+
+Jerry: *"lets try having unused fields greyed-out (inert)"* — answering the open
+question in `MUTUALLY-EXCLUSIVE-FIELDS.md`.
+
+A row that vanishes takes its explanation with it and changes the panel's shape
+under the cursor. A greyed row **keeps its place, keeps its value, and says why
+on hover**. Six rules, all reading the server's tables rather than a list of
+names typed into the browser:
+
+| Field | Inert when |
+|---|---|
+| Lamp | the fixture has output modes — it is an LED engine |
+| LED mode | it has none — it takes a lamp |
+| Dimmer | the unit is patched as `Dimmer`, or the house is dimmer-is-address and it has an address |
+| Lens angle | it is not an oval-beam unit |
+| Model | no models are on file for the type |
+| DMX personality | no personalities are published for it |
+
+**🔴 Inert disables input; it does not filter data.** A unit already carrying a
+contradictory value still shows it, greyed — `sample.plot.json`'s `Lustr 26 EDLT`
+displays its stray `HPL 575` rather than swallowing it. **Hiding a wrong value is
+how it survives to the load-in.** Same reasoning as the dirty flag above: a
+hidden field holding a live value is the worst of the three options.
+
+⭐ **And the arithmetic was already safe, checked rather than assumed:** a Lustr
+computes the same footcandles with or without a stray lamp, and a Source Four the
+same with or without a stray mode. The value that does not apply is ignored in
+both directions, so nothing had to be cleared to make this safe.

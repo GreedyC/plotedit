@@ -213,6 +213,10 @@ function drawInspector() {
     // ⭐ The FAMILY decides which specific models to offer, and it is the
     // server's answer, not a list kept here.
     familyOf: (t: string) => fixtureTable[t]?.family,
+    // ⭐ The server's own answer, not a list kept here — which is the whole
+    // argument of docs/LAMP-AND-MODE.md, applied to the one field that
+    // could already be answered without new data.
+    modesFor: (t: string) => fixtureTable[t]?.modes ?? [],
     // ⚠ STILL HARDCODED. The lamps live in LAMP_MF in Python and this is a
     // second copy of them kept by hand, so it drifts — it drifted for a whole
     // release. Keep the two in step until docs/LAMP-AND-MODE.md is acted on

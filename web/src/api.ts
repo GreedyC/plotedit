@@ -381,6 +381,9 @@ export async function serverVersion(): Promise<string> {
  *  the channel counts live in dmx.py so they cannot drift from the exporter. */
 export interface DmxTable {
   family_models: Record<string, string[]>;
+  /** Personalities that belong to no model — "Dimmer" — so they can be offered
+   *  to a unit with no model to look up. */
+  universal?: string[];
   profiles: Record<string, string[]>;
   /** Personalities the fixture has but whose channel count nobody published. */
   unpublished: Record<string, string[]>;

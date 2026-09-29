@@ -189,6 +189,9 @@ def dmx_table() -> Dict[str, Any]:
     which is the mistake docs/SYMBOLS.md exists to warn about.
     """
     return {"family_models": dmx.FAMILY_MODELS,
+            # ⭐ Belongs to no model, so it cannot travel in `profiles`. A dimmer
+            # is one address of intensity and any unit can be on one.
+            "universal": sorted(dmx.UNIVERSAL),
             "profiles": {m: sorted(t) for m, t in dmx.MODELS.items()},
             "unpublished": {m: sorted(v) for m, v in dmx.UNPUBLISHED.items()},
             "suggested": dmx.SUGGESTED,

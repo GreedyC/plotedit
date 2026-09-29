@@ -331,9 +331,16 @@ check("...and the twofer it made is named",
 
 print("\ndimmer-per-circuit: the circuit and the dimmer are ONE number")
 # Jerry, 2026.09.23: "most houses have circuit per dimmer." RP-2 6.14.1 notates
-# the three control models differently, and in this one a second container tells
-# the electrician there is a patch to make when there is not.
-check("the three models are named", len(sym.CONTROL_MODELS), 3)
+# the control models differently, and in this one a second container tells the
+# electrician there is a patch to make when there is not.
+#
+# ⚠ NAMED, NOT COUNTED. This was `len(...) == 3` and it had one job — to fail
+# when the set changed — which it did, on the day a fourth model was added. A
+# count would also have passed happily through a rename, which is the failure it
+# could not see.
+check("the models are named", sorted(sym.CONTROL_MODELS),
+      ["dimmer-is-address", "dimmer-per-circuit", "hard-and-soft-patch",
+       "no-soft-patch"])
 _pp = [{"name": "E1", "x1": 0, "y1": 16, "x2": 33, "y2": 16,
         "circuits": [3, 4], "circuitSource": "rep plot"}]
 _ii = [{"unit": 1, "position": "E1", "circuit": 3, "dimmer": 3},

@@ -9,6 +9,7 @@ import sys
 from fastapi.testclient import TestClient
 
 from plotedit import dmx
+from plotedit import photometrics as ph
 from plotedit.api import app
 
 client = TestClient(app)
@@ -308,6 +309,36 @@ check("...and patch_cell agrees with it",
       dmx.patch_cell(None, "whatever", "2/21", "7")[0], "2/21")
 
 print()
+
+# ⭐ Jerry, 2026.09.29: "in ETC world, a Dimmer is a DMX shape — basically one
+# address with the value of intensity." So it is a personality, and it belongs
+# to no model: the dimmer is not the fixture, it is what the fixture is plugged
+# into. See docs/DECISIONS.md.
+print("\na dimmer is a personality, not a model")
+check("one channel", dmx.channels(None, "Dimmer")[0], 1)
+check("...and it says why", "intensity" in dmx.channels(None, "Dimmer")[1], True)
+check("no model needed", dmx.channels(None, "Dimmer")[0],
+      dmx.channels("Source Four LED Series 2", "Dimmer")[0])
+# ⚠ The distinction it exists to make. Both of these are a footprint of one
+# address, but only one of them is a CHOICE — the other is the app assuming.
+check("an unrecorded profile is still not a dimmer", dmx.channels(None, None)[0], None)
+
+check("it occupies exactly its own address", dmx.span("1/45", 1), "1/45")
+check("...and so does a universe address", dmx.span("2/21", 1), "2/21")
+
+print("\nthe patch reads a dimmer the same way it always did")
+_s4 = ph.FIXTURES["S4 26"]
+_named = dmx.patch_cell(_s4, "S4 26", "1/45", None, None, "Dimmer")
+_fell_through = dmx.patch_cell(_s4, "S4 26", "1/45", None, None, None)
+check("named Dimmer gives one address", _named[2], 1)
+check("...and so did the old fallback", _fell_through[2], 1)
+# ⭐ The NUMBERS agree and the NOTES do not, which is the whole value of the
+# change: "a conventional fixture is one address" is the app assuming, and
+# "Dimmer, 1 channel" is the designer saying.
+check("the range is the same", _named[0], _fell_through[0])
+check("but the note now credits a decision",
+      "Dimmer" in _named[1] and "Dimmer" not in _fell_through[1], True)
+
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

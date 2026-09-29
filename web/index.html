@@ -276,6 +276,15 @@
     .muted { color:var(--on-surface-variant); }
     .warn { color:var(--error); }
 
+    /* A field that does not apply to this unit. Jerry, 2026.09.29: greyed out,
+       not hidden — the row keeps its place so the panel does not change shape
+       under the cursor, and hovering says why. The cursor is the tell that it
+       is inert by design rather than broken: `not-allowed`, and the label dims
+       with its input so the pair reads as one dead row. */
+    .fields label.inert { opacity:.55; }
+    .fields input:disabled, .fields select:disabled {
+      opacity:.55; cursor:not-allowed; background:var(--surface-container-low); }
+
     /* ---- positions --------------------------------------------------- */
     .pos-row { border:1px solid var(--outline-variant); border-radius:var(--shape-s);
                padding:10px 12px; margin-bottom:10px; display:grid;

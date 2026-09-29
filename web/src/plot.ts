@@ -160,8 +160,14 @@ export interface Room {
  *  hard-wired to its own dimmer, so circuit and dimmer are ONE number and RP-2
  *  draws a single hexagon labelled "Circuit & Dimmer". Drawing two containers
  *  there is not harmlessly redundant — it tells the electrician there is a patch
- *  to make, and there is not. */
-export type ControlModel = "dimmer-per-circuit" | "hard-and-soft-patch" | "no-soft-patch";
+ *  to make, and there is not.
+ *
+ *  ⭐ "dimmer-is-address" is the ETC reading (Jerry, 2026.09.29): a dimmer is a
+ *  DMX shape, one address carrying intensity. The dimmer number stops being a
+ *  separate fact, so the hexagon carries the address for a conventional unit
+ *  exactly as it does for an LED, and a mixed plot reads the same throughout. */
+export type ControlModel = "dimmer-per-circuit" | "hard-and-soft-patch"
+  | "no-soft-patch" | "dimmer-is-address";
 
 /** Line weights, in POINTS ON PAPER — the same on the sheet whatever the
  *  drawing scale. Everything is optional; what is left out keeps RP-2's value.
