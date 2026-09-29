@@ -16,7 +16,7 @@ import type { DmxTable } from "./api.js";
 export interface Field {
   key: keyof Instrument;
   label: string;
-  kind: "number" | "text" | "select" | "list";
+  kind: "number" | "text" | "select" | "list" | "combo";
   /** Does changing it change the light? */
   photometric?: boolean;
   /** 🔴 Does the SERVER have to work the row out again? Photometric fields do.
@@ -68,7 +68,11 @@ export const FIELDS: Field[] = [
   { kind2: "feet", key: "focusY", label: "Focus Y", kind: "number", step: 0.5, photometric: true },
   { kind2: "feet", key: "focusH", label: "Focus height", kind: "number", step: 0.5, photometric: true,
     hint: "Head height, 5'-6\" unless the light lands somewhere else" },
-  { key: "color", label: "Color", kind: "text", photometric: true,
+  // ⭐ A COMBO, NOT A SELECT. The value is often a COMBINATION — "R52+R119" is
+  // stacked and "R52/R119" is a split frame — and neither is an entry in any
+  // list. A fixed dropdown would make Jerry's own most-used colour, on 105
+  // units of the archive, impossible to choose. So: suggestions you can ignore.
+  { key: "color", label: "Color", kind: "combo", photometric: true,
     hint: "R52+R119 stacks · R52/R119 is a split frame" },
   { key: "gobo", label: "Gobo", kind: "text" },
   { key: "lamp", label: "Lamp", kind: "select", photometric: true },
@@ -114,6 +118,10 @@ function onVerticalPosition(store: Store, inst: Instrument): boolean {
 
 export interface InspectorDeps {
   fixtures: string[];
+  /** Gel numbers with their names, for the colour suggestions. Undefined until
+   *  `/gels` has answered, in which case the field is a plain text box — which
+   *  is what it was before, so nothing is lost by the wait. */
+  gels?: { gel: string; name: string }[];
   /** The DMX table, once it has arrived. Undefined until then — the two
    *  personality dropdowns simply offer nothing rather than guessing. */
   dmx?: DmxTable;
@@ -209,6 +217,38 @@ export function renderInspector(
         input.appendChild(el);
       }
       input.value = String(inst[f.key] ?? "");
+    } else if (f.kind === "combo") {
+      // A text box with a datalist: 498 suggestions, and anything typed is
+      // still accepted. ⚠ The browser stops matching once you type "R52+",
+      // because no single entry starts with that — normal combobox behaviour,
+      // and the reason this must never become a <select>.
+      input = document.createElement("input");
+      input.type = "text";
+      input.value = String(inst[f.key] ?? "");
+      const listId = `datalist-${f.key}`;
+      input.setAttribute("list", listId);
+      let dl = document.getElementById(listId) as HTMLDataListElement | null;
+      if (!dl) {
+        dl = document.createElement("datalist");
+        dl.id = listId;
+        document.body.appendChild(dl);
+      }
+      // ⭐ THE NAME FINALLY EARNS ITS PLACE. gels.csv has carried a name column
+      // all along and nothing read it. Here the VALUE stays the bare number —
+      // what the table is keyed on — and the name rides along as the label, so
+      // the dropdown reads "R52  Light Lavender" instead of a wall of numbers.
+      // Whether typing "lav" FILTERS on the name is the browser's business, not
+      // ours: Chrome matches the label, others match the value only. Either way
+      // the number is what gets stored.
+      if (f.key === "color" && deps.gels && dl.childElementCount !== deps.gels.length) {
+        dl.replaceChildren();
+        for (const g of deps.gels) {
+          const o = document.createElement("option");
+          o.value = g.gel;
+          o.label = g.name;
+          dl.appendChild(o);
+        }
+      }
     } else {
       input = document.createElement("input");
       // ⚠ A length is a TEXT box. type="number" silently discards 1'6" — the
