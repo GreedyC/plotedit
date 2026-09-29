@@ -359,5 +359,62 @@ console.log("\nthe splitter leaves the drawing the width it promises");
         /aria-valuenow/.test(src), true);
 }
 
+// ⭐ "If someone selects a light and does nothing to it, should the plot be
+// considered changed?" — Jerry, 2026.09.29. No. And nor should an edit that
+// writes back the value already there. `dirty` means THE DOCUMENT DIFFERS FROM
+// DISK, not "the user touched something". docs/DECISIONS.md.
+console.log("\ndoing nothing is not a change");
+s = new Store(base());
+s.select(0);
+check("selecting a light leaves it clean", s.dirty, false);
+check("...and adds no undo step", s.canUndo, false);
+s.select(null);
+check("deselecting too", s.dirty, false);
+
+s.begin(null); s.update(0, { x: 5 });        // x is already 5
+check("writing back the same value is not an edit", s.dirty, false);
+check("...and pushes no dead undo step", s.canUndo, false);
+
+s.begin(null); s.update(0, { color: undefined });   // was never set
+check("clearing an already-empty field is not an edit", s.dirty, false);
+
+// ⚠ A drag that ends where it started. interact.ts coalesces on a key, so this
+// is the path a real mouse takes, not a synthetic one.
+s.begin("drag:0"); s.update(0, { x: 5, y: 20 });
+check("a drag that lands where it started", s.dirty, false);
+s.commit();
+
+console.log("\na real edit still counts");
+s.begin(null); s.update(0, { x: 9 });
+check("dirty", s.dirty, true);
+check("and undoable", s.canUndo, true);
+
+console.log("\nundo back to the saved state goes clean again");
+s = new Store(base());
+s.begin(null); s.update(0, { x: 7 });
+check("edited", s.dirty, true);
+s.undo();
+check("undone to what was loaded", s.dirty, false);
+s.redo();
+check("redone", s.dirty, true);
+
+s.markSaved();
+check("saved here", s.dirty, false);
+s.undo();
+check("stepping BACK from the save point is dirty", s.dirty, true);
+s.redo();
+check("...and returning to it is clean", s.dirty, false);
+
+// 🔴 The one that made `_redo = []` necessary instead of `.length = 0`.
+console.log("\na no-op does not eat the redo stack");
+s = new Store(base());
+s.begin(null); s.update(0, { x: 7 });
+s.undo();
+check("there is something to redo", s.canRedo, true);
+s.begin(null); s.update(0, { x: 5 });        // tabbing out of an unchanged field
+check("...and a no-op leaves it there", s.canRedo, true);
+s.redo();
+check("redo still works", s.plot.instruments[0]!.x, 7);
+
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");
