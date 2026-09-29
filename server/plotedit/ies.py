@@ -117,6 +117,25 @@ def _angle_at(angles, values, threshold):
         a1, a2 = angles[i], angles[j]
         t = 0 if v1 == v2 else (v1 - threshold) / (v1 - v2)
         edges.append(a1 + t * (a2 - a1))
+    # 🔴 A ONE-SIDED SWEEP IS NOT A FAILURE. An ellipsoidal is measured from the
+    # beam axis outward — 0° to 90° — so its peak sits at the FIRST sample and
+    # walking the other way immediately runs off the array. That returned None
+    # for every ellipsoidal IES ETC publish, while the Altman cyc worked because
+    # an asymmetric unit is measured across its peak. So the reader had only
+    # ever been exercised on the one fixture class it handled correctly.
+    #
+    # ⚠ Doubling is only valid when the measurement STARTS on the axis. If it
+    # does, the distribution is symmetric about that axis by construction and
+    # the full cone is twice the half angle. If it does not, an edge that ran
+    # off really is unknown and None is still the honest answer.
+    # ⚠ The test is where the SWEEP starts, not where the peak landed. On a
+    # symmetric beam the brightest cell falls on 0° or 1.5° indifferently —
+    # measurement noise — so keying off the peak missed most of the files. A
+    # sweep that begins on the axis is the thing that means "measured outward
+    # from centre", and that is what makes doubling correct.
+    if angles and abs(angles[0]) < 1e-9 and edges[0] is not None and edges[1] is None:
+        return round(2 * edges[0], 1)
+
     lo, hi = sorted(e for e in edges if e is not None) if all(e is not None for e in edges) else (None, None)
     if lo is None:
         return None
