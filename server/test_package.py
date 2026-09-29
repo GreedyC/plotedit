@@ -27,13 +27,34 @@ print("  ok   all six modules")
 
 print("\nphotometrics — figures from ETC datasheets")
 check("S4 26 field angle", ph.FIXTURES["S4 26"]["field"], 25.0)
-check("gels.csv found beside the module", len(ph.GELS), 11)
+check("gels.csv found beside the module", len(ph.GELS) > 250, True)
 check("R119 transmission", ph.GELS["R119"]["t"], 0.893)
 
 print("\ngel notation — + stacks, / splits")
 check("R52+R119 stacked", round(ph.gel_factor("R52+R119")[0], 3), 0.232)
 check("R52/R119 split -> first gel only", round(ph.gel_factor("R52/R119")[0], 3), 0.26)
-check("unknown gel -> no guess", ph.gel_factor("L201")[0], None)
+# ⭐ LEE ARRIVED 2026.09.29 — 259 colour filters, so L201 is no longer unknown.
+check("a LEE number resolves", round(ph.gel_factor("L201")[0], 3), 0.350)
+check("...and mixes with a Rosco one",
+      round(ph.gel_factor("R52+L201")[0], 3), 0.091)
+check("a gel nobody has entered still refuses", ph.gel_factor("R9999")[0], None)
+
+# 🔴 THE COLLISION THAT MAKES THE PREFIX MANDATORY. R119 is Light Hamburg Frost
+# at 89%; L119 is Dark Blue at 2%. Same digits, opposite filters — a factor of
+# forty between them. A bare number must refuse and say why, because guessing a
+# house's preferred maker is how a plot promises light it will never deliver.
+check("R119 is the frost", ph.GELS["R119"]["t"], 0.893)
+check("L119 is a dark blue", ph.GELS["L119"]["t"] < 0.05, True)
+_none, _why = ph.gel_factor("119")
+check("a bare number refuses", _none, None)
+check("...and names both makers", "R119" in _why and "L119" in _why, True)
+
+# ⚠ LEE publish a daylight figure and a tungsten figure and they differ. The
+# tungsten one is stored, because the candela these multiply is measured against
+# a tungsten source. L002 is 32.7 daylight and 34.2 tungsten.
+check("the TUNGSTEN figure was taken, not the daylight one",
+      ph.GELS["L002"]["t"], 0.342)
+check("...and the source says so", "Tungsten" in ph.GELS["L002"]["source"], True)
 
 print("\nscaled_pdf -> photometrics -> gels")
 s = Sheet(os.devnull, page="TABLOID", scale="1/4")

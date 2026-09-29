@@ -510,7 +510,16 @@ def gel_factor(gel):
     for g in gels:
         row = GELS.get(g.upper())
         if row is None:
-            return None, f"gel {g} not in gels.csv — add it with Rosco's transmission figure"
+            # ⚠ SAY WHAT A BARE NUMBER IS MISSING. R119 is Light Hamburg Frost
+            # at 89% and L119 is Dark Blue at 2%: the same digits, opposite
+            # filters. An unprefixed number is not a gel this can look up, and
+            # guessing a house's preferred maker is how a plot promises forty
+            # times the light it will deliver.
+            if g[:1].isdigit():
+                return None, (f"gel {g} has no maker — R{g} and L{g} are different "
+                              f"filters. Write R{g} for Roscolux or L{g} for LEE.")
+            return None, (f"gel {g} not in gels.csv — add it with the maker's "
+                          f"published transmission")
         rows.append((g.upper(), row["t"]))
     if kind == "split":
         first = rows[0]

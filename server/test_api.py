@@ -39,7 +39,7 @@ check("tungsten penumbra is not", fx["fixtures"]["S4 26"]["penumbra_deg"], 7.0)
 
 print("\ngels")
 g = client.get("/gels").json()
-check("11 gels", g["count"], 11)
+check("the gel table is served whole", g["count"] > 250, True)
 check("R119 transmission", g["gels"]["R119"]["transmission"], 0.893)
 check("notation explained", set(g["notation"]), {"+", "/"})
 
@@ -51,7 +51,10 @@ r = client.post("/compute", json={"instruments": [
     {"unit": 3, "type": "Mystery Lantern", "x": 1, "y": 1, "trim": 14,
      "focus_x": 5, "focus_y": 5},                                        # unknown fixture
     {"unit": 4, "type": "S4 26", "x": 6, "y": 20, "trim": 14,
-     "focus_x": 10, "focus_y": 10, "color": "L201", "lamp": "HPL 575"},  # unknown gel
+     # ⚠ R64 is a REAL gel Jerry uses on forty units and it is still not in
+     # gels.csv. L201 used to stand here and stopped being unknown when LEE
+     # landed, which is the right way for this test to break.
+     "focus_x": 10, "focus_y": 10, "color": "R64", "lamp": "HPL 575"},   # unknown gel
 ]}).json()["instruments"]
 check("acting-area wash", r[0]["footcandles"], 169)
 check("throw", r[0]["throw_ft"], "13'-9\"")
