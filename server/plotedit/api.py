@@ -625,22 +625,31 @@ def symbol_geometry(types: str, lens_rotation: Optional[float] = None) -> Dict[s
     Local coordinates, in feet: +a is toward the back of the instrument, -a the
     front, c is across. The origin is the yoke — the hanging point.
 
-    An entry may carry accessories after a pipe: `S4 26|top hat+gobo`. The key
-    in the reply is the WHOLE entry, so the browser looks a symbol up by the
-    same string it asked for and two units of one type with different
-    accessories stay distinct. Unknown accessories come back in `warnings`
-    rather than being dropped — a barn door nobody drew is a barn door nobody
-    hangs.
+    An entry may carry accessories after a pipe, and the LAMP after a second:
+    `S4 26|top hat+gobo|Source 4WRD II`. The key in the reply is the WHOLE
+    entry, so the browser looks a symbol up by the same string it asked for and
+    two units of one type stay distinct when they differ. Unknown accessories
+    come back in `warnings` rather than being dropped — a barn door nobody drew
+    is a barn door nobody hangs.
+
+    ⭐ THE LAMP IS PART OF THE KEY because a retrofit changes the symbol: a
+    Source Four with a 4WRD in it gets §6.16 source dots. Keying on type alone
+    would let a retrofitted unit and a tungsten one share a cache entry, and
+    whichever was asked for first would draw both.
     """
     out: Dict[str, Any] = {}
     warnings: List[str] = []
     for t in [x.strip() for x in types.split(",") if x.strip()]:
-        base, _, acc_s = t.partition("|")
-        acc = [a.strip() for a in acc_s.split("+") if a.strip()]
-        shape = sym.for_type(base.strip(), lens_rotation)
+        # base | accessories | lamp. Accessories are split on "+", so they can
+        # never contain a pipe and the three parts stay unambiguous.
+        parts = t.split("|")
+        base = parts[0].strip()
+        acc = [a.strip() for a in (parts[1] if len(parts) > 1 else "").split("+") if a.strip()]
+        lamp = parts[2].strip() if len(parts) > 2 else None
+        shape = sym.for_type(base, lens_rotation, lamp)
         if acc:
             shape, unknown = sym.with_accessories(shape, acc)
-            warnings += [f"{base.strip()}: {u}" for u in unknown]
+            warnings += [f"{base}: {u}" for u in unknown]
         out[t] = _prims_json(shape)
     return {"symbols": out, "warnings": warnings,
             "source": "USITT RP-2 (2006), plates pp.4-9"}

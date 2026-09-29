@@ -237,17 +237,29 @@ export function isPlot(x: unknown): x is Plot {
   return !!p && p.formatVersion === 1 && !!p.room && Array.isArray(p.instruments);
 }
 
-/** The symbol cache key for one instrument: its type, plus its accessories.
+/** The symbol cache key for one instrument: type, accessories, lamp.
  *
  * Two units of the same type with different accessories are different SHAPES,
  * so they cannot share a cache entry keyed on type alone. Built in one place
  * because main.ts asks the server for these keys and render.ts looks them up —
  * if the two ever spelled a key differently the symbol would silently fall back
  * to a plain ring and nobody would know why.
+ *
+ * ⭐ THE LAMP IS IN THE KEY because a retrofit changes the shape: a Source Four
+ * with a 4WRD gains §6.16 source dots. Without it the first S4 asked for would
+ * answer for every other S4 on the plot, retrofitted or not.
+ *
+ * ⚠ WHICH lamps change the symbol is the SERVER's business, not this file's.
+ * The lamp is sent whenever there is one and the answer comes back identical
+ * for a tungsten unit — a wasted cache slot, against keeping a second copy of
+ * "a 4WRD is an LED" in the browser to go stale. That copy is exactly what put
+ * the lamp dropdown a whole release behind LAMP_MF.
  */
 export function symbolKey(inst: Instrument): string {
   const acc = (inst.accessories ?? []).map(a => a.trim()).filter(Boolean);
-  return acc.length ? `${inst.type}|${acc.join("+")}` : inst.type;
+  const lamp = (inst.lamp ?? "").trim();
+  if (!acc.length && !lamp) return inst.type;
+  return `${inst.type}|${acc.join("+")}|${lamp}`;
 }
 
 /** Is this position a pipe that STANDS UP — a boom, box boom, ladder, torm?

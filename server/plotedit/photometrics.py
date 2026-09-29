@@ -320,6 +320,36 @@ LAMP_MF = {
         "S4 26 EDLT": 0.58, "S4 36 EDLT": 0.58},
 }
 
+# ⭐ HOW MANY COLOURS A RETROFIT BURNER MAKES — which is what gets DRAWN.
+#
+# USITT's Lighting Documentation Recommended Practice (February 2025) draws an
+# LED ellipsoidal as the ordinary ERS body with dots at the lamp housing, which
+# is RP-2 §6.16's rule — "number of dots represent the number of different
+# colors" — carried onto the ERS. Its own key reads "LED ERS 26-DEGREE
+# (10-CHANNEL)".
+#
+# A 4WRD is fixed white, so it is ONE colour and one dot. Not zero: the dot is
+# what says the barrel is an LED at all, and that is the whole reason to draw it.
+#
+# ⚠ THIS IS A LAMP FACT, NOT A DRAWING FACT, which is why it lives here beside
+# LAMP_WATTS rather than in symbols.py. What symbols.py decides is where the
+# dots go; how many there are is a property of the burner.
+LAMP_COLORS = {
+    "Source 4WRD II": 1,
+    "Source 4WRD II Gallery": 1,
+    "Source 4WRD II Daylight Gallery": 1,
+}
+
+
+def lamp_colors(lamp):
+    """Colours this lamp makes, or None when it is not an LED source at all.
+
+    None and 0 are different answers: None is "this is a tungsten lamp, draw
+    nothing", and there is no lamp that makes zero colours.
+    """
+    return LAMP_COLORS.get(str(lamp or "").strip())
+
+
 # ---------------------------------------------------------------- wattage
 #
 # ⭐ Wattage belongs to the ENGINE, not the lens tube, which is how ETC publish
