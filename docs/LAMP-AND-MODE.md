@@ -37,9 +37,15 @@ datasheet gives the 26° Cd MF for `HPL 575/115` as **.78**, and
 Two consequences worth naming:
 
 - ⚠ **The dropdown offers 3 of 22.** `main.ts` hardcodes `HPL 750, HPL 575,
-  HPL 575X`. There is no **HPL 375** — a real lamp, CdMF .66 at 26°, and the one
-  you reach for on a small rig or a tight dimmer — and no **HPL 550/77**, which
-  is the Dimmer Doubling lamp. A designer who owns those cannot record them.
+  HPL 575X`. There is no **HPL 375/115** (RT142, CdMF .66) — an ordinary 115 V
+  lamp you put in to halve the load and get more units on a circuit — and no
+  **HPL 550/77** (RT112, CdMF .77), which is a different animal: the table
+  asterisks it and both the other 77 V lamps, and the footnote reads
+  **"77 Volt HPL lamps are for use with ETC Dimmer Doubling technology only."**
+  ⭐ Those are the only two techniques for getting more light off less dimmer,
+  and they are not the same one — the 375 just draws less, while the 550/77 runs
+  two fixtures off one dimmer on half-cycles and needs the 77 V burner to make
+  full output from it. A designer who owns either cannot record it today.
 - ⚠ **The three retrofit burners are missing too.** `Source 4WRD II`, `Gallery`
   and `Daylight Gallery` went into `LAMP_MF` in v0.1.19 and never reached the
   dropdown. The data is there; the list has not caught up.
@@ -165,7 +171,10 @@ That is what makes it safe to build on.
    stock? Twenty-two is complete and a nuisance to scroll; four is a guess about
    somebody else's rig.
 2. Does **HPL 375** belong in the default list? It is a real lamp with a
-   published factor and it is currently unreachable.
+   published factor and it is currently unreachable. Same for **HPL 550/77** —
+   though that one only matters if you still run Dimmer Doubling anywhere, and
+   putting a 77 V lamp in the list where someone might pick it by mistake on an
+   ordinary dimmer is its own hazard.
 3. When the type changes and a mode is dropped, should that be **silent, a
    notice, or a confirm**? The unit's brightness changes either way.
 4. Is the **Lamp row the right place for a 4WRD** at all, or should a retrofit
