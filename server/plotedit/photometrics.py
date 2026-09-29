@@ -244,6 +244,21 @@ LAMP_MF = {
                 # three of the four.
                 "S4 EA PAR VNSP": 0.92, "S4 EA PAR NSP": 0.88,
                 "S4 EA PAR MFL": 0.80, "S4 EA PAR WFL": 0.75},
+    # ⭐ THE LOW-WATTAGE BURNER (Jerry, 2026.09.29). An ordinary 115 V lamp —
+    # no doubler, no special dimmer. You put one in to halve the load and get
+    # more units on a circuit, and you pay about a third of the light for it.
+    #
+    # 🔴 NOT THE DIMMER DOUBLING LAMP, which is the 550/77 below. The two get
+    # confused because both are ways of fitting more rig onto less dimmer, but
+    # they are different techniques: this one just draws less.
+    "HPL 375": {"S4 19": 0.71, "S4 26": 0.66, "S4 36": 0.56, "S4 50": 0.66,
+                # ETC Source Four 19/26/36/50 datasheets, "Lamps" table, row
+                # HPL 375/115 (ETC part RT142), Cd MF column — and the same four
+                # confirmed by the EDLT 19-26-36-50 datasheet p4.
+                #
+                # ⚠ NO PAR FIGURES, for the same reason as the 550/77: the PAR
+                # EA datasheet is not on file.
+                },
     # ⭐ THE DIMMER DOUBLING LAMP (Jerry, 2026.09.29). 550 W at SEVENTY-SEVEN
     # VOLTS — the low voltage is the whole point, not a typo. ETC Dimmer
     # Doubling runs two fixtures off one dimmer on opposite half-cycles, and a

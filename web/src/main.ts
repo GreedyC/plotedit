@@ -219,8 +219,9 @@ function drawInspector() {
     // ⭐ HPL 550/77 is the DIMMER DOUBLING lamp (Jerry, 2026.09.29) — 550W
     // at 77 volts, and the low voltage is the point. Nothing on the plot
     // yet says which circuits are doubled, so choosing it here is a
-    // statement about the lamp only.
-    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 550/77"],
+    // statement about the lamp only. HPL 375 next to it is an ordinary
+    // 115V lamp you fit to halve the load; the two are not the same trick.
+    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 375", "HPL 550/77"],
     modes: ["Boost Full", "Regulated Full", "Regulated 3200K", "Regulated 5600K"],
     onStatus: (msg, bad) => status(msg, bad),
     onPhotometricChange: () => { paint(); recompute(); },
