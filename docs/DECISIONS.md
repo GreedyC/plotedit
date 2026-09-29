@@ -218,3 +218,29 @@ hidden field holding a live value is the worst of the three options.
 computes the same footcandles with or without a stray lamp, and a Source Four the
 same with or without a stray mode. The value that does not apply is ignored in
 both directions, so nothing had to be cleared to make this safe.
+
+## 2026.09.29 — The Lustr's dots stay at the lens end
+
+The 4WRD symbol puts its §6.16 source dot at the **lamp housing**, because that is
+where USITT's February 2025 practice draws an LED ERS's dots and because it is
+where the retrofit physically goes. `led()` has always put a Lustr's seven dots
+in the **front half**, at the lens.
+
+So a plot with both now has source dots at opposite ends of the body.
+
+**Jerry, 2026.09.29: "lets keep the lustr dots where they are for now."** Left
+alone deliberately, not overlooked.
+
+⚠ **Do not "fix" this without asking.** Moving them is one line, and that is
+exactly the problem — it silently changes how **every Lustr on every existing
+plot** draws, including sheets already issued to a shop. A drawing convention is
+not a bug just because it is inconsistent with a newer one.
+
+⭐ **And the inconsistency is visible rather than hidden**, which is the part that
+makes it safe to live with: on a mixed plot the Lustr's cluster of seven reads as
+"LED fixture" and the retrofit's single dot at the back reads as "LED lamp in a
+conventional body". Nobody mistakes one for the other; they are only untidy
+against each other.
+
+Revisit when there is a reason to redraw the archive anyway — a symbol-library
+pass, or adopting the 2025 practice wholesale.
