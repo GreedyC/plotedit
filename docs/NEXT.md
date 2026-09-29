@@ -186,6 +186,40 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **❓ A LABEL DEFINITION — what goes in which container, editable.** *(Jerry,
+  2026.09.28.)* **A popular drafting package lets you define a label legend**: an
+  editor where any field can be assigned to almost any position around the
+  symbol, saved as a definition and applied to a plot.
+
+  **⭐ Everything about notation is currently a decision in code.** Colour and
+  focus in front across the lens, the stack behind, the unit number in the body,
+  the hexagon carrying the address when there is no dimmer — each was argued out
+  once and then frozen into `symbols.notation`. **They are good defaults and
+  they are not universal**: a designer whose house patches differently, or who
+  simply wants the wattage shown, has no way to say so.
+
+  ⚠ **This is not "make the notation configurable" as a tidy-up.** Three things
+  make it hard, and they are the reason to write the item down rather than start
+  it:
+
+  - **A definition has to survive the geometry.** Positions are not slots on a
+    page — the stack follows the symbol as it rotates, the colour label steps
+    further out when it would touch a neighbour, and containers clear the symbol
+    by its own radius. An editor that offers "top left" would be lying.
+  - **The shapes carry meaning.** RP-2 §6.14.1 puts the sense in the container,
+    not the position, so letting a user draw a circuit in a circle would produce
+    a plot that reads wrong to anyone who knows the standard. Whatever the editor
+    allows, **the key has to explain what the plot actually did** — which is
+    already true for the address in the hexagon.
+  - **Screen and paper both have to obey it.** `symbols.notation` draws the
+    paper and `render.ts` draws the screen, and they already differ on purpose:
+    the screen draws only the channel. A definition would have to say what it
+    means for a view that deliberately shows less.
+
+  **➡ The cheap first step is not an editor.** It is naming the current
+  arrangement as *a* definition — the default one — so there is something for a
+  second one to differ from. Until that exists, "configurable" has no shape.
+
 - **❓ Adding a fixture type — open discussion in `docs/FIXTURE-TYPES.md`.**
   Address shapes instead of bare channel counts, whether a type could arrive as
   a package rather than as code, and a four-rung ladder for making it easier.
