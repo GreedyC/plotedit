@@ -6,10 +6,13 @@
 Uses FastAPI's TestClient, so no server needs to be running.
 """
 import sys
+import json
+import os
 
 from fastapi.testclient import TestClient
 
 from plotedit.api import app
+from plotedit import scaled_pdf as sp
 
 client = TestClient(app)
 FAILS = []
@@ -159,6 +162,58 @@ check("a plot that is not there is a 404", client.get("/plots/nope.json").status
 check("the listing names the folder", "folder" in client.get("/plots").json(), True)
 
 print()
+
+# ⭐ BOTH OF THESE CAME FROM ONE TESTER IN ONE EMAIL. Leo, 2026.09.30: "I created
+# a test file, and I wonder if there's a way to open the demo file? And how to
+# set the size of the paper... Seems I'm stuck in a letter size paper in drafting
+# and an arch D for PDF export."
+print("\nthe sheets are served, not typed into the browser")
+_pg = client.get("/pages").json()
+_imp = [r["name"] for r in _pg["imperial"]]
+_met = [r["name"] for r in _pg["metric"]]
+check("imperial sheets are offered", "ARCH_E" in _imp, True)
+check("...largest last", _imp[-1], "ARCH_E")
+check("metric sheets are separate", _met, ["A4", "A3"])
+# 🔴 A metric plot offered ARCH D is the same error as one offered 1/4".
+check("the two lists do not overlap", set(_imp) & set(_met), set())
+check("every sheet in PAGES is in one of them",
+      set(_imp) | set(_met), set(sp.PAGES))
+check("there is a default", _pg["default"], "ARCH_D")
+check("...and it is a real sheet", _pg["default"] in _imp, True)
+check("labels carry the size", [r["label"] for r in _pg["imperial"] if r["name"] == "ARCH_E"],
+      ['ARCH E (36 x 48 in)'])
+
+print("\nthe sheet actually changes the paper")
+_plot = json.load(open(os.path.join(os.path.dirname(__file__), "..", "samples",
+                                    "demo.plot.json"), encoding="utf-8"))
+
+
+def _sheet_inches(page):
+    r = client.post("/export/pdf", json={"plot": _plot, "page": page, "scale": "1/4"})
+    if r.status_code != 200:
+        return r.status_code
+    import pymupdf as _mu
+    d = _mu.open(stream=r.content, filetype="pdf")
+    return (round(d[0].rect.width / 72), round(d[0].rect.height / 72))
+
+
+check("ARCH D", _sheet_inches("ARCH_D"), (36, 24))
+check("ARCH E — the one the tester asked for", _sheet_inches("ARCH_E"), (48, 36))
+# ⚠ And a sheet too small still REFUSES rather than clipping. Being able to
+# choose the paper must not become a way to issue a cropped plot.
+check("a sheet too small refuses", _sheet_inches("TABLOID"), 422)
+
+print("\nwhat shipped with it can be opened again")
+_s = client.get("/samples").json()["samples"]
+check("the demo is listed", [x["name"] for x in _s], ["demo.plot.json"])
+check("...with its show name", _s[0]["show"], "The Odd Couple")
+check("it reads back", client.get("/samples/demo.plot.json").json()["plot"]["show"],
+      "The Odd Couple")
+check("an unknown sample is 404", client.get("/samples/nope.plot.json").status_code, 404)
+# 🔴 The name is matched against the listing, never joined onto a path.
+check("traversal is refused",
+      client.get("/samples/..%2F..%2Fplots%2Fsample.plot.json").status_code, 404)
+
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

@@ -186,6 +186,25 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **🔴 `_fits` COMPARES A SPAN AGAINST A SHEET, AND THE RENDERER PLACES BY
+  ORIGIN.** Found 2026.09.30 while adding A2/A1/A0 to `PAGES`.
+
+  A2 is 387 sq in, which drops it between TABLOID and ARCH C in the
+  area-sorted list the clipping advice walks. So *"Or keep 1/4" on A2 portrait"*
+  started appearing — and **A2 does not hold the drawing**. `test_package`
+  caught it the only way it could: it renders the sheet the advice recommends
+  and checks it really fits. It clipped by 0.4 feet.
+
+  **The bug is older than the A series.** `_fits` asks whether the sheet is
+  wider than the drawing's *span*; the renderer draws from an origin, so a
+  drawing narrower than the paper can still run off the right of it. No sheet in
+  the table happened to land in the gap until A2 did.
+
+  ⚠ **A2, A1 and A0 stay out until this is fixed** — the known-issues note has
+  promised them for a while, and they are three lines of arithmetic, but
+  **advice that sends somebody to buy paper that does not help is worse than no
+  advice.** Fix `_fits` first, then add the rows.
+
 - **🔴 NOTATING DIMMER DOUBLERS — raised by Jerry 2026.09.29, deliberately
   deferred.** The `HPL 550/77` lamp went in the same day, so a doubled rig can
   now be described *at the lamp*. **It cannot be described at the circuit**, and

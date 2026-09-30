@@ -40,8 +40,37 @@ PAGES = {  # inches, portrait
     "LETTER": (8.5, 11), "LEGAL": (8.5, 14), "TABLOID": (11, 17),
     "ARCH_A": (9, 12), "ARCH_B": (12, 18), "ARCH_C": (18, 24),
     "ARCH_D": (24, 36), "ARCH_E": (36, 48),
+    # 🔴 A2, A1 AND A0 ARE STILL MISSING, AND THE REASON IS NOT LAZINESS.
+    # Adding them (2026.09.30) broke the clipping advice: A2 is 387 sq in, which
+    # drops it between TABLOID and ARCH C, so "move to this sheet" started
+    # recommending A2 — and A2 does not actually hold the drawing.
+    #
+    # `_fits` below compares the drawing's SPAN against the sheet, while the
+    # renderer places by ORIGIN. A drawing narrower than the paper can still run
+    # off the right of it, which is exactly what test_package caught: A2 was
+    # recommended, rendered, and clipped by 0.4 feet.
+    #
+    # ⚠ So the A series waits on fixing `_fits`, not on typing three more rows.
+    # Advice that sends somebody to buy paper that does not help is worse than
+    # advice that sends them one size larger than they needed.
     "A4": (8.27, 11.69), "A3": (11.69, 16.54),
 }
+
+# ⚠ WHICH SHEETS BELONG TO WHICH SYSTEM. Offering A1 on an imperial plot, or
+# ARCH D on a metric one, is the same error the scale menu already refuses: a
+# drawing issued on a sheet the reader does not stock. LETTER and TABLOID sit on
+# the imperial side because that is where they are used, whatever ISO calls them.
+PAGES_IMPERIAL = ("LETTER", "LEGAL", "TABLOID",
+                  "ARCH_A", "ARCH_B", "ARCH_C", "ARCH_D", "ARCH_E")
+PAGES_METRIC = ("A4", "A3")
+
+# 🔴 AND THE TWO MUST AGREE. The first cut of this listed A2, A1 and A0 here
+# while the revert above took them out of PAGES, so /pages raised a KeyError and
+# answered 500. The app caught it — the sheet menu fell back to ARCH D and said
+# so in the console — but nothing in the suites did.
+assert set(PAGES) == set(PAGES_IMPERIAL) | set(PAGES_METRIC), (
+    "every sheet in PAGES belongs to exactly one system: "
+    f"{sorted(set(PAGES) ^ (set(PAGES_IMPERIAL) | set(PAGES_METRIC)))}")
 SCALES = {"1/8": 0.125, "1/4": 0.25, "3/8": 0.375, "1/2": 0.5, "3/4": 0.75, "1": 1.0}
 GREEN, BROWN = HexColor("#256948"), HexColor("#994C00")   # Twin Oaks palette
 

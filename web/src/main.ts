@@ -24,7 +24,8 @@ import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          serverVersion,
          type FixtureRow, type ExportKind, type DxfPaths, type SymbolPrim,
          type BoomElevation, type PositionLabel,
-         dmxTable, gelList, type DmxTable } from "./api.js";
+         dmxTable, gelList, paperSizes, samples, readSample,
+         type DmxTable, type PaperSize } from "./api.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
@@ -41,6 +42,7 @@ let fixtureTable: Record<string, FixtureRow> = {};
  *  offer nothing rather than guessing in the meantime. */
 let dmxTable_: DmxTable | undefined;
 let gelList_: { gel: string; name: string }[] | undefined;
+let paperSizes_: { imperial: PaperSize[]; metric: PaperSize[]; default: string } | undefined;
 let basePlan: DxfPaths | null = null;
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
@@ -125,13 +127,55 @@ function fillScaleMenu(): void {
   sel.value = want.includes(chosen) ? chosen : "fit";
 }
 
+/** The sheet menu, built the same way and for the same reason as the scale one.
+ *
+ * ⚠ Imperial sheets or metric sheets, never both — ARCH D on a metric plot is
+ * the same mistake as 1/4" on one. The list comes from the SERVER; a second
+ * copy here is how the lamp dropdown fell a release behind its own table.
+ *
+ * Until /pages answers, the menu holds one entry saying what the export will do
+ * anyway, rather than sitting empty and looking broken.
+ */
+function fillPageMenu(): void {
+  const sel = $<HTMLSelectElement>("page");
+  const metric = (store.plot.units ?? "imperial") === "metric";
+  const rows = metric ? paperSizes_?.metric : paperSizes_?.imperial;
+  if (!rows) {
+    if (!sel.options.length) {
+      const o = document.createElement("option");
+      o.value = ""; o.textContent = "ARCH D";
+      sel.appendChild(o);
+    }
+    return;
+  }
+  const want = rows.map(r => r.name);
+  const have = Array.from(sel.options).map(o => o.value);
+  if (have.join() === want.join()) return;
+  const chosen = sel.value;
+  sel.replaceChildren();
+  for (const r of rows) {
+    const o = document.createElement("option");
+    o.value = r.name;
+    o.textContent = r.label;
+    o.title = `${(r.w_in * 25.4).toFixed(0)} x ${(r.h_in * 25.4).toFixed(0)} mm`;
+    sel.appendChild(o);
+  }
+  // ⭐ Keep the sheet the designer picked if it still exists on this side of the
+  // units switch; otherwise fall back to the server's default, not to the first
+  // in the list — the first is the SMALLEST, and silently issuing a D-sized plot
+  // on Letter is the kind of thing nobody notices until it is printed.
+  sel.value = want.includes(chosen) ? chosen
+            : want.includes(paperSizes_?.default ?? "") ? paperSizes_!.default
+            : want[want.length - 1]!;
+}
+
 function draw() {
   // ⚠ Before ANYTHING is formatted. The system is ambient (see geometry.ts) and
   // this is the single place it is refreshed — a draw that ran with a stale one
   // would label a metric plot in feet and look like a conversion bug rather
   // than a missing assignment.
   setUnitSystem(store.plot.units);
-  fillScaleMenu(); render(svg, store.plot, view(), computed, opts()); }
+  fillScaleMenu(); fillPageMenu(); render(svg, store.plot, view(), computed, opts()); }
 
 /** The dimmer, or the address where there is no dimmer, and which of the two it
  *  is. ⚠ ONE COLUMN CANNOT SAY WHICH ON ITS OWN — "12" is a plausible dimmer and
@@ -613,6 +657,30 @@ async function refreshOpenList(): Promise<void> {
     // The list is a convenience; failing to fetch it must not stop the editor.
     sel.title = e instanceof Error ? e.message : String(e);
   }
+  // ⭐ WHAT SHIPPED WITH IT, in its own group at the bottom. Leo, 2026.09.30:
+  // "I created a test file, and I wonder if there's a way to open the demo
+  // file?" — there was not. The demo lives in samples/ and this list reads the
+  // plots folder, so New put it permanently out of reach.
+  //
+  // 🔴 A GROUP, not another row. A sample is not the designer's work, and a
+  // list that mixes the two invites Save to overwrite something that shipped.
+  // The `sample:` prefix is what keeps openPlot from looking for it on the
+  // wrong side.
+  try {
+    const bundled = await samples();
+    if (!bundled.length) return;
+    const g = document.createElement("optgroup");
+    g.label = "Comes with plotedit";
+    for (const b of bundled) {
+      const o = document.createElement("option");
+      o.value = `sample:${b.name}`;
+      o.textContent = b.show ? `${b.show} — ${b.name}` : b.name;
+      g.appendChild(o);
+    }
+    sel.appendChild(g);
+  } catch (e) {
+    console.warn("samples unavailable:", e);
+  }
 }
 
 /** Bring in a ground plan from a PDF.
@@ -709,6 +777,22 @@ async function openPlot(name: string): Promise<void> {
   }
 }
 
+/** Open one of the plots that shipped with the program.
+ *
+ *  ⭐ ADOPTED WITH NO NAME. `savedAs` stays null, so the first Save asks where
+ *  to put it rather than writing back over the sample — a designer who opens
+ *  the demo to look at it should not be able to destroy it by pressing ⌘S.
+ */
+async function openSample(name: string): Promise<void> {
+  if (!mayDiscard("Open the demo plot")) return;
+  try {
+    await adoptPlot(await readSample(name), null);
+    status(`Opened ${name} — a copy. Save As… to keep your changes.`);
+  } catch (e) {
+    status(e instanceof Error ? e.message : String(e), true);
+  }
+}
+
 async function newFile(): Promise<void> {
   if (!mayDiscard("Start a new plot")) return;
   const show = window.prompt("What is the show called?", "Untitled");
@@ -796,6 +880,14 @@ async function boot() {
     } catch (e) {
       console.warn("gel suggestions unavailable:", e);
     }
+    // ⚠ Not fatal either. Without it the sheet menu shows ARCH D and the export
+    // sends no page, which is exactly what it did before the menu existed.
+    try {
+      paperSizes_ = await paperSizes();
+      fillPageMenu();
+    } catch (e) {
+      console.warn("paper sizes unavailable:", e);
+    }
 
     paintChrome();
     // ⚠ The room's provenance and the plot notes are not shown in the app at
@@ -831,6 +923,9 @@ async function boot() {
         // sent the plot alone and cannot be changed by a checkbox.
         await exportFile(kind, store.plot, {
           scale: $<HTMLSelectElement>("scale").value,
+          // ⚠ The sheet goes with the PDF only. A CSV has no paper.
+          ...(kind === "pdf" && $<HTMLSelectElement>("page").value
+              ? { page: $<HTMLSelectElement>("page").value } : {}),
           ...(kind === "pdf" ? {
             showPools: $<HTMLInputElement>("pools").checked,
             showFocus: $<HTMLInputElement>("focus").checked,
@@ -890,7 +985,12 @@ async function boot() {
       const sel = e.target as HTMLSelectElement;
       const name = sel.value;
       sel.value = "";
-      if (name) void openPlot(name);
+      if (!name) return;
+      // ⚠ A sample opens as UNSAVED and UNNAMED. savedAs stays null, so the
+      // first ⌘S asks where to put it instead of writing back over the file
+      // that shipped — which is the whole reason the two lists are separate.
+      if (name.startsWith("sample:")) void openSample(name.slice(7));
+      else void openPlot(name);
     });
     wirePanels();
     wireSplitter();
