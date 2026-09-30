@@ -186,8 +186,10 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
-- **🔴 THE DRAWING IS ANCHORED TO THE BOTTOM OF THE SHEET, so every spare inch
-  lands at the top.** Measured on `sample.plot.json` at `fit`, 2026.09.30, from
+- **🟡 HALF-FIXED: the drawing is centred now, and what is left is the 1.3"
+  band.** *(Centred 2026.09.30. The rest is below.)* The original finding:
+  **the drawing was anchored to the bottom of the sheet, so every spare inch
+  landed at the top.** Measured on `sample.plot.json` at `fit`, 2026.09.30, from
   Jerry's screenshots of real exports:
 
   | sheet | fit picks | white above | white below | wasted |
@@ -217,6 +219,29 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
   ⚠ **It can only move content UP, away from the bottom margin**, so the
   clipping guard stays a backstop rather than becoming the thing being fought.
+
+  **➡ WHAT WAS DONE, and what is left.** `slack_above()` centres the drawing on
+  the page and `plot_to_pdf` renders twice — once to measure, once to draw. The
+  white above roughly halved on every sheet and nothing got worse:
+
+  | | before | after |
+  |---|---|---|
+  | LETTER | 2.63" | **1.81"** |
+  | TABLOID | 5.13" | **2.95"** |
+  | ARCH C | 6.88" | **4.03"** |
+  | ARCH D | 2.38" | **2.18"** |
+  | ARCH E | 3.88" | **3.32"** |
+
+  🔴 **THE RESIDUAL IS THE 1.3" RESERVATION ITSELF, and it is exactly that.**
+  `finish()` treats the top 1.3" of every sheet as unavailable, and the lift is
+  clamped out of it so centring can never provoke a clipping warning. Nothing is
+  ever drawn there: on Letter the band runs 6.70"–8.00" and the highest ink on
+  the page reaches 5.88". The title block is at the BOTTOM.
+
+  ⚠ **It has been there since the scaffold commit** (`80e89b1`) and no comment
+  says what it is for. Removing it would close the gap completely — and it would
+  also change what the guard REFUSES, which is a decision about issued drawings
+  rather than a tidy-up. **Find out what it was reserving before taking it out.**
 
   **Second order, worth noting while here:** the scale ladder is coarse — 1/8,
   1/4, 3/8, 1/2, 3/4, 1 — so "the largest that fits" can still leave a lot

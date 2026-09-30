@@ -21,7 +21,23 @@ from plotedit.booms import BOOM_PITCH
 
 def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=None,
            pool_plane=None, show_pools=True, show_focus=True, show_labels=True,
-           rulers=None):
+           rulers=None, lift=None):
+    """Draw the plot.
+
+    ⭐ `lift` is how far up the sheet the drawing sits, in feet, and None means
+    WORK IT OUT. The origin below pads for the FOH catwalk and the boom
+    elevations so neither is clipped off the bottom or the left — it is a FLOOR,
+    and nothing ever asked what was left over above, so every spare inch landed
+    at the top. Measured 2026.09.30 on Jerry's own exports: 31% of the height
+    wasted on Letter, 38% on ARCH C, 47% on TABLOID, always with the bare 0.5"
+    margin below.
+
+    ⚠ It takes two passes because the extent is not knowable in advance — booms,
+    key, labels and the title block all contribute, and the title block is drawn
+    last. The sheet already tracks what it drew for the clipping guard, so pass
+    one measures and pass two draws. The fit search above already renders
+    repeatedly for the same reason.
+    """
     from plotedit import units as _units
     # "fit" means: zoom in as far as the sheet allows. An explicit scale is
     # still honoured — a plot issued at 1/4" stays at 1/4" when it is reissued.
@@ -36,12 +52,28 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
         # them on and then issuing with them off picks a scale far smaller than
         # the sheet can hold — a drawing correct in every dimension and half the
         # size it should be.
+        # ⚠ lift=0 through the search. Centring only ever happens on a drawing
+        # that ALREADY FITS (see below), so it cannot change which scale fits —
+        # and letting each trial run its own two passes would double the work of
+        # a search that already renders the plot six times.
         scale = largest_scale(
             lambda k, path: render(plot_path, path, scale=k, page=page,
                                    landscape=landscape, pool_plane=pool_plane,
                                    show_pools=show_pools, show_focus=show_focus,
-                                   show_labels=show_labels, rulers=rulers)[0],
+                                   show_labels=show_labels, rulers=rulers,
+                                   lift=0.0)[0],
             system=_system)
+
+    # ⭐ PASS ONE: draw it at the floor to find out how much room is left.
+    if lift is None:
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as _d:
+            _probe, _ = render(plot_path, os.path.join(_d, "probe.pdf"),
+                               scale=scale, page=page, landscape=landscape,
+                               dxf=dxf, pool_plane=pool_plane,
+                               show_pools=show_pools, show_focus=show_focus,
+                               show_labels=show_labels, rulers=rulers, lift=0.0)
+        lift = _probe.slack_above()
 
     plot = json.load(open(plot_path))
     room = plot["room"]
@@ -67,7 +99,8 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # clipping guard afterwards.
     from plotedit import booms as _B
     boom_space = _B.space_needed(plot["positions"], plot["instruments"])
-    s.origin(ft(4) + boom_space, ft(4) + (house + 1.5 if house else 0))
+    _floor_y = ft(4) + (house + 1.5 if house else 0)
+    s.origin(ft(4) + boom_space, _floor_y + (lift or 0.0))
 
     s.layer("BASE")
     # §6.18: architecture is HEAVY; the reference lines are MEDIUM and dashed;

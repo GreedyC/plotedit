@@ -254,6 +254,44 @@ class Sheet:
             from .dxf_bridge import DxfOut
             self.dxf = DxfOut()
 
+    def slack_above(self):
+        """How far up the sheet this drawing could move, in FEET.
+
+        ⭐ CENTRED ON THE PAGE, then clamped out of the guard's band. The origin
+        in plot_to_pdf is a FLOOR — it pads for the FOH catwalk and the boom
+        elevations so neither is clipped off the bottom — and nothing ever asked
+        what was left over above, so every spare inch landed at the top. Measured
+        2026.09.30 on Jerry's own exports: 2.63" of white above and 0.50" below
+        on Letter, 31% of the height doing nothing.
+
+        🔴 THE FIRST ATTEMPT CENTRED INSIDE THE GUARD'S BAND AND BARELY MOVED.
+        `finish()` treats the top 1.3" as unavailable, so the band's own centre
+        sits low on the page — Letter gained a quarter inch, and ARCH D, which
+        was already centred, was pushed 0.44" off. Centre on the PAGE; the band
+        is a limit, not a frame.
+
+        ⚠ THE CLAMP IS WHAT KEEPS THE GUARD HONEST. Nothing may be nudged into
+        the reserved strip, so this can never turn a drawing that fits into one
+        the guard reports as clipped.
+
+        🔴 AND ZERO WHEN IT DOES NOT ALREADY FIT. Moving a clipped drawing only
+        changes WHICH edge loses, and the guard's message names the edge — it
+        would start naming the wrong one. A plot that overruns wants a bigger
+        sheet or a smaller scale, and it already says so.
+        """
+        x0b, y0b, x1b, y1b = self._bounds
+        if x1b < -1e8:
+            return 0.0                       # nothing drawn
+        m = self.margin
+        page_top = self.page_pt[1] - m
+        guard_top = page_top - 1.3 * inch           # the band finish() polices
+        if y0b < m or y1b > guard_top:
+            return 0.0                              # already clipped; leave it
+        # Centre between the margins...
+        want = ((page_top - y1b) - (y0b - m)) / 2.0
+        # ...but never past the line the guard draws.
+        return max(0.0, min(want, guard_top - y1b)) / self.pt_per_ft
+
     # ---- coordinates -------------------------------------------------
     def origin(self, x_ft, y_ft):
         """Place real-world (0,0) at this many feet in from the page's lower-left margin."""

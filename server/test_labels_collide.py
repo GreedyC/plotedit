@@ -170,6 +170,57 @@ _half = len(_overlaps("ARCH_D", "1/2")[0])
 check("a half-inch plot has no colliding labels", _half, 0)
 check("...and 1/8\" is worse than 1/2\"", _eighth >= _half, True)
 
+
+# ⭐ THE DRAWING IS CENTRED ON THE SHEET, not parked on the bottom margin.
+# From Jerry's own exports, 2026.09.30: 2.63" of white above and 0.50" below on
+# Letter. The origin in plot_to_pdf is a FLOOR — it pads for the FOH catwalk and
+# the booms so neither is clipped off the bottom — and nothing asked what was
+# left over above.
+print("\nthe drawing is centred on the sheet")
+import plot_to_pdf as _P
+import tempfile as _tfd
+
+
+def _white(page, lift):
+    with _tfd.TemporaryDirectory() as d:
+        f = os.path.join(d, "x.pdf")
+        _P.render(os.path.join(os.path.dirname(__file__), "..", "plots",
+                               "sample.plot.json"),
+                  f, scale="fit", page=page, lift=lift)
+        pg = _mu.open(f)[0]
+        H = pg.rect.height
+        bb = _mu.Rect(1e9, 1e9, -1e9, -1e9)
+        for dr in pg.get_drawings():
+            if dr["rect"].get_area() > 0.80 * pg.rect.get_area():
+                continue
+            bb |= dr["rect"]
+        for w in pg.get_text("words"):
+            bb |= _mu.Rect(w[0], w[1], w[2], w[3])
+        return bb.y0 / 72, (H - bb.y1) / 72
+
+
+for _pg in ("LETTER", "TABLOID", "ARCH_C", "ARCH_D"):
+    _b_above, _ = _white(_pg, 0.0)
+    _a_above, _ = _white(_pg, None)
+    check(f"{_pg} wastes less at the top", round(_a_above, 2) <= round(_b_above, 2), True)
+
+# 🔴 ARCH D was ALREADY near-centred, and the first attempt at this pushed it
+# 0.44" off. Named because a regression there is the one that would look like an
+# improvement everywhere else.
+_d_before, _ = _white("ARCH_D", 0.0)
+_d_after, _ = _white("ARCH_D", None)
+check("ARCH D is not made worse", _d_after <= _d_before + 0.01, True)
+
+# ⚠ And centring must never create a clipping warning. The lift is clamped out
+# of the band finish() polices, so a drawing that fitted still fits.
+with _tfd.TemporaryDirectory() as _d:
+    _s, _ = _P.render(os.path.join(os.path.dirname(__file__), "..", "plots",
+                                   "sample.plot.json"),
+                      os.path.join(_d, "x.pdf"), scale="fit", page="LETTER")
+    check("centring raises no CLIPPED warning",
+          [w for w in _s.warnings if "CLIPPED" in w], [])
+
+
 if FAILS:
 
 
