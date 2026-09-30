@@ -1088,7 +1088,7 @@ records the file does not currently contain.
 
 ---
 
-## How a multi-leg position should number — open, 2026.09.30
+## How a multi-leg position should number — PARTLY ANSWERED, 2026.09.30
 
 A V or an L is one position made of two straight segments sharing one name, and
 the app now lets you make one on purpose. **Renumbering it produces an order
@@ -1141,3 +1141,21 @@ walking the pipe with a pencil, and it needs two things the app does not have:
 can be walked from whichever free end is furthest stage left. But it is a
 convention decision, not a derivation, and RP-2 §2.3.2 does not cover a bent
 position. **Jerry's call.**
+
+### ⭐ And there is now a way round it, which may be the whole answer
+
+**number by clicking** (#74) numbers a run in the order the units are clicked.
+Jerry, 2026.09.30: *"One cool feature Vectorworks has is the ability to pick a
+starting sequence number and then letting the user fix the sequence by selecting
+units."*
+
+That does not answer the question above — it **removes the need to**. The order is
+whatever order the designer walks the pipe in, so no convention has to be derived
+for which leg comes first or which end starts. It works on a V, an L, a curved
+cove and a rig somebody else hung.
+
+**What is still open** is only whether `renumber` — the one-press, geometry-sorted
+path — should learn to walk a bent run, or whether a shared name should simply
+send the reader to click instead. Today it warns: the dialog says the order came
+from the first leg and may alternate, and leaves the choice there. ⚠ That warning
+is the thing to revisit, not the interleave itself, which is now avoidable.

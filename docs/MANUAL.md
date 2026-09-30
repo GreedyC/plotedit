@@ -139,9 +139,30 @@ catches it.
 electric, pipe, grid, catwalk, truss, boom, box-boom, ladder, tormentor — a trim,
 and its ends.
 
+It **asks you what to call it**, and suggests a name nobody is using.
+
+⭐ **Draw the pipe instead of typing it.** Press **draw**, click one end on the
+plan, then the other. Six boxes describe a pipe exactly and none of them is how
+anybody thinks about one. Escape stops.
+
+⚠ **There is no draw button on a vertical position** — a boom, box boom, ladder
+or tormentor. It is a single point in plan, so there are no two ends to point at.
+Type its x and y.
+
 A **vertical** position (boom, box boom, ladder, tormentor) is a *point* in plan:
 every unit on it shares one x and y and is told apart by height. It also asks for
 a **Mount**: boom base, floor plate or flange.
+
+⭐ **Two positions may share a name, on purpose.** A V or an L is one position
+made of two straight segments — say so by giving both the same name. The app
+tells you what that means rather than stopping you: they become one heading in
+the schedule and the hookup, and one run of unit numbers.
+
+🔴 **Then the unit numbers have to be unique across both legs.** RP-2 numbers
+units per position, so unit 1 on two separate pipes is correct — but a shared name
+makes those pipes one position, and no piece of paperwork can tell two unit 1s
+apart. **+ unit** keeps them unique as you go. Merging two pipes that each had
+1-5 does not, and the position says so in red when it happens.
 
 ⭐ **Record the house's circuits on the position** if you know them. The app never
 invents circuit numbers — they depend on the house and have no set order — but it
@@ -150,12 +171,30 @@ circuit that position does not have.
 
 ### Hang units
 
-On a position, **+ unit**. **renumber** puts the units back in order along the
-pipe (RP-2 §2.3.2) after you have been moving things about. **delete** removes the
-position.
+On a position, **+ unit**. **delete** removes the position.
 
 Then drag them where they go. A unit **snaps to the nearest pipe** as you drag;
 **hold Alt** to place one deliberately off a pipe.
+
+### Numbering them
+
+Two ways, and they are for different plots.
+
+**renumber** orders the whole run by geometry — stage left to stage right on a
+batten, top down then downstage to upstage on a boom, nearest the plaster line out
+front (RP-2 §2.3.2). One press, and it shows you every move before it changes
+anything.
+
+**number by clicking** asks where to start, then you click the units in the order
+they hang. What you click is what you get. Use it where no single rule can put the
+units in order — **a V, an L, a curved cove**, or a rig somebody else hung. The
+status line says what each click replaced, **⌘Z** undoes one click, and Escape
+stops and tells you what it left behind.
+
+⚠ **Neither is a tidy-up to run without thinking.** A unit number is spiked on the
+pipe, written in the hookup the electrician is holding, and called out in the
+dark. Renumbering rewrites every one of them in the file and none of them in the
+room. **If one number is wrong, change that one by hand.**
 
 ### Point them
 
@@ -293,7 +332,7 @@ does not cover a floor.
 | **⌘S / ⇧⌘S** | Save / Save As… |
 | **Arrows** | nudge by an **inch** |
 | **Shift + arrows** | nudge by a **foot** |
-| **Escape** | deselect |
+| **Escape** | deselect — and stop drawing a pipe, numbering a run, or calibrating |
 | **Delete / Backspace** | delete the unit — **asks first** |
 
 ⭐ **Up the screen is upstage.**
@@ -314,6 +353,11 @@ Plots go in a **`plots`** folder next to `run.command`, as `.plot.json`.
 
 **Save** writes the file you are on. **Save As…** starts a new one. **Open…**
 lists what is there.
+
+**Save is greyed out when there is nothing to save**, and hovering it says so.
+⌘S says the same rather than writing. **Save As… stays live** — saving a copy
+under a new name is a real thing to want with nothing changed, and it is the only
+way to write a plot you have never saved.
 
 ⭐ **The demo is at the bottom of Open…**, under *"Comes with plotedit"*. It opens
 as **a copy with no name**, so ⌘S asks where to put it rather than writing back
