@@ -11,10 +11,11 @@
  */
 import type { Plot, Position } from "./plot.js";
 import { isVertical, resolveEnds, runOf, lengthOf, angleOf,
-         endsFromLengthAngle } from "./plot.js";
+         endsFromLengthAngle, duplicateNames, duplicateUnits,
+         nextPositionName } from "./plot.js";
 import type { Store } from "./store.js";
 import { renumber } from "./api.js";
-import { confirmDelete } from "./confirm.js";
+import { confirmDelete, confirmSharedName, sharedNameRenumberNote } from "./confirm.js";
 import { parseFeet } from "./feet.js";
 import { fmtFt } from "./geometry.js";
 
@@ -68,8 +69,8 @@ export function nextBoomHeight(
   if (below >= MIN_BOOM_GAP) return below;
 
   // No room underneath. Fall back to the widest gap BETWEEN units — the same
-  // rule a pipe uses. The new unit will be numbered last and out of order, so
-  // the caller says to press renumber.
+  // rule a pipe uses. The new unit is numbered last and so sits out of order on
+  // the boom; the caller states that, and leaves the fix to the designer.
   let best: number | undefined;
   let widest = MIN_BOOM_GAP;
   for (let k = 0; k < heights.length - 1; k++) {
@@ -131,6 +132,11 @@ export function renderPositions(
   // forEach, not an index loop: `noUncheckedIndexedAccess` is on, so
   // positions[i] is Position | undefined and every read needs a guard. The
   // callback hands back a Position that is known to exist.
+  // ⭐ ONCE for the whole panel, not once per row. Every row asks whether its
+  // name clashes, and rebuilding the set eleven times to answer eleven
+  // questions is the kind of thing that makes a panel feel slow on a big plot.
+  const clashes = duplicateNames(plot.positions);
+
   plot.positions.forEach((p) => {
     const box = document.createElement("div");
     box.className = "pos-row";
@@ -153,7 +159,31 @@ export function renderPositions(
       return v;
     };
 
-    box.appendChild(field("Name", p.name, v => set({ name: v })));
+    // ⭐ RENAMING A PIPE TAKES ITS RIG WITH IT, for the same reason changing its
+    // trim does — a unit says which position it is on by NAME, so a rename that
+    // leaves the units behind orphans every light on the pipe. They keep
+    // pointing at a name no position has any more, and drop out of the
+    // schedule, the hookup and the focus chart without a word.
+    //
+    // 🔴 FOUND BY THE WARNING BELOW TELLING PEOPLE TO DO IT. The duplicate-name
+    // note says "Rename one" — which, before this, was advice that broke the
+    // plot it was trying to fix.
+    box.appendChild(field("Name", p.name, v => {
+      const from = p.name.trim().toLowerCase();
+      const to = v.trim();
+      if (!to || to.toLowerCase() === from) { set({ name: v }); return; }
+      store.begin(null);
+      p.name = v;
+      let moved = 0;
+      for (const inst of plot.instruments) {
+        if ((inst.position ?? "").trim().toLowerCase() !== from) continue;
+        inst.position = to;
+        moved++;
+      }
+      store.commit();
+      deps.onChange();
+      if (moved) deps.onStatus?.(`${to} — ${moved} unit${moved === 1 ? "" : "s"} came with it.`);
+    }, { hint: "Every unit on this position is renamed with it" }));
     box.appendChild(field("Type", p.type ?? "electric",
       v => set({ type: v as Position["type"] }), { options: TYPES }));
     // ⭐ Moving a pipe MOVES ITS RIG. Setting the trim alone changed only the
@@ -264,6 +294,44 @@ export function renderPositions(
     note.className = "muted pos-note";
     const bits: string[] = [];
 
+    // ⭐ SHARING A NAME IS ALLOWED, and is how you say "these two segments are
+    // one position" — a V or an L. So this states the consequence rather than
+    // warning against it. Everything joins by name, so the segments are already
+    // one heading in the schedule and one run of unit numbers.
+    //
+    // ⚠ The thing that DOES go wrong is the numbering, and it is checked below.
+    const sharing = clashes.has(p.name.trim().toLowerCase());
+    if (sharing) {
+      bits.push(`shares its name with another position — they are one position `
+        + `in the schedule and number as one run`);
+    }
+
+    // 🔴 THIS is the thing that actually breaks when a name is shared. RP-2
+    // §2.3.2 numbers units per POSITION, so unit 1 on two different pipes is
+    // right — but a shared name makes those pipes one position, and then two
+    // unit 1s are two lights the paperwork cannot tell apart. The schedule, the
+    // hookup and the focus chart all address a light as "position, number".
+    //
+    // ⚠ It is not automatic. `+ unit` takes max+1 across every segment of the
+    // name, so it stays unique going forward — but MERGING two pipes that each
+    // already had units 1-5 gives 1,1,2,2,3,3,4,4,5.
+    //
+    // 🔴 AND THE NOTE DOES NOT SEND THE READER TO RENUMBER, which is what it
+    // used to do. Jerry, 2026.09.30: "you can't just renumber the units […] you
+    // can allow the user to do it, but doing automatically is bad." A unit
+    // number is not a label the file owns. It is spiked on the pipe, written in
+    // the hookup the electrician is holding, and called out in the dark. Renumber
+    // rewrites all of them in the file and none of them in the room. Changing
+    // ONE number by hand is the small fix; renumbering the run is a decision
+    // about a document that may already have gone out.
+    const dupUnits = duplicateUnits(plot.instruments, p.name);
+    if (dupUnits.length) {
+      bits.push(`🔴 ${dupUnits.length > 1 ? "UNITS" : "UNIT"} `
+        + `${dupUnits.join(", ")} ${dupUnits.length > 1 ? "are" : "is"} used twice `
+        + `on this position — the paperwork cannot tell them apart. `
+        + `Give one of each pair a free number in the inspector`);
+    }
+
     // ⭐ A trim above the ceiling cannot be hung. Nothing checked until
     // 2026.09.24, when a pipe was raised to 18' in a room with a 15' grid and
     // the tool drew it, computed levels from it and printed it without a word.
@@ -372,11 +440,15 @@ export function renderPositions(
       });
       if (outOfOrder) {
         // ⚠ Say it. A unit numbered 5 sitting between 2 and 3 on the elevation
-        // is a paperwork error waiting to happen, and the fix is one button
-        // away — but only if the reader knows to press it.
+        // is a paperwork error waiting to happen.
+        //
+        // It used to end "press renumber on X". It no longer tells anyone to do
+        // that — see the note on duplicate units above. State the fact and let
+        // the designer decide whether the order is worth rewriting the run for;
+        // on a boom that is still being built it usually is not.
         deps.onStatus?.(
-          `Unit ${nextUnit} went in above a lower one, so the numbers are out of `
-          + `order — press renumber on ${p.name}.`);
+          `Unit ${nextUnit} went in above a lower one, so ${p.name} is not in `
+          + `numerical order down the boom.`);
       }
       deps.onChange();
     });
@@ -423,7 +495,13 @@ export function renderPositions(
         const lines = r.moves.slice(0, 12)
           .map(m => `   unit ${m.from} → ${m.to}`).join("\n");
         const more = r.moves.length > 12 ? `\n   …and ${r.moves.length - 12} more` : "";
-        if (!confirm(`${r.convention}\n\n${r.changed} of ${r.count} units change:\n${lines}${more}\n\nApply?`)) return;
+        // 🔴 A shared name is two legs ordered by ONE leg's geometry, which
+        // interleaves them when they cover the same ground. Say so above the
+        // moves — the reader still decides. See `sharedNameRenumberNote`.
+        const legs = plot.positions.filter(
+          q => q.name.trim().toLowerCase() === p.name.trim().toLowerCase()).length;
+        const shared = legs > 1 ? `${sharedNameRenumberNote(p.name, legs)}\n\n` : "";
+        if (!confirm(`${shared}${r.convention}\n\n${r.changed} of ${r.count} units change:\n${lines}${more}\n\nApply?`)) return;
         store.begin(null);
         const byPos = new Map(r.instruments.map(i => [`${i.x},${i.y},${i.height ?? ""}`, i.unit]));
         const name = p.name.trim().toLowerCase();
@@ -448,9 +526,30 @@ export function renderPositions(
   const addPos = document.createElement("button");
   addPos.textContent = "+ Add position";
   addPos.addEventListener("click", () => {
+    // ⭐ THE USER NAMES IT. The old button invented `Electric ${count + 1}`,
+    // which is one delete away from a collision — the demo ships seven
+    // positions, one called "Electric 7", so deleting any of them and pressing
+    // add produced a second "Electric 7" silently.
+    //
+    // ⚠ And a clash is ALLOWED, because it is a real thing to want. A V or an L
+    // is one position made of two straight segments; sharing the name is how
+    // you say so, and the plot already treats them as one for numbering and
+    // paperwork. So: suggest a free name, say plainly when the typed one is
+    // taken and what that means, and let them go ahead.
+    const suggested = nextPositionName(plot.positions);
+    const typed = window.prompt("Name this position", suggested);
+    if (typed === null) return;                       // cancelled; add nothing
+    const wanted = typed.trim();
+    if (!wanted) {
+      deps.onStatus?.("A position needs a name.", true);
+      return;
+    }
+    const clashes = plot.positions.filter(
+      q => q.name.trim().toLowerCase() === wanted.toLowerCase()).length;
+    if (clashes && !confirmSharedName(wanted, clashes)) return;
     const n = plot.positions.length + 1;
     store.addPosition({
-      name: `Electric ${n}`,
+      name: wanted,
       type: "electric",
       x1: 0, y1: Math.min(plot.room.depth - 2, 8 + n * 4),
       x2: plot.room.width, y2: Math.min(plot.room.depth - 2, 8 + n * 4),

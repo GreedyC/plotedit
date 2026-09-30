@@ -1,10 +1,12 @@
 /** Run: cd web && npm run test:store */
 import { Store, snapToPosition } from "./store.js";
 import { plotFileName, newPlot, isPlot, resolveEnds, runOf, lengthOf, angleOf,
-         endsFromLengthAngle, type Plot } from "./plot.js";
+         endsFromLengthAngle, duplicateNames, duplicateUnits, nextPositionName,
+         type Plot } from "./plot.js";
 import { feet } from "./details.js";
 import { nextBoomHeight } from "./positions.js";
-import { deleteMessage, describeUnit } from "./confirm.js";
+import { deleteMessage, describeUnit, sharedNameMessage,
+         sharedNameRenumberNote } from "./confirm.js";
 import { parseFeet } from "./feet.js";
 
 let fails = 0;
@@ -458,6 +460,134 @@ check("a position with no length has no angle, not NaN",
       angleOf({ x1: 3, y1: 3, x2: 3, y2: 3 }), 0);
 check("length of a point is zero", lengthOf({ x1: 3, y1: 3, x2: 3, y2: 3 }), 0);
 check("a 3-4-5 pipe is 5 long", lengthOf({ x1: 0, y1: 0, x2: 3, y2: 4 }), 5);
+
+
+// ------------------------------------------------ two positions, one name
+// 🔴 A position's name is the JOIN KEY. Units say which position they are on by
+// name, so two positions called the same thing share their rig, merge in the
+// schedule and move each other's trim. Jerry, 2026.09.30: "I can see that
+// happening. Perhaps the position is a V for instance."
+console.log("\na duplicate position name is caught");
+
+const pos = (name: string) => ({ name });
+check("no clash on distinct names",
+      [...duplicateNames([pos("GRID B"), pos("GRID C")])], []);
+check("a repeat is caught",
+      [...duplicateNames([pos("V"), pos("GRID C"), pos("V")])], ["v"]);
+// ⚠ Compared the way the joins compare: trimmed and lower-cased. "Grid C" and
+// "GRID C " are the same position to every reader of the plot.
+check("case does not save you",
+      [...duplicateNames([pos("Grid C"), pos("GRID C")])], ["grid c"]);
+check("nor does a trailing space",
+      [...duplicateNames([pos("GRID C"), pos("GRID C ")])], ["grid c"]);
+check("three of a kind is still one clash",
+      [...duplicateNames([pos("V"), pos("V"), pos("V")])], ["v"]);
+// An unnamed position has its own problem; it is not this one, and reporting
+// every blank as a clash with every other blank would bury the real ones.
+check("blank names are not a clash",
+      [...duplicateNames([pos(""), pos(""), pos("GRID C")])], []);
+
+console.log("\ntwo units with the same number on one position");
+const u = (position: string, unit: number) => ({ position, unit });
+// ⭐ RP-2 numbers units PER POSITION, so unit 1 on two pipes is correct.
+check("the same number on two different pipes is fine",
+      duplicateUnits([u("GRID B", 1), u("GRID C", 1)], "GRID C"), []);
+check("...but twice on one pipe is not",
+      duplicateUnits([u("GRID C", 1), u("GRID C", 1)], "GRID C"), [1]);
+check("reported in order", duplicateUnits(
+      [u("GRID C", 3), u("GRID C", 1), u("GRID C", 3), u("GRID C", 1)], "GRID C"), [1, 3]);
+check("matched the way the joins match",
+      duplicateUnits([u("grid c", 2), u("GRID C ", 2)], "GRID C"), [2]);
+check("a unit with no number is not a duplicate",
+      duplicateUnits([{ position: "GRID C" }, { position: "GRID C" }], "GRID C"), []);
+
+
+// ------------------------------------------- sharing a name is allowed, not wrong
+// ⭐ Jerry, 2026.09.30: "let the user name the position... Then if its the same
+// name, say there is already a position with that name - let them use the same
+// name if they want." A V or an L is ONE position made of two straight
+// segments, and sharing the name is how you say so.
+console.log("\nsharing a name is offered, not refused");
+
+const _one = sharedNameMessage("V", 1);
+check("it names the position", _one.includes('"V"'), true);
+check("...and says how many already have it", _one.includes("another position"), true);
+check("two others are counted", sharedNameMessage("V", 2).includes("2 other positions"), true);
+// ⚠ The dialog must say what sharing MEANS, because that is the decision being
+// made. "Are you sure?" would ask the reader to work it out themselves.
+check("it explains the numbering", _one.includes("one run of unit numbers"), true);
+check("...and that the schedule merges them", _one.includes("schedule"), true);
+check("...and names the case it is for", /V or an L/.test(_one), true);
+// 🔴 It must not read as a refusal. This is a legitimate thing to want.
+check("it does not warn against it", /cannot|must not|error|invalid/i.test(_one), false);
+check("it ends with the question", _one.trim().endsWith("Use the same name?"), true);
+
+
+// ------------------------------------- the SUGGESTED name is one nobody is using
+// 🔴 The old button invented `Electric ${positions.length + 1}`, which is one
+// delete away from a collision: the demo ships seven positions, one called
+// "Electric 7", so deleting any of them and pressing add produced a second
+// "Electric 7" with no prompt and no warning. Reproduced in the app.
+//
+// ⚠ This is the SUGGESTION only. A clash the user types deliberately is still
+// allowed — see sharedNameMessage — because a V is a real thing to want.
+console.log("\nthe suggested position name is free");
+
+const P = (...names: string[]) => names.map(n => ({ name: n }));
+check("an empty plot starts at 1", nextPositionName(P()), "Electric 1");
+check("counts from the number of positions",
+      nextPositionName(P("a", "b", "c")), "Electric 4");
+check("skips a name already taken",
+      nextPositionName(P("Cat 1", "GRID C", "GRID D", "HR Boom", "HL Boom", "Electric 7")),
+      "Electric 8");
+check("...and keeps skipping",
+      nextPositionName(P("a", "b", "Electric 3", "Electric 4", "Electric 5")),
+      "Electric 6");
+check("case-insensitively, the way the joins compare",
+      nextPositionName(P("a", "b", "electric 3")), "Electric 4");
+
+// ⭐ The invariant, not the examples: what the button suggests is never what
+// duplicateNames flags.
+let _grow = P("Cat 1", "GRID C", "GRID D", "HR Boom", "HL Boom", "Electric 7");
+let _clean = true;
+for (let i = 0; i < 12; i++) {
+  _grow = [..._grow, { name: nextPositionName(_grow) }];
+  if (duplicateNames(_grow).size) _clean = false;
+}
+check("twelve in a row never suggests a duplicate", _clean, true);
+
+// ---------------------------------------------------------------- renumber
+// 🔴 Jerry, 2026.09.30: "you can't just renumber the units […] you can allow the
+// user to do it, but doing automatically is bad." So two things are tested: the
+// dialog SAYS what a shared name does to the order, and nothing in the UI tells
+// the reader to press the button.
+const _rn = sharedNameRenumberNote("Cove", 2);
+check("names the position", _rn.includes('"Cove"'), true);
+check("counts the legs", _rn.includes("2 positions"), true);
+check("says which leg set the order", _rn.includes("FIRST"), true);
+check("says they alternate", _rn.includes("alternate"), true);
+check("sends the reader to the moves, not to Apply",
+      _rn.includes("check the moves"), true);
+// ⚠ It must not read as a refusal — the reader is allowed to do this.
+check("does not refuse", /cannot|refus|not allowed/i.test(_rn), false);
+
+// ⭐ THE REAL REGRESSION, and the reason this block exists. The duplicate-unit
+// note used to end "Renumber fixes it across every segment of the name", which
+// pointed the reader at a button that rewrites every number on the run. It now
+// points at the one number that is wrong. Asserted against the SOURCE, because
+// the note is built inline in a DOM-rendering function.
+const _fsRn = await import("node:fs");
+const _srcRaw = _fsRn.readFileSync(new URL("./positions.ts", import.meta.url), "utf8");
+// ⚠ COMMENTS STRIPPED FIRST. The assertion is about what reaches the reader, and
+// the comments explaining this very change mention the old wording — a test that
+// failed on its own explanation would push the explanation out of the file.
+const _src = _srcRaw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+check("no note tells the reader to press renumber",
+      /press renumber|Renumber fixes/.test(_src), false);
+check("the duplicate-unit note offers the by-hand fix instead",
+      _src.includes("Give one of each pair a free number"), true);
+// And the button itself is still there — this was never about removing it.
+check("the renumber button survives", _src.includes('textContent = "renumber"'), true);
 
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

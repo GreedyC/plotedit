@@ -1085,3 +1085,59 @@ export it, but that's another day."
 ⚠ Eos asks on import whether to bring fixtures in as **Library** or **Custom**;
 ETC's manual recommends Custom. That prompt is asking how to resolve fixture
 records the file does not currently contain.
+
+---
+
+## How a multi-leg position should number — open, 2026.09.30
+
+A V or an L is one position made of two straight segments sharing one name, and
+the app now lets you make one on purpose. **Renumbering it produces an order
+nobody could hang.**
+
+Measured, not inferred — a `>` shaped cove, four units on each leg, no two at the
+same coordinate:
+
+```
+leg A   x = 0, 4, 8, 12    →  units 1, 3, 5, 7
+leg B   x = 14, 10, 6, 2   →  units 8, 6, 4, 2
+```
+
+Odds down one leg and evens back up the other, **with no warning**. The cause is
+in `positions.order`: one sort key is worked out from ONE leg's geometry — stage
+left to stage right, per RP-2 §2.3.2 — and applied to every unit on the name.
+When the legs cover the same ground along that axis, they interleave. The
+existing guard in `positions.number` misses it because it only fires when two
+units share a coordinate *exactly*, which happens at the apex and nowhere else.
+
+A V that runs one way across both legs numbers correctly (verified: 1..10), so
+this is not always wrong — which is why the browser now states the risk in the
+renumber dialog above the moves and lets the designer judge, rather than
+refusing.
+
+### 🔴 The rule not to break while fixing it
+
+Jerry, 2026.09.30: *"you can't just renumber the units"* and *"you can allow the
+user to do it, but doing automatically is bad."*
+
+A unit number is not a label the file owns. It is spiked on the pipe, written in
+the hookup the electrician is holding, and called out in the dark. Renumbering
+rewrites every one of them in the file and none of them in the room. So the fix
+here is **a better order when the designer asks for one**, never a tidy-up that
+runs by itself. Nothing calls `number()` automatically today and nothing should
+start.
+
+### The question
+
+Should a shared name number **along the run** — walk leg 1 end to end, then leg 2
+— instead of sorting the whole name on one axis? That is how you would number it
+walking the pipe with a pencil, and it needs two things the app does not have:
+
+1. **Which leg comes first.** The segments are a list in file order, which is the
+   order they were drawn, not the order they hang.
+2. **Which end of each leg is the start.** Two legs meeting at an apex means one
+   of them runs "backwards" relative to §2.3.2's stage-left rule.
+
+⚠ Both are answerable from the geometry — the legs share an endpoint, so the run
+can be walked from whichever free end is furthest stage left. But it is a
+convention decision, not a derivation, and RP-2 §2.3.2 does not cover a bent
+position. **Jerry's call.**

@@ -451,3 +451,78 @@ export function endsFromLengthAngle(
   const r = (v: number) => Math.abs(v) < 1e-9 ? 0 : Math.round(v * 1e6) / 1e6;
   return { x1, y1, x2: r(x1 + length * Math.cos(a)), y2: r(y1 + length * Math.sin(a)) };
 }
+
+/** Position names used more than once, lower-cased.
+ *
+ *  🔴 A POSITION'S NAME IS THE JOIN KEY, not a label. A unit says which position
+ *  it is on by NAME, and every consumer resolves it the same way — positions.py,
+ *  circuits.py, booms.py, labels.py, exports.py, and five places in the browser.
+ *  So two positions called the same thing is not an untidy plot, it is a broken
+ *  one:
+ *
+ *    - every unit on the name belongs to BOTH
+ *    - the schedule and the hookup merge them under one heading
+ *    - changing the trim on one moves the units hanging on the other
+ *    - renumbering renumbers across both
+ *
+ *  ⚠ Trimmed and lower-cased, because that is exactly how the joins compare
+ *  them. "Grid C" and "GRID C " are the same position to every reader of this
+ *  plot, so they must be the same clash here.
+ *
+ *  Jerry, 2026.09.30, on why it is worth catching rather than documenting:
+ *  "I can see that happening. Perhaps the position is a V for instance."
+ */
+export function duplicateNames(
+  positions: readonly { name: string }[],
+): Set<string> {
+  const seen = new Set<string>(), twice = new Set<string>();
+  for (const p of positions) {
+    const k = (p.name ?? "").trim().toLowerCase();
+    if (!k) continue;                       // an unnamed position is its own problem
+    if (seen.has(k)) twice.add(k); else seen.add(k);
+  }
+  return twice;
+}
+
+/** Unit numbers used more than once ON ONE POSITION.
+ *
+ *  ⭐ RP-2 §2.3.2 numbers units per position, so unit 1 on GRID C and unit 1 on
+ *  GRID D are two different lights and that is correct. Two unit 1s on the SAME
+ *  pipe is not — the schedule, the hookup and the focus chart all address a unit
+ *  as "position, number", and a repeat makes two lights indistinguishable in the
+ *  paperwork an electrician is holding.
+ */
+export function duplicateUnits(
+  instruments: readonly { position?: string; unit?: number }[],
+  positionName: string,
+): number[] {
+  const key = (positionName ?? "").trim().toLowerCase();
+  const seen = new Set<number>(), twice = new Set<number>();
+  for (const i of instruments) {
+    if ((i.position ?? "").trim().toLowerCase() !== key) continue;
+    if (i.unit === undefined) continue;
+    if (seen.has(i.unit)) twice.add(i.unit); else seen.add(i.unit);
+  }
+  return [...twice].sort((a, b) => a - b);
+}
+
+/** A position name not already in use: Electric 8, or 9, or 10...
+ *
+ *  🔴 `Electric ${positions.length + 1}` COLLIDES, and it is one delete away.
+ *  The demo ships seven positions, one of them called "Electric 7". Delete any
+ *  position and press add: six positions, so the new one is named "Electric 7"
+ *  and the plot now has two. Every unit on that name then belongs to both —
+ *  see `duplicateNames`.
+ *
+ *  ⚠ Counts from the number of positions, not from 1, so a plot with eight
+ *  pipes offers "Electric 9" rather than walking up from the bottom every time.
+ */
+export function nextPositionName(
+  positions: readonly { name: string }[], stem = "Electric",
+): string {
+  const taken = new Set(positions.map(p => (p.name ?? "").trim().toLowerCase()));
+  for (let n = positions.length + 1; ; n++) {
+    const candidate = `${stem} ${n}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
