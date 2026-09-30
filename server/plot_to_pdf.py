@@ -232,13 +232,21 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                  bottom=_opt.get("bottom", True),
                  side=_opt.get("side", "left"))
 
-    if room.get("source"):
-        # ⚠ This note is the one that says the room was never measured and may
-        # not be quoted. It used to be cut to 110 characters, which ended it
-        # mid-word — losing the half that named the source. Wrapped to the room
-        # now, so all of it is there and none of it is off the paper.
-        s.note(1, room["depth"] - 1.5, f"Room: {room['source']}",
-               width_ft=max(room["width"] - 2.0, 8.0))
+    # 🔴 THE ROOM SOURCE IS NO LONGER PRINTED ON THE PLOT (Jerry, 2026.09.30:
+    # "lets lose the room site visit stuff"). It was drawn inside the room at
+    # depth - 1.5, which is where a pipe label lives — on his own export
+    # "Room: Site visit 08-29-2026" sat across "ELECTRIC 7" and neither read.
+    #
+    # ⚠ IT IS STILL IN THE FILE. `room.source` is data and travels with the
+    # plot; what changed is that the sheet stops carrying it. Anything that
+    # needs the provenance reads the .plot.json, where it was always the
+    # authority — the note was a copy of it.
+    #
+    # ⚠ AND ONE THING WENT WITH IT. server/testdata/blackbox.plot.json carries
+    # "NOT MEASURED and not a real room, so nothing here may be quoted" in that
+    # field, so a PDF rendered from the fixture used to say on its face that its
+    # dimensions were invented. It no longer does. If that warning is wanted
+    # back it belongs in the title block, not across a pipe.
     s.finish()
     return s, rows
 

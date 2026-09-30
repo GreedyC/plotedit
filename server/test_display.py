@@ -149,44 +149,36 @@ check("an unknown field is still not a reason to refuse a plot",
 
 
 print()
-print("the room note reaches the paper whole")
-# It used to be cut to 110 characters, which ended the room note mid-word
-# and lost the half that named the source and said the dimension may not be
-# quoted. A note cut mid-word does not LOOK truncated.
+print("the room source is no longer printed on the plot")
+# 🔴 Jerry, 2026.09.30: "lets lose the room site visit stuff." It was drawn
+# inside the room at depth - 1.5, which is where a pipe label lives, so on a
+# real export "Room: Site visit 08-29-2026" sat across "ELECTRIC 7".
 _src = plot["room"]["source"]
 _p = os.path.join(tempfile.mkdtemp(), "note.pdf")
 render(SAMPLE, _p, scale="1/4")
 _text = fitz.open(_p)[0].get_text()
-check("the sample's note is longer than the old 110-char cut", len(_src) > 110, True)
-check("every word of it is on the sheet",
-      [w for w in _src.split() if w not in _text], [])
+check("the fixture still carries a source", bool(_src), True)
+check("...and none of it reaches the sheet",
+      [w for w in _src.split() if w in _text and len(w) > 6], [])
+# ⚠ IT IS STILL DATA. The plot file is where the provenance lives; the note was
+# a copy of it. Losing the copy must not be read as losing the record.
+check("the plot file still holds it", len(_src) > 110, True)
 
-
-def _with_source(source, width=30, depth=30):
-    """A minimal plot carrying `source`, rendered; returns its Sheet."""
-    body = {
-        "show": "note probe", "venue": "", "revision": "0", "designer": "", "studio": "",
-        "control": "dimmer-per-circuit",
-        "room": {"width": width, "depth": depth, "source": source},
-        "positions": [{"name": "E1", "type": "electric",
-                       "x1": 0, "y1": 20, "x2": width, "y2": 20, "trim": 14}],
-        "instruments": [{"unit": 1, "channel": 1, "type": "S4 26", "x": width / 2, "y": 20,
-                         "trim": 14, "focusX": width / 2, "focusY": 10, "focusH": 5.5,
-                         "position": "E1"}],
-    }
-    d = tempfile.mkdtemp()
-    jp = os.path.join(d, "p.json")
-    json.dump(body, open(jp, "w"))
-    buf = _io.StringIO()
-    with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-        sheet, _ = render(jp, os.path.join(d, "p.pdf"), scale="1/4")
-    return sheet, fitz.open(os.path.join(d, "p.pdf"))[0].get_text()
-
+print("\nbut note() still wraps, because the section uses it")
+# ⭐ RETARGETED, NOT DELETED. This used to reach note() through the room source.
+# plot_to_section still draws two of them, and a note cut mid-word does not LOOK
+# truncated — which is the bug the coverage exists for.
+_d = tempfile.mkdtemp()
 _long = " ".join(["measurement"] * 120)
-_sheet, _t = _with_source(_long)
+_ns = Sheet(os.path.join(_d, "n.pdf"), page="ARCH_D", scale="1/4",
+            landscape=True, show="note probe")
+_ns.origin(72, 72)
+_ns.note(1.0, 20.0, _long, width_ft=20.0)
+_ns.finish()
+_nt = fitz.open(os.path.join(_d, "n.pdf"))[0].get_text()
 check("a note far too long for one line still arrives in full",
-      [w for w in set(_long.split()) if w not in _t], [])
-check("...on more than one line", _t.count("measurement") > 1, True)
+      [w for w in set(_long.split()) if w not in _nt], [])
+check("...on more than one line", _nt.count("measurement") > 1, True)
 
 # ⚠ P() records the point it is GIVEN. Each wrapped line is drawn at its own
 # anchor, so the block's HEIGHT was always counted — but every anchor sits at
