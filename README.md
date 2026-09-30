@@ -10,6 +10,9 @@ It runs entirely on your own machine. Nothing is uploaded anywhere.
 **Not a CAD program.** The ground plan comes in as DXF; this never draws
 architecture. See [docs/SPEC.md](docs/SPEC.md) for scope and architecture.
 
+📖 **[The manual](docs/MANUAL.md)** — how to draft a plot with it, field by field.
+This page is what it is and how to install it; that one is how to use it.
+
 ## Why it exists
 
 Vectorworks is subscription-only and Lightwright has followed. A designer lighting
