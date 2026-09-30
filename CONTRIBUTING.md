@@ -8,6 +8,21 @@ symbols mean something fixed. Every contribution is measured against it.
 Contributions are welcome. The most common one is a **new fixture symbol**, and
 that has its own standard below.
 
+## Where the work is
+
+**[Issues tagged `help wanted`](https://github.com/jerryjonas3/plotedit/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)**
+are the ones somebody could pick up today. They carry the measurements that found
+them, so you are not starting from "something looks wrong" — you are starting
+from a number and a repro.
+
+⭐ **Say so on the issue before you start.** Not to be given permission — to stop
+two people writing the same fix on a Saturday.
+
+⚠ **Some of them explain why they have NOT been fixed**, and that is the
+interesting part rather than an apology. A drawing bug that would take three
+lines to make disappear and a week to be sure about is worth reading before you
+make it disappear.
+
 ---
 
 ## Before anything else
