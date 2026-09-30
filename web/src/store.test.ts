@@ -1,6 +1,7 @@
 /** Run: cd web && npm run test:store */
 import { Store, snapToPosition } from "./store.js";
-import { plotFileName, newPlot, isPlot, resolveEnds, runOf, type Plot } from "./plot.js";
+import { plotFileName, newPlot, isPlot, resolveEnds, runOf, lengthOf, angleOf,
+         endsFromLengthAngle, type Plot } from "./plot.js";
 import { feet } from "./details.js";
 import { nextBoomHeight } from "./positions.js";
 import { deleteMessage, describeUnit } from "./confirm.js";
@@ -415,6 +416,48 @@ s.begin(null); s.update(0, { x: 5 });        // tabbing out of an unchanged fiel
 check("...and a no-op leaves it there", s.canRedo, true);
 s.redo();
 check("redo still works", s.plot.instruments[0]!.x, 7);
+
+
+// ------------------------------------------- a pipe by its length and angle
+// 🔴 The arithmetic a designer should not have to do. A position is two
+// endpoints, so an angled pipe was always possible — by working out the far end
+// yourself, and again every time you nudged the angle. #62, raised by a tester
+// hanging truss towers at a slight angle to follow a warehouse wall.
+console.log("\na pipe can be given a length and an angle");
+
+const R4 = (n: number) => Math.round(n * 1e4) / 1e4;
+const ends = (o: { x1: number; y1: number; x2: number; y2: number }) =>
+  ({ x1: R4(o.x1), y1: R4(o.y1), x2: R4(o.x2), y2: R4(o.y2) });
+
+check("0 degrees runs across", ends(endsFromLengthAngle(0, 10, 20, 0)),
+      { x1: 0, y1: 10, x2: 20, y2: 10 });
+check("...and runOf agrees", runOf(endsFromLengthAngle(0, 10, 20, 0)), "across");
+check("90 degrees runs up and downstage", ends(endsFromLengthAngle(5, 0, 20, 90)),
+      { x1: 5, y1: 0, x2: 5, y2: 20 });
+// ⚠ cos(90°) is 6e-17, not 0. Without rounding, x2 differs from x1 by a
+// hair and runOf calls a pipe up the deck "raked".
+check("...and is not called raked by a rounding error",
+      runOf(endsFromLengthAngle(5, 0, 20, 90)), "up-and-downstage");
+check("a slight rake", ends(endsFromLengthAngle(0, 0, 20, 12)),
+      { x1: 0, y1: 0, x2: R4(20 * Math.cos(12 * Math.PI / 180)),
+        y2: R4(20 * Math.sin(12 * Math.PI / 180)) });
+
+// ⭐ The pair must round-trip, because the panel shows both and writes both.
+for (const [len, ang] of [[20, 0], [20, 90], [20, 12], [33, -35], [12.5, 180]]) {
+  const e = endsFromLengthAngle(4, 7, len!, ang!);
+  check(`round-trips at ${len}' / ${ang}deg`,
+        [R4(lengthOf(e)), R4(((angleOf(e) - ang! + 540) % 360) - 180)], [R4(len!), 0]);
+}
+
+// ⚠ The near end does NOT move. Turning a pipe swings the far end about the
+// end you first placed — the one you measured off the wall.
+const _turned = endsFromLengthAngle(4, 7, 20, 40);
+check("the near end stays put", [_turned.x1, _turned.y1], [4, 7]);
+
+check("a position with no length has no angle, not NaN",
+      angleOf({ x1: 3, y1: 3, x2: 3, y2: 3 }), 0);
+check("length of a point is zero", lengthOf({ x1: 3, y1: 3, x2: 3, y2: 3 }), 0);
+check("a 3-4-5 pipe is 5 long", lengthOf({ x1: 0, y1: 0, x2: 3, y2: 4 }), 5);
 
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

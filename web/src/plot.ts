@@ -406,3 +406,48 @@ export function runOf(p: { x1: number; y1: number; x2: number; y2: number }):
   if (dx < 0.01) return "up-and-downstage";
   return "raked";
 }
+
+/** How long a position is, in feet. */
+export function lengthOf(p: Ends): number {
+  return Math.hypot(p.x2 - p.x1, p.y2 - p.y1);
+}
+
+/** Which way a position runs, in degrees.
+ *
+ *  ⭐ 0° RUNS ACROSS and 90° runs up and downstage, which is the same fact
+ *  `runOf` names in words. Measured anticlockwise from stage right to stage
+ *  left, so a pipe raked upstage at its stage-left end has a positive angle.
+ *
+ *  ⚠ A position with no length has no angle, and returns 0 rather than the
+ *  NaN `atan2(0, 0)` would give — a NaN here would reach an input box.
+ */
+export function angleOf(p: Ends): number {
+  const dx = p.x2 - p.x1, dy = p.y2 - p.y1;
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return 0;
+  return Math.atan2(dy, dx) * 180 / Math.PI;
+}
+
+/** The far end of a pipe, from its near end, a length and an angle.
+ *
+ *  🔴 THIS IS THE ARITHMETIC A DESIGNER SHOULD NOT HAVE TO DO. A position is
+ *  stored as two endpoints, so an angled pipe was always possible — but only by
+ *  working out the far end yourself, and again every time you nudged the angle.
+ *  From a beta tester, 2026-09-30, on a corporate show in a warehouse:
+ *
+ *      "My towers are set at a slight angle to follow the walls. I was trying
+ *      to draw the pipes at an angle, but there is no way to enter an angle for
+ *      that, without doing some math to get the pipe length correct."
+ *
+ *  ⚠ The near end does NOT move. Turning a pipe swings its far end about the
+ *  end you first placed, which is the one you measured from the wall.
+ */
+export function endsFromLengthAngle(
+  x1: number, y1: number, length: number, angleDeg: number,
+): Ends {
+  const a = angleDeg * Math.PI / 180;
+  // Rounded so that a right angle is exactly a right angle. cos(90°) is 6e-17
+  // in floating point, and an x2 that differs from x1 by 6e-17 makes runOf say
+  // "raked" about a pipe that runs straight up the deck.
+  const r = (v: number) => Math.abs(v) < 1e-9 ? 0 : Math.round(v * 1e6) / 1e6;
+  return { x1, y1, x2: r(x1 + length * Math.cos(a)), y2: r(y1 + length * Math.sin(a)) };
+}

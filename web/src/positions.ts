@@ -10,12 +10,17 @@
  * seeing at once — unlike instruments, where a list of sixty would be a wall.
  */
 import type { Plot, Position } from "./plot.js";
-import { isVertical, resolveEnds, runOf } from "./plot.js";
+import { isVertical, resolveEnds, runOf, lengthOf, angleOf,
+         endsFromLengthAngle } from "./plot.js";
 import type { Store } from "./store.js";
 import { renumber } from "./api.js";
 import { confirmDelete } from "./confirm.js";
 import { parseFeet } from "./feet.js";
 import { fmtFt } from "./geometry.js";
+
+/** Two decimals, for a box a human types into. A pipe at 11.999999 degrees is
+ *  at twelve degrees, and showing the noise invites someone to retype it. */
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const TYPES = ["electric", "pipe", "grid", "catwalk", "truss",
                "boom", "box-boom", "ladder", "tormentor"] as const;
@@ -213,6 +218,43 @@ export function renderPositions(
       box.appendChild(end("Y1", p.y1, "y1"));
       box.appendChild(end("X2", p.x2, "x2"));
       box.appendChild(end("Y2", p.y2, "y2"));
+
+      // ⭐ THE SAME PIPE, SAID THE OTHER WAY. A truss tower is specified as
+      // "20 foot truss, 12 degrees off the wall", not as two coordinates — and
+      // working the far end out by hand, then again for every nudge of the
+      // angle, is the reason #62 was raised:
+      //
+      //   "My towers are set at a slight angle to follow the walls... there is
+      //    no way to enter an angle for that, without doing some math."
+      //
+      // These write x2/y2, the same fields the four boxes above write. There is
+      // no new state and nothing to keep in step — the length and the angle are
+      // READ BACK from the ends every time the panel is built, so whichever way
+      // you type, both halves agree.
+      const _ends = { x1: p.x1, y1: p.y1, x2: p.x2, y2: p.y2 };
+      box.appendChild(field("Length", round2(lengthOf(_ends)), v => {
+        const n = num(v);
+        if (n === null || n === undefined) return;
+        set(endsFromLengthAngle(p.x1, p.y1, n, angleOf(_ends)));
+        deps.onStatus?.(`${p.name} is ${fmtFt(n)} long, ${runOf({ ...p, ...endsFromLengthAngle(p.x1, p.y1, n, angleOf(_ends)) })}.`);
+      }, { feet: true, hint: "Swings the far end about X1/Y1 — the end you measured from" }));
+
+      // ⚠ NOT parseFeet. An angle is degrees, and "12" must not be read as
+      // twelve feet by the length parser sitting next to it.
+      box.appendChild(field("Angle", round2(angleOf(_ends)), v => {
+        const a = Number(v.trim().replace(/[°\s]/g, ""));
+        if (!Number.isFinite(a)) {
+          deps.onStatus?.(`"${v}" is not an angle — degrees, so 0 runs across and 90 runs up the deck`, true);
+          return;
+        }
+        const len = lengthOf(_ends);
+        if (len < 0.01) {
+          deps.onStatus?.("Give the position a length before turning it.", true);
+          return;
+        }
+        set(endsFromLengthAngle(p.x1, p.y1, len, a));
+        deps.onStatus?.(`${p.name} is at ${round2(a)}°, ${runOf(endsFromLengthAngle(p.x1, p.y1, len, a))}.`);
+      }, { hint: "Degrees. 0 runs across, 90 runs up and downstage. Keeps the length" }));
       if ((p.type ?? "") === "catwalk" || (p.type ?? "") === "truss")
         box.appendChild(field("Width", p.width, v => { const n = num(v);
           if (n === null) return; set({ width: n }); }, { feet: true }));
