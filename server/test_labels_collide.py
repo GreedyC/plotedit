@@ -225,6 +225,142 @@ with _tfd.TemporaryDirectory() as _d:
           [w for w in _s.warnings if "CLIPPED" in w], [])
 
 
+
+# ------------------------------------------------- the key keeps out of the way
+print("\nthe instrument key stays clear of the drawing")
+import json as _json
+
+_DEMO = os.path.join(os.path.dirname(__file__), "..", "samples", "demo.plot.json")
+
+# Words the key prints. Enough of them to catch a line crossing anywhere in the
+# block, and all distinctive enough not to appear in the drawing itself.
+_KEY_WORDS = {"INSTRUMENT", "KEY", "NOTATION", "COLOR", "ACCESSORIES",
+              "hexagon", "rectangle", "circle"}
+
+
+def _struck(base):
+    """Key labels that a LONG line passes through.
+
+    🔴 The defect: a base plan offset ten feet ran its walls through "6) S4 26"
+    and four lines of NOTATION and read as a strikethrough. The clipping guard
+    never saw it, because the guard polices the sheet EDGE and the key sits
+    nowhere near the edge.
+
+    ⚠ The key draws its own little fixture symbols, so "nothing overlaps the
+    key" would fail on the key itself. A strikethrough is a LONG line — the
+    discriminator is width. A symbol is a third of an inch; a venue wall at 3/8"
+    is a foot of paper.
+    """
+    with _tfd.TemporaryDirectory() as d:
+        f = os.path.join(d, "k.pdf")
+        _P.render(_DEMO, f, scale="3/8", base=base)
+        pg = _mu.open(f)[0]
+        # ⚠ A path's rect is its BOUNDING BOX, so the sheet border alone would
+        # "intersect" every word on the page. A strikethrough is long AND thin:
+        # two inches across, under two points tall.
+        lines = [dr["rect"] for dr in pg.get_drawings()
+                 if (dr["rect"].x1 - dr["rect"].x0) > 144
+                 and (dr["rect"].y1 - dr["rect"].y0) < 2]
+
+        # 🔴 NOT Rect & Rect. A horizontal line has ZERO HEIGHT, so its
+        # intersection with anything has zero AREA and an area test can never
+        # fire — which is exactly how the first version of this passed with the
+        # fix reverted. Ask the question geometrically instead: does the line
+        # span the word horizontally, at a height inside the word's own box.
+        def crossed(w):
+            return any(ln.x0 < w[2] and ln.x1 > w[0] and w[1] <= ln.y0 <= w[3]
+                       for ln in lines)
+
+        words = [w for w in pg.get_text("words") if w[4] in _KEY_WORDS]
+        return sorted({w[4] for w in words if crossed(w)}), len(words)
+
+
+# ⚠ The base plan is built HERE rather than read from a .dxf, because *.dxf is
+# gitignored and a test that quietly skips on CI is a test that is not run.
+#
+# 🔴 AND IT IS A COMB, not the room's outline, which is the version that taught
+# me this. A horizontal line only strikes a word if it lands on that word's own
+# 7pt row, so three walls at three heights sailed between the key's lines and
+# the test passed with the fix REVERTED. A line every foot cannot miss.
+_ROOM = _json.load(open(_DEMO))["room"]
+_W, _D = _ROOM["width"], _ROOM["depth"]
+_off = {"paths": [{"layer": "WALL",
+                   "points": [[10, 4 + n], [10 + _W, 4 + n]]}
+                  for n in range(0, int(_D) + 1)]}
+_hit_plain, _n = _struck(None)
+_hit_base, _ = _struck(_off)
+check("the key prints its labels at all", _n > 0, True)
+check("nothing strikes the key with no base plan", _hit_plain, [])
+check("...nor with one offset ten feet", _hit_base, [])
+
+# ⭐ And the rule underneath it, tested directly: the key is placed clear of what
+# is ACTUALLY drawn, not of the room. Pools are the thing that reaches past the
+# room on an ordinary plot, so turning them on must move the key.
+from plotedit import scaled_pdf as _SP
+
+_reach = {}
+_orig_dr = _SP.Sheet.drawn_right_ft
+
+
+def _spy(self):
+    v = _orig_dr(self)
+    _reach[id(self)] = v
+    return v
+
+
+_SP.Sheet.drawn_right_ft = _spy
+try:
+    with _tfd.TemporaryDirectory() as _d:
+        _reach.clear()
+        _P.render(_DEMO, os.path.join(_d, "a.pdf"), scale="1/2", show_pools=False)
+        _no_pools = max(_reach.values())
+        _reach.clear()
+        _P.render(_DEMO, os.path.join(_d, "b.pdf"), scale="1/2", show_pools=True)
+        _with_pools = max(_reach.values())
+finally:
+    _SP.Sheet.drawn_right_ft = _orig_dr
+
+check("with pools off the key clears the room wall",
+      round(_no_pools, 1), round(_json.load(open(_DEMO))["room"]["width"], 1))
+check("pools push it further out", _with_pools > _no_pools + 1, True)
+
+# ---------------------------------------------- centred the other way round too
+print("\nthe drawing is centred left to right")
+
+
+def _sides(page, shift):
+    """The drawing's own margins, left and right, in inches.
+
+    ⚠ Measured from the sheet's bounds, NOT from the PDF's ink. The title block
+    and the scale bar are page furniture — drawn in page points at a fixed
+    corner, never through P() — so a bbox of everything on the page is pinned to
+    the title block at the right and reports a centred drawing as lopsided. The
+    first version of this test did exactly that and called ARCH D's genuine
+    improvement a regression.
+    """
+    with _tfd.TemporaryDirectory() as d:
+        sh, _ = _P.render(_DEMO, os.path.join(d, "x.pdf"), scale="fit",
+                          page=page, shift=shift)
+        x0, _, x1, _ = sh._bounds
+        m = sh.margin
+        return (x0 - m) / 72.0, (sh.page_pt[0] - m - x1) / 72.0
+
+
+# 🔴 Measured on the demo plot at 1/2": 4.21' of dead paper against the left
+# margin while 3.03' hung off the RIGHT — with 1.18' of slack going spare. The
+# vertical axis was fixed on 2026.09.30; the horizontal had never been measured.
+for _pg in ("LETTER", "TABLOID", "ARCH_C", "ARCH_D"):
+    _l0, _r0 = _sides(_pg, 0.0)
+    _l1, _r1 = _sides(_pg, None)
+    check(f"{_pg} is more even side to side",
+          round(abs(_l1 - _r1), 2) <= round(abs(_l0 - _r0), 2) + 0.01, True)
+
+# ⚠ And it must never create a clipping warning, the same clamp the lift has.
+with _tfd.TemporaryDirectory() as _d:
+    _s2, _ = _P.render(_DEMO, os.path.join(_d, "x.pdf"), scale="fit", page="ARCH_D")
+    check("side-to-side centring raises no CLIPPED warning",
+          [w for w in _s2.warnings if "CLIPPED" in w], [])
+
 if FAILS:
 
 

@@ -72,6 +72,28 @@ export async function readSample(name: string): Promise<Plot> {
   return (await r.json()).plot as Plot;
 }
 
+/** One page of a PDF as a picture, for a plan with no vectors in it.
+ *
+ *  ⭐ A photograph of a room cannot be traced into geometry — tracing it would
+ *  invent walls. It CAN be a backdrop to draw over, which is what this is for.
+ *  🔴 The result is never a measurement. See the endpoint.
+ */
+export async function pdfRaster(
+  file: File, page: number,
+): Promise<{ href: string; wIn: number; hIn: number }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("page", String(page));
+  const r = await fetch("/api/import/pdf/raster", { method: "POST", body: fd });
+  if (!r.ok) throw new Error(await r.text() || `raster failed: ${r.status}`);
+  const blob = await r.blob();
+  return {
+    href: URL.createObjectURL(blob),
+    wIn: Number(r.headers.get("X-Page-Width-In") ?? 0),
+    hIn: Number(r.headers.get("X-Page-Height-In") ?? 0),
+  };
+}
+
 /** The fixture table, so the inspector can offer real types rather than free text. */
 export async function fixtures(): Promise<Record<string, FixtureRow>> {
   const r = await fetch("/api/fixtures");
@@ -116,6 +138,11 @@ export interface ExportOptions {
   /** Print a dimension scale along the plan's edges. PDF only — the browser
    *  does not draw them. */
   rulers?: boolean;
+  /** The imported base plan, already placed in stage feet — `paths`, and an
+   *  `image` as base64 PNG with its rectangle. ⚠ Sent as DRAWN rather than as
+   *  imported, so the server does not redo the placement arithmetic. Two copies
+   *  of it is exactly how the screen and the paper drift apart. */
+  base?: Record<string, unknown>;
 }
 
 export async function exportFile(
@@ -137,6 +164,7 @@ export async function exportFile(
       ...(opts.showLabels === undefined ? {} : { showLabels: opts.showLabels }),
       ...(opts.poolPlane === undefined ? {} : { poolPlane: opts.poolPlane }),
       ...(opts.rulers ? { rulers: true } : {}),
+      ...(opts.base ? { base: opts.base } : {}),
     }),
   });
   if (!r.ok) {

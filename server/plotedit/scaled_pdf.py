@@ -292,11 +292,72 @@ class Sheet:
         # ...but never past the line the guard draws.
         return max(0.0, min(want, guard_top - y1b)) / self.pt_per_ft
 
+    def slack_left(self):
+        """How far RIGHT this drawing should move to sit centred, in FEET.
+
+        Negative means move left. The horizontal twin of `slack_above`, and the
+        same underlying fault: the origin in plot_to_pdf pads a fixed four feet
+        plus whatever the boom elevations need, which is a FLOOR, and nothing
+        ever asked what was left over on the other side. Measured on the demo
+        plot at 1/2": 4.21 feet of dead paper against the left margin while 3.03
+        feet hung off the right — with 1.18 feet of slack going spare.
+
+        ⭐ THE RULE IS THE SPAN, NOT THE CURRENT CLIPPING, and that is where this
+        deliberately parts company with `slack_above`. That one gives up the
+        moment anything is clipped, on the reasoning that moving a clipped
+        drawing only changes which edge loses. True when the drawing is too
+        wide — and false when it is merely parked badly, which is this case
+        exactly. So: centre whenever the SPAN fits between the margins, and
+        centring then cannot clip anything, because a span that fits, centred,
+        has margin to spare on both sides by construction.
+
+        🔴 A drawing WIDER than the sheet gets nothing. There is no placement
+        that saves it, the guard names the edge and the scale that would work,
+        and nudging it would only rename the edge.
+        """
+        x0b, y0b, x1b, y1b = self._bounds
+        if x1b < -1e8:
+            return 0.0                       # nothing drawn
+        m = self.margin
+        right = self.page_pt[0] - m
+        if (x1b - x0b) > (right - m):
+            return 0.0                       # too wide at any placement
+        return ((right - x1b) - (x0b - m)) / 2.0 / self.pt_per_ft
+
     # ---- coordinates -------------------------------------------------
     def origin(self, x_ft, y_ft):
         """Place real-world (0,0) at this many feet in from the page's lower-left margin."""
         self.ox = self.margin + x_ft * self.pt_per_ft
         self.oy = self.margin + y_ft * self.pt_per_ft
+
+    def base_image(self, png_bytes, x_ft, y_ft, wide_ft, tall_ft,
+                   rotate_deg=0.0, opacity=0.45):
+        """A picture of a plan, drawn under everything as a tracing backdrop.
+
+        🔴 NOT A MEASUREMENT, and it must not be mistaken for one on paper any
+        more than on screen. It is drawn faded and underneath, and the room
+        outline, the pipes and the rig are all heavier than it by §6.18.
+
+        ⚠ Drawn from BYTES, not a path. The image came up from the browser in
+        the export request; writing it to a file first would only mean deleting
+        it afterwards.
+        """
+        import io as _io
+        from reportlab.lib.utils import ImageReader
+        x0, y0 = self.P(x_ft, y_ft)
+        w = wide_ft * self.pt_per_ft
+        h = tall_ft * self.pt_per_ft
+        self.P(x_ft + wide_ft, y_ft + tall_ft)      # so the guard sees its extent
+        c = self.c
+        c.saveState()
+        try:
+            if rotate_deg:
+                c.translate(x0, y0); c.rotate(rotate_deg); c.translate(-x0, -y0)
+            c.setFillAlpha(opacity)
+            c.drawImage(ImageReader(_io.BytesIO(png_bytes)), x0, y0, w, h,
+                        mask="auto", preserveAspectRatio=False)
+        finally:
+            c.restoreState()
 
     def import_dxf(self, path, **kw):
         """Draw a venue's DXF under the plot as the base drawing. See dxf_bridge.import_into."""
@@ -316,6 +377,25 @@ class Sheet:
         b = self._bounds
         b[0], b[1], b[2], b[3] = min(b[0], px), min(b[1], py), max(b[2], px), max(b[3], py)
         return px, py
+
+    def drawn_right_ft(self):
+        """The rightmost thing drawn so far, in stage feet — or None if nothing.
+
+        🔴 For placing the instrument key. The key used to sit at a fixed four
+        feet right of the ROOM wall, which is only clear if nothing else reaches
+        past the room. Pools do, booms do, and an imported base plan certainly
+        does: a venue drawing offset ten feet ran its walls straight through
+        "6) S4 26" and four lines of NOTATION, and read as a strikethrough. The
+        clipping guard never saw it, because the guard polices the sheet EDGE
+        and the key is nowhere near the edge.
+
+        ⚠ Read this AFTER the drawing and BEFORE the key, or it answers a
+        question about a half-finished page.
+        """
+        right = self._bounds[2]
+        if right < -1e8:                      # nothing has been drawn yet
+            return None
+        return (right - self.ox) / self.pt_per_ft
 
     def L(self, feet):
         return feet * self.pt_per_ft

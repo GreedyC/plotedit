@@ -1,7 +1,7 @@
 /** Run: cd web && npm test */
 import { toScreen, toPlot, len, fitView, fohExtent, fmtFt, svgTransform, notationAnchor, symbolRadius,
          symbolTransform, lensDirection, fmtFc, setUnitSystem, unitSystem,
-         M_PER_FOOT, type View } from "./geometry.js";
+         M_PER_FOOT, placeBase, type View } from "./geometry.js";
 import { parseFeet } from "./feet.js";
 
 let fails = 0;
@@ -180,6 +180,43 @@ setUnitSystem("imperial");
 check("a bare number on an imperial plot is still feet", parseFeet("4.2"), 4.2);
 check("nonsense is still nonsense", parseFeet("banana"), null);
 check("empty is still empty", parseFeet(""), undefined);
+
+
+// --------------------------------------------------- placing an imported plan
+// 🔴 This arithmetic had no test because it had no home — it lived inside
+// main.ts, next to the DOM, where nothing can import it. It is the sum that
+// decides where a venue's own drawing sits on both the screen AND the print, so
+// a drift here shows up as the paper disagreeing with the app.
+console.log("");
+console.log("an imported base plan goes where it is put");
+const SQ: { layer: string; points: [number, number][] }[] =
+  [{ layer: "WALL", points: [[0, 0], [10, 0], [10, 20], [0, 20]] }];
+
+check("no transform hands back the very same array",
+      placeBase(SQ, { x: 0, y: 0, rotate: 0 }) === SQ, true);
+check("an offset moves every point",
+      placeBase(SQ, { x: 3, y: 4, rotate: 0 })[0]!.points,
+      [[3, 4], [13, 4], [13, 24], [3, 24]]);
+check("the layer survives the move",
+      placeBase(SQ, { x: 3, y: 4, rotate: 0 })[0]!.layer, "WALL");
+check("a quarter turn is about the STAGE ORIGIN, not the drawing",
+      placeBase(SQ, { x: 0, y: 0, rotate: 90 })[0]!.points.map(
+        ([x, y]) => [+x.toFixed(4), +y.toFixed(4)]),
+      [[0, 0], [0, 10], [-20, 10], [-20, 0]]);
+check("...so x and y can put it back",
+      placeBase(SQ, { x: 20, y: 0, rotate: 90 })[0]!.points.map(
+        ([x, y]) => [+x.toFixed(4), +y.toFixed(4)]),
+      [[20, 0], [20, 10], [0, 10], [0, 0]]);
+// ⚠ Turn, THEN move — the other order puts the offset through the rotation and
+// "x = 10'" stops meaning ten feet stage right.
+check("the turn happens before the offset, so x is still feet",
+      placeBase(SQ, { x: 10, y: 0, rotate: 180 })[0]!.points.map(
+        ([x, y]) => [+x.toFixed(4), +y.toFixed(4)]),
+      [[10, 0], [0, 0], [0, -20], [10, -20]]);
+check("a full turn comes home", placeBase(SQ, { x: 0, y: 0, rotate: 360 })[0]!
+        .points.map(([x, y]) => [Math.round(x), Math.round(y)]),
+      [[0, 0], [10, 0], [10, 20], [0, 20]]);
+check("the original is not mutated", SQ[0]!.points[1], [10, 0]);
 
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

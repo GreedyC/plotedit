@@ -61,6 +61,35 @@ def pages(path):
     return out
 
 
+def raster(path, page=1, dpi=150):
+    """One page as a PNG, for a plan that has no vectors in it.
+
+    ⭐ A PHOTOGRAPH OF A ROOM CANNOT BE TRACED INTO GEOMETRY, and pretending
+    otherwise would put invented lines on a light plot. What it CAN be is a
+    backdrop: the designer sees the room, draws over it, and the drawing is
+    theirs rather than the picture's.
+
+    🔴 IT IS NOT A SOURCE OF DIMENSIONS. Nothing measured off this image may
+    reach the paperwork. The room's width and depth are still typed in by the
+    person who measured them, and the calibration below only decides how big the
+    picture is DRAWN — never how big the room is.
+
+    Returns (png_bytes, width_in, height_in) at the page's own size, so the
+    caller knows the aspect ratio before it has scaled anything.
+    """
+    with fitz.open(path) as doc:
+        if page < 1 or page > doc.page_count:
+            raise ValueError(f"no page {page} — the file has {doc.page_count}")
+        pg = doc[page - 1]
+        # ⚠ 150 dpi, not 300. This is a tracing backdrop viewed at screen size
+        # and printed behind a plot; doubling the dpi quadruples the bytes for
+        # detail nobody is measuring off.
+        pix = pg.get_pixmap(dpi=dpi)
+        return (pix.tobytes("png"),
+                round(pg.rect.width / PT_PER_INCH, 3),
+                round(pg.rect.height / PT_PER_INCH, 3))
+
+
 def _flatten(item, height):
     """One PDF drawing item as a list of point lists, in PDF points, y UP.
 

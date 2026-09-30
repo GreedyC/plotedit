@@ -245,3 +245,32 @@ export function lensDirection(drawnDeg: number): Pt {
   const nx = 0, ny = -1;                       // the nose in the symbol's own frame
   return { x: nx * cos - ny * sin, y: nx * sin + ny * cos };
 }
+
+/** Where an imported base plan sits once the designer has placed it.
+ *
+ *  ⚠ THE ONLY COPY OF THIS ARITHMETIC. What it returns is both what gets drawn
+ *  and what gets sent to the exporter, so the screen and the paper cannot
+ *  disagree about where the venue's drawing is. The temptation is to send the
+ *  import plus the transform and let the server apply it — that is the same sum
+ *  in two languages, and `server/test_agreement.py` is the record of the last
+ *  time that made the screen and the print differ.
+ *
+ *  The turn is about the STAGE ORIGIN, not the drawing's own centre, which
+ *  matches `dxf_bridge`'s `rotate_deg` and means a 90° turn also swings the
+ *  plan sideways. That is arithmetically honest and visually surprising, so the
+ *  x and y boxes are there to put it back.
+ */
+export function placeBase<T extends { points: [number, number][] }>(
+  paths: readonly T[], xf: { x: number; y: number; rotate: number },
+): T[] {
+  const { x, y, rotate } = xf;
+  // Nothing to do is worth short-circuiting: a base plan can be thousands of
+  // points and this runs on every redraw.
+  if (!x && !y && !rotate) return paths as T[];
+  const a = rotate * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+  return paths.map(p => ({
+    ...p,
+    points: p.points.map(([px, py]) =>
+      [px * ca - py * sa + x, px * sa + py * ca + y] as [number, number]),
+  }));
+}

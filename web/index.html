@@ -287,6 +287,15 @@
        is inert by design rather than broken: `not-allowed`, and the label dims
        with its input so the pair reads as one dead row. */
     .fields label.inert { opacity:.55; }
+
+    /* 🔴 NOT an inline style, which is how this went wrong. `display:inline-flex`
+       written on the element beats the browser's own `[hidden] { display:none }`,
+       so the backdrop strip sat in the toolbar, empty, from the moment the app
+       loaded. A rule can be overridden by [hidden]; an inline style cannot. */
+    #bdbar { display: inline-flex; gap: 6px; align-items: center;
+             padding: 2px 8px; border: 1px solid var(--outline-variant);
+             border-radius: var(--shape-s); background: var(--surface-container-low); }
+    [hidden] { display: none !important; }
     .fields input:disabled, .fields select:disabled {
       opacity:.55; cursor:not-allowed; background:var(--surface-container-low); }
 
@@ -370,6 +379,16 @@
       </div>
     </div>
     <div class="bar">
+      <span id="bdbar" hidden>
+        <span id="bdwhat" class="muted" style="font-size:12px">backdrop</span>
+        <label class="muted" style="font-size:12px">x <input id="bdx" type="text" value="0'" style="width:56px"></label>
+        <label class="muted" style="font-size:12px">y <input id="bdy" type="text" value="0'" style="width:56px"></label>
+        <label class="muted" style="font-size:12px">wide <input id="bdw" type="text" style="width:62px"></label>
+        <label class="muted" style="font-size:12px">turn <input id="bdr" type="number" value="0" step="0.5" style="width:56px"></label>
+        <label class="muted" style="font-size:12px">fade <input id="bdo" type="range" min="10" max="100" value="45" style="width:70px"></label>
+        <button id="bdcal" class="small outlined" title="Click two points you know the distance between">calibrate</button>
+        <button id="bdoff" class="small outlined" title="Remove the backdrop">remove</button>
+      </span>
       <label class="filebtn" title="Import a venue ground plan — DXF or PDF">
         <span class="material-symbols-outlined">upload_file</span>
         <input type="file" id="dxf" accept=".dxf,.pdf" hidden> Ground plan…

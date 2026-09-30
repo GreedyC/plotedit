@@ -329,3 +329,95 @@ if fails:
         print("   ", f)
     sys.exit(1)
 print("all agree")
+
+
+# --------------------------------------------------------------- the base plan
+# 🔴 Until v0.1.23 this had no test because it had no code. `exports.plot_pdf`
+# accepted a base plan from the beginning and no endpoint ever passed it one, so
+# an imported venue drawing appeared on screen, survived every check a designer
+# could make, and then was simply absent from the print.
+#
+# The browser sends the base ALREADY PLACED in stage feet — see `baseForExport`
+# in main.ts. That is deliberate: the alternative is the browser sending the
+# import plus a transform and the server applying it again, which is two copies
+# of the same arithmetic and exactly how the screen and the paper drift apart.
+# This file is the record of the last time they did.
+
+def _count(base):
+    """Export the sample and count the marks on the page."""
+    body = {"plot": plot, "scale": "3/8"}
+    if base is not None:
+        body["base"] = base
+    r = client.post("/export/pdf", json=body)
+    assert r.status_code == 200, r.text
+    pdf = r.content
+    return pdf.count(b"/Subtype /Image") + pdf.count(b"/Subtype/Image"), len(pdf)
+
+
+def _png():
+    """A 2x2 red PNG, written by hand so the test needs no image library."""
+    import base64
+    import struct
+    import zlib
+
+    def chunk(tag, payload):
+        body = tag + payload
+        return struct.pack(">I", len(payload)) + body + struct.pack(
+            ">I", zlib.crc32(body) & 0xFFFFFFFF)
+
+    raw = b"".join(b"\x00" + b"\xff\x00\x00" * 2 for _ in range(2))
+    png = (b"\x89PNG\r\n\x1a\n"
+           + chunk(b"IHDR", struct.pack(">IIBBBBB", 2, 2, 8, 2, 0, 0, 0))
+           + chunk(b"IDAT", zlib.compress(raw))
+           + chunk(b"IEND", b""))
+    return base64.b64encode(png).decode()
+
+
+SQUARE = [{"layer": "WALL",
+           "points": [[10, 4], [43, 4], [43, 42], [10, 42], [10, 4]]}]
+
+plain_imgs, plain_len = _count(None)
+vec_imgs, vec_len = _count({"paths": SQUARE})
+img_imgs, img_len = _count({"image": _png(), "x": 10, "y": 4,
+                            "wide": 33, "tall": 38, "rotate": 0,
+                            "opacity": 0.45})
+
+print()
+print("the base plan reaches the paper")
+ok = True
+
+
+def check(label, got, want):
+    global ok
+    good = got == want if isinstance(want, bool) else want(got)
+    ok = ok and good
+    print(f"  {'ok  ' if good else 'FAIL'} {label:<48} {got}")
+
+
+check("a plot with no base has no image on the page", plain_imgs, lambda n: n == 0)
+check("vector paths make the file bigger", vec_len, lambda n: n > plain_len)
+check("...and are drawn as lines, not an image", vec_imgs, lambda n: n == 0)
+check("a backdrop puts exactly one image on the page", img_imgs, lambda n: n == 1)
+
+# ⚠ The transform is the browser's, so what this can check is that the server
+# HONOURS a placement rather than ignoring it: the same paths at a different
+# offset must not produce an identical file.
+moved_len = _count({"paths": [{"layer": "WALL",
+                              "points": [[p[0] + 7, p[1]] for p in SQUARE[0]["points"]]}]})[1]
+check("moving the paths changes the page", vec_len != moved_len, True)
+
+# ⭐ #63 — "an imported base plan can land off the sheet and read as nothing
+# imported." It no longer can, and the fix is one the guard was already doing
+# for everything else: a base plan counts toward the drawing's extent, so a
+# plan at 900 feet is REFUSED by name rather than clipped in silence.
+r = client.post("/export/pdf", json={
+    "plot": plot, "scale": "3/8",
+    "base": {"paths": [{"layer": "WALL", "points": [[900, 900], [901, 901]]}]}})
+check("a base 900' away is refused, not silently clipped",
+      r.status_code == 422, True)
+check("...and the refusal says how far off it is",
+      "CLIPPED" in r.json().get("detail", ""), True)
+
+if not ok:
+    sys.exit("base plan checks failed")
+print("all passed")

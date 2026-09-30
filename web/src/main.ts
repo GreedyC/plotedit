@@ -16,7 +16,7 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 /** Load a plot, draw it, let it be edited. */
-import { fitView, fohExtent, setUnitSystem, type View } from "./geometry.js";
+import { fitView, fohExtent, setUnitSystem, fmtFt, toPlot, type View, placeBase } from "./geometry.js";
 import { isPlot, symbolKey, plotFileName, newPlot, type Plot } from "./plot.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
@@ -24,8 +24,9 @@ import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          serverVersion,
          type FixtureRow, type ExportKind, type DxfPaths, type SymbolPrim,
          type BoomElevation, type PositionLabel,
-         dmxTable, gelList, paperSizes, samples, readSample,
+         dmxTable, gelList, paperSizes, samples, readSample, pdfRaster,
          type DmxTable, type PaperSize } from "./api.js";
+import { parseFeet } from "./feet.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
@@ -43,6 +44,18 @@ let fixtureTable: Record<string, FixtureRow> = {};
 let dmxTable_: DmxTable | undefined;
 let gelList_: { gel: string; name: string }[] | undefined;
 let paperSizes_: { imperial: PaperSize[]; metric: PaperSize[]; default: string } | undefined;
+// ⭐ A ground plan with no vectors in it — a photograph, a scan, a planner's
+// layout — placed as a BACKDROP to draw over. 🔴 NEVER A MEASUREMENT: the
+// room's dimensions are still typed in by whoever measured them, and `wide`
+// is only how big the picture is DRAWN.
+let baseImage: { href: string; aspect: number; x: number; y: number;
+                 wide: number; rotate: number; opacity: number } | undefined;
+// Two clicks and a real distance set the scale. Held here while the mode runs.
+let calibrating: { a?: { x: number; y: number } } | undefined;
+// ⭐ The SAME placement for a vector base. dxf_bridge has taken an offset and a
+// rotation since the beginning and no endpoint ever exposed them, so an import
+// that landed in the wrong place could only be lived with — #63.
+let baseXf = { x: 0, y: 0, rotate: 0 };
 let basePlan: DxfPaths | null = null;
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
@@ -90,7 +103,14 @@ function opts(): RenderOptions {
     showFocus: $<HTMLInputElement>("focus").checked,
     showLabels: $<HTMLInputElement>("labels").checked,
     selected: store.selected,
-    basePaths: $<HTMLInputElement>("base").checked ? basePlan?.paths : undefined,
+    basePaths: $<HTMLInputElement>("base").checked ? placedBasePaths() : undefined,
+    // ⚠ The same checkbox governs both kinds of base. A designer who turns
+    // the plan off means the imported one, whether it is lines or a picture.
+    baseImage: $<HTMLInputElement>("base").checked && baseImage
+      ? { href: baseImage.href, x: baseImage.x, y: baseImage.y,
+          wide: baseImage.wide, tall: baseImage.wide * baseImage.aspect,
+          rotate: baseImage.rotate, opacity: baseImage.opacity }
+      : undefined,
     symbols: symbolCache,
     booms: boomLayout,
     labels: labelLayout,
@@ -637,6 +657,179 @@ async function save(): Promise<void> {
   }
 }
 
+/** Lay a picture of a plan under the drawing, to trace over.
+ *
+ *  ⭐ It arrives at a GUESS — as wide as the room — and the designer calibrates
+ *  it. Landing it at some arbitrary size and leaving them to find it is the bug
+ *  already filed against the DXF import (#63); a backdrop that starts on top of
+ *  the room is at worst the wrong size, never invisible.
+ */
+async function placeBackdrop(file: File, page: number): Promise<void> {
+  status("rendering the page…");
+  const { href, wIn, hIn } = await pdfRaster(file, page);
+  baseImage = {
+    href, aspect: hIn / wIn,
+    x: 0, y: 0, wide: store.plot.room.width, rotate: 0, opacity: 0.45,
+  };
+  syncBackdropBar();
+  draw();
+  status(`Backdrop placed, guessed at ${fmtFt(baseImage.wide)} wide. `
+       + `Calibrate it: click two points you know the distance between.`);
+  startCalibration();
+}
+
+/** Click two points on the backdrop, say how far apart they really are.
+ *
+ *  ⭐ TWO POINTS, NOT A WIDTH. Nobody knows how many feet across a planner's PDF
+ *  "is" — but everybody knows how wide their own stage is, and it is somewhere
+ *  in the picture. Calibration asks for the dimension they have, not the one the
+ *  file would have to declare.
+ */
+function startCalibration(): void {
+  if (!baseImage) return;
+  calibrating = {};
+  svg.style.cursor = "crosshair";
+}
+
+function stopCalibration(): void {
+  calibrating = undefined;
+  svg.style.cursor = "";
+}
+
+/** A click while calibrating. Returns true if it was consumed. */
+function calibrationClick(x: number, y: number): boolean {
+  if (!calibrating || !baseImage) return false;
+  if (!calibrating.a) {
+    calibrating.a = { x, y };
+    status("Now click the second point.");
+    return true;
+  }
+  const dx = x - calibrating.a.x, dy = y - calibrating.a.y;
+  const drawn = Math.hypot(dx, dy);
+  if (drawn < 0.05) { status("Those are the same point — click further apart.", true); return true; }
+
+  const answer = window.prompt(
+    `How far apart are those two points, really?\n\n`
+    + `They are ${fmtFt(drawn)} apart on the backdrop as it is drawn now.`,
+    fmtFt(drawn));
+  stopCalibration();
+  if (answer === null) { status(""); draw(); return true; }
+  const real = parseFeet(answer.trim());
+  if (real === null || real === undefined || real <= 0) {
+    status(`"${answer}" is not a length — try 24', 24'-6" or 24.5`, true);
+    draw(); return true;
+  }
+  // ⚠ Scale about the image's own corner, so calibrating does not also move it.
+  const k = real / drawn;
+  baseImage.wide *= k;
+  syncBackdropBar();
+  draw();
+  status(`Backdrop scaled — it is now ${fmtFt(baseImage.wide)} wide. `
+       + `Set x and y to put it where it goes. Nothing on it is a measurement.`);
+  return true;
+}
+
+/** The imported vector plan, moved and turned to where the designer put it.
+ *  The arithmetic is `placeBase` in geometry.ts, where it is unit-tested. */
+function placedBasePaths(): { layer: string; points: [number, number][] }[] | undefined {
+  return basePlan?.paths ? placeBase(basePlan.paths, baseXf) : undefined;
+}
+
+/** What the exporter needs to draw the same base the screen is showing. */
+async function baseForExport(): Promise<Record<string, unknown> | undefined> {
+  if (!$<HTMLInputElement>("base").checked) return undefined;
+  const out: Record<string, unknown> = {};
+  const paths = placedBasePaths();
+  if (paths?.length) out.paths = paths;
+  if (baseImage) {
+    // ⚠ Fetched back out of the object URL rather than kept as base64 all
+    // along — holding both would double the memory for every plan tried.
+    const blob = await (await fetch(baseImage.href)).blob();
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]!);
+    out.image = btoa(bin);
+    out.x = baseImage.x; out.y = baseImage.y;
+    out.wide = baseImage.wide; out.tall = baseImage.wide * baseImage.aspect;
+    out.rotate = baseImage.rotate; out.opacity = baseImage.opacity;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** Show and fill the backdrop controls, or hide them when there is none.
+ *
+ *  ⭐ NUMBERS, NOT A DRAG, for the first cut. A drag is the nicer gesture and it
+ *  is the next piece of work — but a backdrop you can only shove with a mouse
+ *  cannot be aligned to a dimension you actually know, and "x = 2'-6"" can.
+ */
+function syncBackdropBar(): void {
+  const bar = $("bdbar");
+  if (!baseImage && !basePlan) { bar.hidden = true; return; }
+  bar.hidden = false;
+  // ⚠ A vector plan has no width to set and nothing to fade — its lines are
+  // drawn at the scenery weight. Those two boxes go away rather than sit there
+  // doing nothing, and calibrate goes with them: you scale a photograph, you
+  // do not scale a drawing that arrived with its own units.
+  const vectorOnly = !baseImage;
+  $("bdwhat").textContent = vectorOnly ? "base plan" : "backdrop";
+  // ⚠ The labels WRAP their input rather than carry a for=, so hide the label.
+  for (const id of ["bdw", "bdo", "bdcal"]) {
+    const el = $(id);
+    ((el.closest("label") as HTMLElement | null) ?? el).hidden = vectorOnly;
+  }
+  const b = baseImage ?? baseXf;
+  ($<HTMLInputElement>("bdx")).value = fmtFt(b.x);
+  ($<HTMLInputElement>("bdy")).value = fmtFt(b.y);
+  ($<HTMLInputElement>("bdr")).value = String(b.rotate);
+  if (baseImage) {
+    ($<HTMLInputElement>("bdw")).value = fmtFt(baseImage.wide);
+    ($<HTMLInputElement>("bdo")).value = String(Math.round(baseImage.opacity * 100));
+  }
+}
+
+function wireBackdropBar(): void {
+  const len = (id: string, set: (v: number) => void) => {
+    $(id).addEventListener("change", () => {
+      if (!baseImage && !basePlan) return;
+      const v = parseFeet(($<HTMLInputElement>(id)).value.trim());
+      // ⚠ Refuse loudly and put it back, the same as every other length box.
+      if (v === null || v === undefined) {
+        status(`"${($<HTMLInputElement>(id)).value}" is not a length — try 2'6", 30" or 2.5`, true);
+        syncBackdropBar(); return;
+      }
+      set(v); draw(); syncBackdropBar();
+    });
+  };
+  len("bdx", v => { (baseImage ?? baseXf).x = v; });
+  len("bdy", v => { (baseImage ?? baseXf).y = v; });
+  len("bdw", v => { if (v > 0) baseImage!.wide = v; });
+  $("bdr").addEventListener("input", () => {
+    if (!baseImage && !basePlan) return;
+    (baseImage ?? baseXf).rotate = Number(($<HTMLInputElement>("bdr")).value) || 0; draw();
+  });
+  $("bdo").addEventListener("input", () => {
+    if (!baseImage) return;
+    baseImage.opacity = Number(($<HTMLInputElement>("bdo")).value) / 100; draw();
+  });
+  $("bdcal").addEventListener("click", () => {
+    if (!baseImage) return;
+    startCalibration();
+    status("Click two points you know the real distance between. Escape to stop.");
+  });
+  $("bdoff").addEventListener("click", () => {
+    if (baseImage) {
+      // ⚠ Revoke the object URL. A session of trying plans would otherwise hold
+      // every one of them in memory until the tab closed.
+      URL.revokeObjectURL(baseImage.href);
+      baseImage = undefined;
+    } else if (basePlan) {
+      basePlan = null;
+      baseXf = { x: 0, y: 0, rotate: 0 };
+    } else return;
+    stopCalibration(); syncBackdropBar(); draw(); status("Base plan removed.");
+  });
+}
+
 /** Keep the Open menu in step with what is actually on disk. */
 async function refreshOpenList(): Promise<void> {
   const sel = $("open") as HTMLSelectElement;
@@ -706,8 +899,17 @@ async function importPdf(file: File): Promise<void> {
     // and looking broken.
     const usable = pages.filter(p => p.items > 0);
     if (!usable.length) {
-      status(`${file.name} has no vector drawing in it — if the plan is a scan `
-             + `there is nothing to import`, true);
+      // ⭐ NO VECTORS IS NO LONGER A DEAD END. A photograph cannot be traced into
+      // geometry, but it can be laid underneath and drawn over — which is what a
+      // designer with a planner's layout actually wants.
+      const withPics = pages.filter(p => p.images > 0);
+      const pg = (withPics[0] ?? pages[0])?.page ?? 1;
+      if (!window.confirm(
+            `${file.name} has no vector drawing in it, so there is no geometry `
+          + `to import.\n\nPlace it as a BACKDROP instead? You can draw over `
+          + `it, but nothing can be measured off it — the room size is still `
+          + `yours to type in.`)) { status(""); return; }
+      await placeBackdrop(file, pg);
       return;
     }
 
@@ -728,6 +930,7 @@ async function importPdf(file: File): Promise<void> {
 
     const got = await pdfPaths(file, page, scale.trim());
     basePlan = got;
+    baseXf = { x: 0, y: 0, rotate: 0 };
     const [x0, y0, x1, y1] = got.extents ?? [0, 0, 0, 0];
     // ⚠ Say the size out loud. At the wrong scale this is still a believable
     // drawing, just of a different building — the number is the only way to
@@ -736,7 +939,7 @@ async function importPdf(file: File): Promise<void> {
            + `${(x1 - x0).toFixed(1)}' x ${(y1 - y0).toFixed(1)}' including the sheet border. `
            + `Check that against something you measured.`);
     ($("base") as HTMLInputElement).checked = true;
-    draw();
+    syncBackdropBar(); draw();
   } catch (err) {
     status(err instanceof Error ? err.message : String(err), true);
   }
@@ -917,6 +1120,9 @@ async function boot() {
       sel.value = "";
       if (!kind) return;
       try {
+        // ⚠ Encoded ONCE — the image goes through base64 and a big plan is
+        // megabytes of string.
+        const exportBase = kind === "pdf" ? await baseForExport() : undefined;
         // ⭐ The PDF is a drawing and honours what the checkboxes are showing:
         // a designer who hides the pools to read the plan expects the print to
         // match. The CSV and patch exports have no drawing in them, so they are
@@ -932,6 +1138,11 @@ async function boot() {
             showLabels: $<HTMLInputElement>("labels").checked,
             ...(poolPlane() === undefined ? {} : { poolPlane: poolPlane() }),
             rulers: $<HTMLInputElement>("rulers").checked,
+            // 🔴 Until now the import went on the SCREEN and never on the
+            // paper. exports.plot_pdf has taken a base plan the whole time and
+            // nothing ever handed it one, so an imported venue drawing looked
+            // like it had worked right up to the moment you printed it.
+            ...(exportBase ? { base: exportBase } : {}),
           } : {}),
         });
         status("");
@@ -965,13 +1176,14 @@ async function boot() {
           ? prompt("The file declares no units. in / ft / mm / cm / m?", "in") ?? undefined
           : undefined;
         basePlan = await dxfPaths(file, want ? want.split(",").map(s => s.trim()) : undefined, units);
+        baseXf = { x: 0, y: 0, rotate: 0 };
         const [x0, y0, x1, y1] = basePlan.extents ?? [0, 0, 0, 0];
         // Unit headers lie. Say the size out loud so it can be checked against
         // a dimension that is actually known.
         status(`imported ${basePlan.paths.length} paths, ` +
                `${(x1 - x0).toFixed(1)}' x ${(y1 - y0).toFixed(1)}' — check that against something you measured`);
         $<HTMLInputElement>("base").checked = true;
-        draw();
+        syncBackdropBar(); draw();
       } catch (err) {
         status(err instanceof Error ? err.message : String(err), true);
       }
@@ -992,6 +1204,25 @@ async function boot() {
       if (name.startsWith("sample:")) void openSample(name.slice(7));
       else void openPlot(name);
     });
+    // ⭐ CALIBRATION CLICKS GO FIRST, in the CAPTURE phase, so a click meant for
+    // the backdrop never also grabs an instrument underneath it. Dragging a
+    // light by accident while measuring a wall is the kind of thing that makes
+    // somebody stop trusting a tool.
+    svg.addEventListener("pointerdown", (e) => {
+      if (!calibrating) return;
+      const r = svg.getBoundingClientRect();
+      const pt = toPlot({ x: e.clientX - r.left, y: e.clientY - r.top }, view());
+      if (calibrationClick(pt.x, pt.y)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+    // Escape abandons it rather than leaving the cursor a crosshair for ever.
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && calibrating) { stopCalibration(); status(""); }
+    });
+
+    wireBackdropBar();
     wirePanels();
     wireSplitter();
     wireZoomButtons();

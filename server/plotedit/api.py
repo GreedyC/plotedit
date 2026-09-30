@@ -348,6 +348,16 @@ class ExportRequest(BaseModel):
     # way to issue a clean plan was to delete the focus points.
     # Defaulting to True keeps every existing caller — and every saved plot —
     # drawing exactly what it drew before.
+    # 🔴 THE BASE PLAN NEVER REACHED THE PAPER. plot_pdf has always taken a
+    # dxf_path and export_pdf has never passed one, so an imported ground plan
+    # was drawn on screen and silently absent from the PDF. Found 2026.09.30
+    # while adding the raster backdrop — the same hole swallowed both kinds.
+    #
+    # ⭐ THE BROWSER SENDS WHAT IT DREW, already transformed into stage feet.
+    # The alternative is sending a transform and applying it again here, which
+    # is two copies of the same arithmetic and exactly how the screen and the
+    # paper drift apart — see test_agreement.py.
+    base: Optional[Dict[str, Any]] = None
     showPools: bool = True
     showFocus: bool = True
     showLabels: bool = True
@@ -432,7 +442,8 @@ def export_pdf(req: ExportRequest) -> Response:
                                     show_focus=req.showFocus,
                                     show_labels=req.showLabels,
                                     pool_plane=req.poolPlane,
-                                    rulers=req.rulers)
+                                    rulers=req.rulers,
+                                    base=req.base)
         # ⚠ Refuse only what makes the drawing WRONG. A clipped sheet is
         # unusable, so it is a 422. Everything else — a grazing pool, an
         # unrecognised accessory — is a true note ABOUT the plot, and refusing
@@ -536,6 +547,39 @@ async def import_pdf_pages(file: UploadFile = File(...)) -> Dict[str, Any]:
     return await _with_temp(file, ".pdf",
                             lambda p: {"pages": pdf_bridge.pages(p),
                                        "scales": list(pdf_bridge.SCALES)})
+
+
+@app.post("/import/pdf/raster")
+async def import_pdf_raster(
+    file: UploadFile = File(...),
+    page: int = Form(1),
+) -> Response:
+    """One page of a PDF as a PNG, for a plan with no vectors in it.
+
+    ⭐ THE ANSWER TO "MY GROUND PLAN IS A PHOTOGRAPH". Tracing it would invent
+    walls; showing it does not. The designer draws over the picture and the
+    drawing is theirs.
+
+    🔴 A BACKDROP, NEVER A MEASUREMENT. Nothing read off this image may reach
+    the paperwork: the room's dimensions are still typed in by whoever measured
+    them. Calibration decides how big the picture is DRAWN and nothing else.
+
+    Returned as the image itself rather than base64 in JSON — a 150dpi page is
+    around 200KB, and base64 would add a third to that for no gain.
+    """
+    # ⚠ NOT async. _with_temp calls its callback synchronously, so a coroutine
+    # here would be returned as the response body.
+    def _go(path):
+        png, w_in, h_in = pdf_bridge.raster(path, page)
+        return Response(content=png, media_type="image/png", headers={
+            # ⚠ The page's own size travels in the headers, because the browser
+            # needs the aspect ratio before it can place the image and cannot
+            # get it from a PNG drawn at an arbitrary dpi.
+            "X-Page-Width-In": str(w_in),
+            "X-Page-Height-In": str(h_in),
+            "Access-Control-Expose-Headers": "X-Page-Width-In, X-Page-Height-In",
+        })
+    return await _with_temp(file, ".pdf", _go)
 
 
 @app.post("/import/pdf")

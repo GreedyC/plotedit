@@ -61,6 +61,20 @@ export interface RenderOptions {
   selected?: number | null;
   /** A venue's DXF, already in feet. Drawn under everything, in gray. */
   basePaths?: { layer: string; points: [number, number][] }[];
+  /** A ground plan that has no vectors in it — a photograph, a scan, a planner's
+   *  layout — placed as a BACKDROP to draw over.
+   *
+   *  🔴 NEVER A MEASUREMENT. Nothing read off this image may reach the
+   *  paperwork; the room's dimensions are still typed in by whoever measured
+   *  them. `wide` and `tall` are how big it is DRAWN, in feet, which the
+   *  designer sets by calibration — they are not a claim about the building. */
+  baseImage?: {
+    href: string;
+    x: number; y: number;          // stage feet, lower-left of the image
+    wide: number; tall: number;    // stage feet
+    rotate: number;                // degrees, about the lower-left corner
+    opacity: number;
+  };
   /** RP-2 symbol outlines by fixture type, from GET /symbols. */
   symbols?: Record<string, SymbolPrim[]>;
   /** Where each position's NAME goes, from POST /labels. Without it the names
@@ -112,6 +126,21 @@ export function render(
   // draw order: room, pools, positions, focus, instruments, labels
   const gBase = layer("base"), gRoom = layer("room"), gPools = layer("pools"),
         gPos = layer("positions");
+
+  // ---- a raster backdrop, under even the vector base.
+  // ⚠ SVG's y runs DOWN and the plot's runs UP, and the whole drawing is already
+  // flipped by the viewBox. An <image> flips with it, so it is flipped back
+  // about its own box or the plan arrives upside down.
+  const bi = opts.baseImage;
+  if (bi) {
+    gBase.appendChild(el("image", {
+      href: bi.href, x: bi.x, y: bi.y, width: bi.wide, height: bi.tall,
+      opacity: String(bi.opacity),
+      preserveAspectRatio: "none",
+      transform: `rotate(${bi.rotate} ${bi.x} ${bi.y}) `
+               + `translate(0 ${2 * bi.y + bi.tall}) scale(1 -1)`,
+    }));
+  }
 
   // ---- the venue's own drawing, if one was imported.
   // Their claim, not a measurement — drawn quietly, under everything.
