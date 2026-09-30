@@ -28,6 +28,18 @@ const MOUNTS = ["", "boom-base", "floor-plate", "flange"] as const;
 
 export interface PositionDeps {
   onChange: () => void;
+  /** Put the plan into "click one end, then the other" for this position.
+   *  ⭐ The panel does not do the picking — the plan does, because that is
+   *  where the room is. This just says which pipe is being drawn.
+   *
+   *  🔴 THE POSITION ITSELF, NOT ITS NAME. The first cut passed the name and
+   *  looked it up again on the second click, and NAMES ARE NOT UNIQUE —
+   *  "+ Add position" names a new one `Electric ${count+1}`, which collides
+   *  with an existing "Electric 7" as soon as anything has been deleted. Two
+   *  rows called the same thing meant `find` returned the FIRST, so drawing on
+   *  one pipe silently moved a different one. Jerry found it in a minute:
+   *  "it seems to have blown away the last US electric in the plot." */
+  onDrawPipe?: (pos: Position) => void;
   /** Say something the user needs to read — a refusal, or a nudge to renumber.
    *  Optional so a caller that does not have a status line still compiles. */
   onStatus?: (msg: string, bad?: boolean) => void;
@@ -285,6 +297,17 @@ export function renderPositions(
 
     const actions = document.createElement("div");
     actions.className = "pos-actions";
+
+    // ⭐ DRAW IT, rather than compute it. Six boxes describe a pipe exactly and
+    // none of them is how anybody thinks about where a tower goes — you point
+    // at the two ends. #62's real ask.
+    if (!isVertical(p) && deps.onDrawPipe) {
+      const drawBtn = document.createElement("button");
+      drawBtn.textContent = "draw";
+      drawBtn.title = "Click one end on the plan, then the other";
+      drawBtn.addEventListener("click", () => deps.onDrawPipe!(p));
+      actions.appendChild(drawBtn);
+    }
 
     const addUnit = document.createElement("button");
     addUnit.textContent = "+ unit";

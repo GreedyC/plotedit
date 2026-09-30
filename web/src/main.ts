@@ -16,8 +16,9 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 /** Load a plot, draw it, let it be edited. */
-import { fitView, fohExtent, setUnitSystem, fmtFt, toPlot, type View, placeBase } from "./geometry.js";
-import { isPlot, symbolKey, plotFileName, newPlot, type Plot } from "./plot.js";
+import { fitView, fohExtent, setUnitSystem, fmtFt, toPlot, type View, placeBase, toScreen} from "./geometry.js";
+import { isPlot, symbolKey, plotFileName, newPlot, type Plot, type Position,
+         lengthOf, angleOf, runOf } from "./plot.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          positionLabels, savePlot, listPlots, loadPlot, pdfPages, pdfPaths,
@@ -52,6 +53,11 @@ let baseImage: { href: string; aspect: number; x: number; y: number;
                  wide: number; rotate: number; opacity: number } | undefined;
 // Two clicks and a real distance set the scale. Held here while the mode runs.
 let calibrating: { a?: { x: number; y: number } } | undefined;
+// ⭐ Drawing a pipe by pointing at its ends. Same shape as `calibrating` and for
+// the same reason — a mode the PLAN is in, not a dialog, because the thing you
+// are aiming at is the room.
+let drawingPipe: { pos: Position; a?: { x: number; y: number } } | undefined;
+let pipeGhost: SVGLineElement | undefined;
 // ⭐ The SAME placement for a vector base. dxf_bridge has taken an offset and a
 // rotation since the beginning and no endpoint ever exposed them, so an import
 // that landed in the wrong place could only be lived with — #63.
@@ -269,6 +275,7 @@ function drawInspector() {
   renderPositions($("positions"), store, {
     onChange: () => { draw(); recompute(); },
     onStatus: (msg, bad) => status(msg, bad),
+    onDrawPipe: (pos) => startPipeDraw(pos),
   });
   renderInspector($("inspector"), store, computed, {
     fixtures: Object.keys(fixtureTable).sort(),
@@ -756,6 +763,89 @@ async function baseForExport(): Promise<Record<string, unknown> | undefined> {
   return Object.keys(out).length ? out : undefined;
 }
 
+/** Point at one end of a pipe, then the other.
+ *
+ *  🔴 SIX BOXES DESCRIBE A PIPE EXACTLY AND NONE OF THEM IS HOW ANYBODY THINKS
+ *  ABOUT ONE. Jerry, 2026.09.30, on the length-and-angle fields: "it's a little
+ *  hokey - is there a way to let them pick an end point, then the other
+ *  endpoint?" He is right. A tower goes where you point at it.
+ *
+ *  ⚠ The near end is the FIRST click, so the pipe keeps the end you placed
+ *  deliberately — the same rule the Length and Angle boxes follow.
+ */
+function startPipeDraw(pos: Position): void {
+  stopCalibration();
+  drawingPipe = { pos };
+  svg.style.cursor = "crosshair";
+  status(`Click one end of ${pos.name}. Escape to stop.`);
+}
+
+function stopPipeDraw(): void {
+  drawingPipe = undefined;
+  svg.style.cursor = "";
+  pipeGhost?.remove();
+  pipeGhost = undefined;
+}
+
+/** The rubber band between the first click and the pointer.
+ *
+ *  ⚠ Drawn straight onto the svg rather than through render(), so a redraw of
+ *  the plot cannot fight with it and a half-finished pipe never reaches the
+ *  plot data. It is removed when the pick ends, however it ends. */
+function pipeGhostTo(x: number, y: number): void {
+  if (!drawingPipe?.a) return;
+  if (!pipeGhost) {
+    pipeGhost = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    pipeGhost.setAttribute("stroke", "#256948");
+    pipeGhost.setAttribute("stroke-width", "2");
+    pipeGhost.setAttribute("stroke-dasharray", "6 4");
+    pipeGhost.setAttribute("pointer-events", "none");
+    svg.appendChild(pipeGhost);
+  }
+  const v = view();
+  const a = toScreen({ x: drawingPipe.a.x, y: drawingPipe.a.y }, v);
+  const b = toScreen({ x, y }, v);
+  pipeGhost.setAttribute("x1", String(a.x)); pipeGhost.setAttribute("y1", String(a.y));
+  pipeGhost.setAttribute("x2", String(b.x)); pipeGhost.setAttribute("y2", String(b.y));
+}
+
+/** A click while drawing a pipe. Returns true if it was consumed. */
+function pipeDrawClick(x: number, y: number): boolean {
+  if (!drawingPipe) return false;
+  // Feet to the nearest inch. Sub-inch precision on a light plot is a lie, and
+  // interact.ts rounds a dragged instrument the same way.
+  const snap = (f: number) => Math.round(f * 12) / 12;
+  const px = snap(x), py = snap(y);
+  if (!drawingPipe.a) {
+    drawingPipe.a = { x: px, y: py };
+    status(`Now click the other end of ${drawingPipe.pos.name}.`);
+    return true;
+  }
+  const a = drawingPipe.a;
+  const ends = { x1: a.x, y1: a.y, x2: px, y2: py };
+  if (lengthOf(ends) < 0.25) {
+    status("Those are the same point — click the other end further away.", true);
+    return true;
+  }
+  // ⚠ THE OBJECT WE WERE HANDED, not a lookup by name. See onDrawPipe.
+  const pos = drawingPipe.pos;
+  const name = pos.name;
+  stopPipeDraw();
+  // ⚠ Still gone if it was deleted while the pick was open. An object that is
+  // no longer in the plot must not be written to — it would edit nothing and
+  // report success.
+  if (!store.plot.positions.includes(pos)) {
+    status(`${name} was deleted.`, true); draw(); return true;
+  }
+  store.begin(null);
+  Object.assign(pos, ends);
+  store.commit();
+  draw(); recompute();
+  status(`${name} is ${fmtFt(lengthOf(ends))} at ${Math.round(angleOf(ends) * 10) / 10}°, `
+       + `${runOf(ends)}.`);
+  return true;
+}
+
 /** Show and fill the backdrop controls, or hide them when there is none.
  *
  *  ⭐ NUMBERS, NOT A DRAG, for the first cut. A drag is the nicer gesture and it
@@ -1209,17 +1299,30 @@ async function boot() {
     // light by accident while measuring a wall is the kind of thing that makes
     // somebody stop trusting a tool.
     svg.addEventListener("pointerdown", (e) => {
-      if (!calibrating) return;
+      if (!calibrating && !drawingPipe) return;
       const r = svg.getBoundingClientRect();
       const pt = toPlot({ x: e.clientX - r.left, y: e.clientY - r.top }, view());
-      if (calibrationClick(pt.x, pt.y)) {
+      if (calibrationClick(pt.x, pt.y) || pipeDrawClick(pt.x, pt.y)) {
         e.preventDefault();
         e.stopPropagation();
       }
     }, true);
+    // ⭐ The rubber band. Without it you are clicking twice into nothing and
+    // hoping — which is the difference between pointing at a pipe and guessing
+    // where its far end will land.
+    svg.addEventListener("pointermove", (e) => {
+      if (!drawingPipe?.a) return;
+      const r = svg.getBoundingClientRect();
+      const pt = toPlot({ x: e.clientX - r.left, y: e.clientY - r.top }, view());
+      pipeGhostTo(pt.x, pt.y);
+      const ends = { x1: drawingPipe.a.x, y1: drawingPipe.a.y, x2: pt.x, y2: pt.y };
+      status(`${drawingPipe.pos.name}: ${fmtFt(lengthOf(ends))} at `
+           + `${Math.round(angleOf(ends) * 10) / 10}°`);
+    });
     // Escape abandons it rather than leaving the cursor a crosshair for ever.
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && calibrating) { stopCalibration(); status(""); }
+      if (e.key === "Escape" && drawingPipe) { stopPipeDraw(); status(""); }
     });
 
     wireBackdropBar();
