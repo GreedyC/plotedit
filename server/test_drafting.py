@@ -211,6 +211,165 @@ for _sys in (_u.IMPERIAL, _u.METRIC):
 check(f"every scale in both ladders drawn and measured ({_checked})", _checked, 11)
 check("...and none of them put the bar off the sheet", True, True)
 
+
+# ------------------------------------------- a position label is read, not lost
+print("\na position label knocks out what is under it")
+# 🔴 Issue #66. Now that an imported base plan prints, a position name can have
+# the venue's own walls drawn straight through it. On a real plan, 42 words on
+# the sheet had a line running through them, including the leading letter of
+# ELECTRIC 1. It is not a placement error — the pipe runs wall to wall and the
+# label sits at its stage-left end, which is exactly where the wall is.
+#
+# ⭐ MEASURED BY RASTERISING, because the fix does not remove the line — it
+# paints over it. Counting geometry still finds the line and always will; the
+# question is what reaches the eye. So: a label over a base plan must look the
+# same as a label over nothing.
+import json as _j
+import tempfile as _t
+import pymupdf as _mu2
+from PIL import Image as _Im
+import plot_to_pdf as _P2
+
+_LP = {"formatVersion": 1, "show": "T", "venue": "v", "designer": "d",
+       "studio": "s", "room": {"width": 30, "depth": 20},
+       "positions": [{"name": "ELECTRIC 1", "type": "electric",
+                      "x1": 0, "y1": 10, "x2": 30, "y2": 10, "trim": 14}],
+       "instruments": []}
+# A comb, which is what a ground plan actually looks like where a label lands.
+_WALLS = {"paths": [{"layer": "W", "points": [[n / 4.0, 0], [n / 4.0, 20]]}
+                    for n in range(1, 13)]}
+
+
+def _label_ink(base):
+    """Dark pixels inside the ELECTRIC label's own box."""
+    with _t.TemporaryDirectory() as d:
+        pj = os.path.join(d, "p.json")
+        _j.dump(_LP, open(pj, "w"))
+        f = os.path.join(d, "o.pdf")
+        _P2.render(pj, f, scale="1/2", page="ARCH_C", base=base)
+        pg = _mu2.open(f)[0]
+        w = [x for x in pg.get_text("words") if x[4] == "ELECTRIC"][0]
+        z = 6
+        pix = pg.get_pixmap(matrix=_mu2.Matrix(z, z))
+        im = _Im.frombytes("RGB", (pix.width, pix.height), pix.samples).convert("L")
+        box = im.crop((int(w[0] * z), int(w[1] * z), int(w[2] * z), int(w[3] * z)))
+        return sum(1 for v in box.getdata() if v < 128)
+
+
+_clear = _label_ink(None)
+_over = _label_ink(_WALLS)
+_extra = 100.0 * (_over - _clear) / _clear
+check("the label prints at all", _clear > 500, True)
+# ⚠ Not zero. The knockout's edge and the antialiasing either side of it leave a
+# little, and a threshold of exactly zero would be a test that fails on a font
+# update rather than on a regression. Without the knockout this comb gives 12%.
+#
+# ⚠ THE NUMBER IN THIS COMMENT IS THE COMB'S. An earlier draft of the test used
+# three walls instead of twelve and measured 3.8%, and that figure was left here
+# when the comb replaced it — a stale number beside a live one, which Copilot
+# caught on #67. The threshold is what the test enforces; the percentages are
+# here to say how much room it has, so they have to be of the same thing.
+check("a label over a base plan reads like one over nothing",
+      _extra < 2.0, True)
+print(f"       ({_clear} px clear, {_over} px over twelve walls, +{_extra:.1f}%)")
+
+
+# ⚠ And the knockout must NOT reach the DXF. There the text is on its own layer
+# and the reader turns layers off, so a white rectangle exported beside it would
+# be an object nobody asked for. Checked by COUNTING PER LABEL rather than by
+# looking for white: if each label brought a fill along, five positions would
+# bring five more than one does.
+def _dxf_fills(n_positions):
+    with _t.TemporaryDirectory() as d:
+        plot = dict(_LP)
+        plot["positions"] = [{"name": f"ELECTRIC {i}", "type": "electric",
+                              "x1": 0, "y1": 2 + i * 2, "x2": 30, "y2": 2 + i * 2,
+                              "trim": 14} for i in range(1, n_positions + 1)]
+        pj = os.path.join(d, "p.json")
+        _j.dump(plot, open(pj, "w"))
+        dxf = os.path.join(d, "o.dxf")
+        _P2.render(pj, os.path.join(d, "o.pdf"), scale="1/2", page="ARCH_C", dxf=dxf)
+        t = open(dxf).read()
+        return t.count("\nSOLID\n") + t.count("\nHATCH\n"), t.count("ELECTRIC")
+
+
+_f1, _t1 = _dxf_fills(1)
+_f5, _t5 = _dxf_fills(5)
+check("the DXF carries every position name", (_t1, _t5), (1, 5))
+check("...and not one fill per label", _f5, _f1)
+
+
+# 🔴 AND THE NAMES MUST GO ON LAST. A knockout can only clear what is ALREADY on
+# the canvas, so a label drawn with the pipes is repainted by anything that
+# comes after it — a pool, or a later position crossing an earlier one. Copilot
+# found this on #67 and it was real: drawing one line after a knocked-out label
+# brought 2898 of its pixels back. plot_to_pdf now holds the names until every
+# pool and pipe is down.
+def _label_vs_later_geometry():
+    """Pixels of a knocked-out label that a pool repaints. Zero is the answer."""
+    _unit = {"unit": 1, "channel": 1, "type": "S4 26", "x": 5.5, "y": 20,
+             "trim": 14, "focusX": 8, "focusY": 10, "color": "R80",
+             "position": "GRID C"}
+    plot = {"formatVersion": 1, "show": "T", "venue": "v", "designer": "d",
+            "studio": "s", "room": {"width": 30, "depth": 26},
+            "positions": [{"name": "GRID C", "type": "electric",
+                           "x1": 0, "y1": 20, "x2": 30, "y2": 20, "trim": 14},
+                          # its name lands inside the pool below
+                          {"name": "ELECTRIC 1", "type": "electric",
+                           "x1": 7.0, "y1": 8.7, "x2": 30, "y2": 8.7, "trim": 14}],
+            "instruments": [_unit]}
+    shot = {}
+    for pools in (False, True):
+        with _t.TemporaryDirectory() as d:
+            pj = os.path.join(d, "p.json")
+            _j.dump(plot, open(pj, "w"))
+            f = os.path.join(d, "o.pdf")
+            _P2.render(pj, f, scale="1/2", page="ARCH_D", show_pools=pools)
+            pg = _mu2.open(f)[0]
+            w = [x for x in pg.get_text("words") if x[4] == "ELECTRIC"][0]
+            z = 8
+            pix = pg.get_pixmap(matrix=_mu2.Matrix(z, z))
+            im = _Im.frombytes("RGB", (pix.width, pix.height),
+                               pix.samples).convert("L")
+            shot[pools] = im.crop((int(w[0] * z), int(w[1] * z),
+                                   int(w[2] * z), int(w[3] * z)))
+    from PIL import ImageChops as _IC
+    return sum(1 for v in _IC.difference(shot[False], shot[True]).getdata() if v > 8)
+
+
+check("a pool drawn later does not reach the label", _label_vs_later_geometry(), 0)
+
+# ⚠ And the mechanism itself, with no plot in the way: a knockout protects
+# against what is BEFORE it and nothing else. This is the test that has to keep
+# working, because it is the reason the names are deferred at all.
+def _knockout_vs_after():
+    from plotedit.scaled_pdf import Sheet as _S
+    out = []
+    for after in (False, True):
+        with _t.TemporaryDirectory() as d:
+            f = os.path.join(d, "o.pdf")
+            sh = _S(f, page="ARCH_C", scale="1/2", landscape=True)
+            sh.origin(5, 5)
+            sh.line(0, 10, 30, 10, style="batten")
+            sh.text(1, 10, "ELECTRIC 1", size=7, bold=True, knockout=True)
+            if after:
+                sh.line(0, 10.05, 30, 10.05, style="batten")
+            sh.finish()
+            pg = _mu2.open(f)[0]
+            w = [x for x in pg.get_text("words") if x[4] == "ELECTRIC"][0]
+            z = 8
+            pix = pg.get_pixmap(matrix=_mu2.Matrix(z, z))
+            im = _Im.frombytes("RGB", (pix.width, pix.height),
+                               pix.samples).convert("L")
+            out.append(im.crop((int(w[0] * z), int(w[1] * z),
+                                int(w[2] * z), int(w[3] * z))))
+    from PIL import ImageChops as _IC
+    return sum(1 for v in _IC.difference(out[0], out[1]).getdata() if v > 8)
+
+
+check("a knockout does NOT protect against what comes after it",
+      _knockout_vs_after() > 50, True)
+
 print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")

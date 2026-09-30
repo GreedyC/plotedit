@@ -388,10 +388,21 @@ ok = True
 
 
 def check(label, got, want):
+    """`want` is a value to equal, or a predicate to satisfy.
+
+    🔴 CALLABLE, not "is it a bool". Asking `isinstance(want, bool)` meant every
+    other plain value — an int, a string — was CALLED, so `check(..., 1, 2)`
+    raised TypeError instead of failing. That matters beyond the tidiness:
+    verify_suites.py proves each suite really fails by injecting exactly that
+    call, and a traceback goes to STDERR, so the failure was never named on
+    stdout and this file was reported as "REPORTS SUCCESS WHILE FAILING".
+    """
     global ok
-    good = got == want if isinstance(want, bool) else want(got)
+    good = want(got) if callable(want) else got == want
     ok = ok and good
     print(f"  {'ok  ' if good else 'FAIL'} {label:<48} {got}")
+    if not good:
+        print(f"       wanted {want!r}")
 
 
 check("a plot with no base has no image on the page", plain_imgs, lambda n: n == 0)

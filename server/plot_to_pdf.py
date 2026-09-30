@@ -173,6 +173,7 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                  L.plan(plot["positions"], plot["instruments"], _measure,
                         room_width=room["width"], system=_system, bounds=_bounds))}
 
+    _pending_labels = []
     for p in plot["positions"]:
         at = spots.get(id(p))
         if P.is_vertical(p):
@@ -187,7 +188,14 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
         # every pipe in the room. The SECTION carries trim for everything.
         # (Jerry, 2026.09.24.) labels.text_for() assembles it, so the screen and
         # the paper cannot disagree about what a pipe is called.
-        s.position(p, label=at["text"] if at else p["name"], label_at=at)
+        # ⚠ The NAME is held back — see Sheet.position_label. A knockout only
+        # clears what is already on the canvas, and the units below are drawn
+        # after this loop, so a pool would be painted straight over a label the
+        # knockout had just cleared. The names go on last.
+        _spec = s.position(p, label=at["text"] if at else p["name"], label_at=at,
+                           draw_label=False)
+        if _spec:
+            _pending_labels.append(_spec)
 
     # §6.12: the readable layout goes BESIDE the plot, because in plan a boom is
     # a point. Placed off the room's stage-left edge, which is the low-x side.
@@ -246,6 +254,15 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                            not in _boom_names,
                    color_tier=_tiers[_i])
         rows.append(r)
+
+    # ⭐ THE POSITION NAMES GO ON LAST, after every pool and every pipe. Their
+    # knockout can only clear what is already on the canvas, so a name drawn
+    # with the pipes was repainted by whatever came after it — a pool, or a
+    # later position crossing an earlier one. Copilot spotted this on #67 and it
+    # is real: drawing one line after a knocked-out label brought 2898 of its
+    # pixels back.
+    for _spec in _pending_labels:
+        s.position_label(_spec)
 
     # ⭐ The key goes ON THE PLOT. §5.0 allows it "in any location that does not
     # conflict with other information", and on the plot is the location that
