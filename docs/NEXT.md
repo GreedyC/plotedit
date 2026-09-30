@@ -186,6 +186,42 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **🔴 THE DRAWING IS ANCHORED TO THE BOTTOM OF THE SHEET, so every spare inch
+  lands at the top.** Measured on `sample.plot.json` at `fit`, 2026.09.30, from
+  Jerry's screenshots of real exports:
+
+  | sheet | fit picks | white above | white below | wasted |
+  |---|---|---|---|---|
+  | LETTER | 1/8" | **2.63"** | 0.50" | 31% |
+  | TABLOID | 1/8" | **5.13"** | 0.50" | 47% |
+  | ARCH C | 1/4" | **6.88"** | 0.50" | 38% |
+  | ARCH D | 1/2" | 2.38" | 0.50" | 10% |
+  | ARCH E | 3/4" | 3.88" | 0.50" | 11% |
+
+  **Always 0.50" below — the bare margin — and all the slack above.** The cause
+  is one line in `plot_to_pdf`:
+
+  ```python
+  s.origin(ft(4) + boom_space, ft(4) + (house + 1.5 if house else 0))
+  ```
+
+  The pad exists to make room **below and left** for the FOH catwalk and the
+  boom elevations, so they are not clipped off. ⚠ **Nothing ever asks what is
+  left over above**, so the origin is a floor, never a centring.
+
+  ⭐ **The fix wants two passes, not a cleverer formula.** The content extent is
+  not knowable before drawing — booms, key, labels and the title block all
+  contribute — but `Sheet` already tracks the drawn bounds for the clipping
+  guard. Render once to measure, shift the origin by half the slack, render
+  again. Expensive and exact, against a formula that would be neither.
+
+  ⚠ **It can only move content UP, away from the bottom margin**, so the
+  clipping guard stays a backstop rather than becoming the thing being fought.
+
+  **Second order, worth noting while here:** the scale ladder is coarse — 1/8,
+  1/4, 3/8, 1/2, 3/4, 1 — so "the largest that fits" can still leave a lot
+  spare. TABLOID wastes 47% because 1/4" clips and the next rung down is 1/8".
+
 - **🔴 PLAN LABELS ARE SPACED IN FEET, SO THEY COLLIDE AS THE SCALE SHRINKS.**
   Measured on `sample.plot.json`, 2026.09.30, counting word boxes that overlap
   by more than half their area:
