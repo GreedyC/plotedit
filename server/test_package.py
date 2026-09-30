@@ -1240,6 +1240,51 @@ check("one colour, one dot", ph.lamp_colors("Source 4WRD II"), 1)
 check("Gallery too", ph.lamp_colors("Source 4WRD II Gallery"), 1)
 check("an HPL is not a source to draw", ph.lamp_colors("HPL 575"), None)
 
+# ⭐ THE MANUAL PDF IS GENERATED, NEVER COMMITTED (Jerry, 2026.09.29: "make it a
+# PDF too"). docs/MANUAL.md is the manual; make_manual.py is a second view of
+# it, built at release time so it cannot drift.
+print("\nthe manual builds as a PDF")
+import importlib.util as _ilu
+import tempfile as _tf
+_spec = _ilu.spec_from_file_location(
+    "make_manual", _os.path.join(_os.path.dirname(__file__), "make_manual.py"))
+_mm = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_mm)
+
+with _tf.TemporaryDirectory() as _d:
+    _pdf = _mm.build(_os.path.join(_d, "m.pdf"))
+    import pymupdf as _mu
+    _doc = _mu.open(_pdf)
+    _txt = "\n".join(pg.get_text() for pg in _doc)
+    check("it has pages", _doc.page_count > 3, True)
+    # ⚠ Every section of the source must survive the conversion. A parser that
+    # silently drops what it does not recognise is the failure mode here.
+    _heads = [h for h in _re.findall(r"^#{2,3} (.+)$",
+                                     open(_mm.SRC, encoding="utf-8").read(), _re.M)
+              if h != "Contents"]
+    _lost = [h for h in _heads
+             if _re.sub(r"[^A-Za-z0-9 ]", "", h).split()[0] not in _txt]
+    check("every heading survives", _lost, [])
+    # 🔴 The two bugs the first build shipped: bold around a code span left its
+    # asterisks showing, and Cmd/Shift had no glyph and printed as black boxes.
+    check("no stray markdown", "**" in _txt, False)
+    check("keystrokes are readable", "Cmd-Z" in _txt and "Shift-Cmd-S" in _txt, True)
+    _doc.close()
+
+# 🔴 The release guard allows exactly ONE pdf, by full path. A pattern could one
+# day match somebody else's document, which is the thing it exists to stop —
+# docs/reference/ holds a bought copy of USITT RP-2.
+_rel = open(_os.path.join(_os.path.dirname(__file__), "..", ".github",
+                          "workflows", "release.yml"), encoding="utf-8").read()
+check("the manual is generated into the download",
+      "server/make_manual.py out/plotedit/plotedit-manual.pdf" in _rel, True)
+check("...and allowed by exact path, not a pattern",
+      "grep -vx 'plotedit/plotedit-manual.pdf'" in _rel, True)
+check("...and its absence fails the build",
+      "the manual PDF was not generated into the download" in _rel, True)
+check("docs/reference is still excluded from the package",
+      "--exclude 'reference/'" in _rel, True)
+
 print()
 if FAILS:
     print(f"{len(FAILS)} FAILED")
