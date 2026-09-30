@@ -186,110 +186,26 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
-- **🟡 HALF-FIXED: the drawing is centred now, and what is left is the 1.3"
-  band.** *(Centred 2026.09.30. The rest is below.)* The original finding:
-  **the drawing was anchored to the bottom of the sheet, so every spare inch
-  landed at the top.** Measured on `sample.plot.json` at `fit`, 2026.09.30, from
-  Jerry's screenshots of real exports:
 
-  | sheet | fit picks | white above | white below | wasted |
-  |---|---|---|---|---|
-  | LETTER | 1/8" | **2.63"** | 0.50" | 31% |
-  | TABLOID | 1/8" | **5.13"** | 0.50" | 47% |
-  | ARCH C | 1/4" | **6.88"** | 0.50" | 38% |
-  | ARCH D | 1/2" | 2.38" | 0.50" | 10% |
-  | ARCH E | 3/4" | 3.88" | 0.50" | 11% |
+- **➡ THREE DRAWING BUGS MOVED TO ISSUES, 2026.09.30**, with their measurements
+  intact. They were the kind that need numbers next to them, so they were written
+  up here first and then moved once the repository started using issues.
 
-  **Always 0.50" below — the bare margin — and all the slack above.** The cause
-  is one line in `plot_to_pdf`:
+  - **[#57](https://github.com/jerryjonas3/plotedit/issues/57)** — `_fits`
+    compares a SPAN against a sheet while the renderer places by ORIGIN. **Blocks
+    A2, A1 and A0**, which are three lines of arithmetic and stay out until the
+    clipping advice can be trusted.
+  - **[#58](https://github.com/jerryjonas3/plotedit/issues/58)** — plan labels
+    are spaced in stage FEET while the text is 7pt on PAPER, so they collide as
+    the scale shrinks. 0 pairs at 1/2", 1 at 1/4", 3 at 1/8".
+  - **[#59](https://github.com/jerryjonas3/plotedit/issues/59)** — the clipping
+    guard reserves 1.3" at the top of every sheet and nothing is ever drawn
+    there. It is the whole of the remaining top gap.
 
-  ```python
-  s.origin(ft(4) + boom_space, ft(4) + (house + 1.5 if house else 0))
-  ```
-
-  The pad exists to make room **below and left** for the FOH catwalk and the
-  boom elevations, so they are not clipped off. ⚠ **Nothing ever asks what is
-  left over above**, so the origin is a floor, never a centring.
-
-  ⭐ **The fix wants two passes, not a cleverer formula.** The content extent is
-  not knowable before drawing — booms, key, labels and the title block all
-  contribute — but `Sheet` already tracks the drawn bounds for the clipping
-  guard. Render once to measure, shift the origin by half the slack, render
-  again. Expensive and exact, against a formula that would be neither.
-
-  ⚠ **It can only move content UP, away from the bottom margin**, so the
-  clipping guard stays a backstop rather than becoming the thing being fought.
-
-  **➡ WHAT WAS DONE, and what is left.** `slack_above()` centres the drawing on
-  the page and `plot_to_pdf` renders twice — once to measure, once to draw. The
-  white above roughly halved on every sheet and nothing got worse:
-
-  | | before | after |
-  |---|---|---|
-  | LETTER | 2.63" | **1.81"** |
-  | TABLOID | 5.13" | **2.95"** |
-  | ARCH C | 6.88" | **4.03"** |
-  | ARCH D | 2.38" | **2.18"** |
-  | ARCH E | 3.88" | **3.32"** |
-
-  🔴 **THE RESIDUAL IS THE 1.3" RESERVATION ITSELF, and it is exactly that.**
-  `finish()` treats the top 1.3" of every sheet as unavailable, and the lift is
-  clamped out of it so centring can never provoke a clipping warning. Nothing is
-  ever drawn there: on Letter the band runs 6.70"–8.00" and the highest ink on
-  the page reaches 5.88". The title block is at the BOTTOM.
-
-  ⚠ **It has been there since the scaffold commit** (`80e89b1`) and no comment
-  says what it is for. Removing it would close the gap completely — and it would
-  also change what the guard REFUSES, which is a decision about issued drawings
-  rather than a tidy-up. **Find out what it was reserving before taking it out.**
-
-  **Second order, worth noting while here:** the scale ladder is coarse — 1/8,
-  1/4, 3/8, 1/2, 3/4, 1 — so "the largest that fits" can still leave a lot
-  spare. TABLOID wastes 47% because 1/4" clips and the next rung down is 1/8".
-
-- **🔴 PLAN LABELS ARE SPACED IN FEET, SO THEY COLLIDE AS THE SCALE SHRINKS.**
-  Measured on `sample.plot.json`, 2026.09.30, counting word boxes that overlap
-  by more than half their area:
-
-  | | |
-  |---|---|
-  | ARCH D at 1/2" | **0** colliding pairs |
-  | ARCH C at 1/4" | **1** |
-  | ARCH C at 1/8" | **3** |
-
-  The de-collision in `plot_to_pdf` pushes colour labels apart by a distance in
-  **stage feet**, and the comment beside it already half-knows the problem:
-  *"The text is 7pt on paper, so how much of the STAGE it covers depends on the
-  scale."* It is compensated for, not solved — at 1/8" a 7pt label covers twice
-  the stage it covers at 1/4", and the spacing does not double with it.
-
-  ⚠ **The fix is to space in POINTS and convert back**, not to add another
-  fudge factor. What collides at 1/8" here is a colour label against an address
-  (`R52+R119` over `2/21`) and an accessory string against itself.
-
-  ⭐ **Not urgent, and worth saying why:** a plot issued at 1/8" is already
-  hard to read, and `Fit` picks the largest scale that fits rather than the
-  smallest. This bites the designer who chooses 1/8" deliberately to get a big
-  room onto a small sheet — which is exactly when they can least afford it.
-
-- **🔴 `_fits` COMPARES A SPAN AGAINST A SHEET, AND THE RENDERER PLACES BY
-  ORIGIN.** Found 2026.09.30 while adding A2/A1/A0 to `PAGES`.
-
-  A2 is 387 sq in, which drops it between TABLOID and ARCH C in the
-  area-sorted list the clipping advice walks. So *"Or keep 1/4" on A2 portrait"*
-  started appearing — and **A2 does not hold the drawing**. `test_package`
-  caught it the only way it could: it renders the sheet the advice recommends
-  and checks it really fits. It clipped by 0.4 feet.
-
-  **The bug is older than the A series.** `_fits` asks whether the sheet is
-  wider than the drawing's *span*; the renderer draws from an origin, so a
-  drawing narrower than the paper can still run off the right of it. No sheet in
-  the table happened to land in the gap until A2 did.
-
-  ⚠ **A2, A1 and A0 stay out until this is fixed** — the known-issues note has
-  promised them for a while, and they are three lines of arithmetic, but
-  **advice that sends somebody to buy paper that does not help is worse than no
-  advice.** Fix `_fits` first, then add the rows.
+  ⚠ **What stays in this file** is the reasoning that belongs beside the code —
+  the notes inside `PAGES`, `slack_above()` and `plot_to_pdf` still say why, and
+  they point at the same three problems. **An issue is where you decide to fix
+  something; a comment is where you find out you shouldn't have removed it.**
 
 - **🔴 NOTATING DIMMER DOUBLERS — raised by Jerry 2026.09.29, deliberately
   deferred.** The `HPL 550/77` lamp went in the same day, so a doubled rig can
