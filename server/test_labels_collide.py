@@ -120,7 +120,59 @@ with tempfile.TemporaryDirectory() as d:
         check(f"a {sc}\" sheet renders", os.path.getsize(out) > 5000, True)
 
 print()
+# 🔴 THE BOOM FOOTNOTE IS ONE SENTENCE FOR THE WHOLE STRIP. It used to be drawn
+# once per boom, centred on that boom's own pipe, so two booms standing near
+# each other overprinted it and neither copy was readable. Found on a tester's
+# export, 2026.09.30 — the words "NOT TO SCALE" sat on top of "heights", and
+# "1 break" on top of "compressed".
+print("\nthe boom footnote is drawn once, not once per boom")
+import pymupdf as _mu
+from fastapi.testclient import TestClient as _TC
+from plotedit.api import app as _app
+_c = _TC(_app)
+_plot = json.load(open(os.path.join(os.path.dirname(__file__), "..", "plots",
+                                    "sample.plot.json"), encoding="utf-8"))
+
+
+def _overlaps(page, scale):
+    r = _c.post("/export/pdf", json={"plot": _plot, "page": page, "scale": scale})
+    if r.status_code != 200:
+        return None
+    pg = _mu.open(stream=r.content, filetype="pdf")[0]
+    ws = pg.get_text("words")
+    out = []
+    for i in range(len(ws)):
+        for j in range(i + 1, len(ws)):
+            a = _mu.Rect(ws[i][0], ws[i][1], ws[i][2], ws[i][3])
+            b = _mu.Rect(ws[j][0], ws[j][1], ws[j][2], ws[j][3])
+            x = a & b
+            if x.is_valid and x.get_area() > 0.45 * min(a.get_area(), b.get_area()):
+                out.append((ws[i][4], ws[j][4]))
+    return out, pg.get_text()
+
+
+_hits, _txt = _overlaps("ARCH_C", "1/8")
+check("the note appears once", _txt.count("NOT TO SCALE — heights are the data"), 1)
+check("...and so does the compression note", _txt.count("pipes compressed"), 1)
+check("...which counts the pipes", "2 of 2 pipes compressed" in _txt, True)
+# ⚠ The exact pairs that were overprinting. Named, so a regression says which.
+check("NOT TO SCALE no longer collides",
+      [h for h in _hits if "NOT" in h or "SCALE" in h], [])
+check("the break note no longer collides",
+      [h for h in _hits if "compressed" in h or "break" in h], [])
+
+# ⚠ WHAT IS LEFT IS SCALE-DEPENDENT, and it is recorded rather than asserted
+# away — see docs/NEXT.md. The plan labels are spaced in FEET, so the smaller
+# the scale the closer they sit on paper. This pins the direction, not a number
+# that would go stale the first time a label moves.
+_eighth = len(_overlaps("ARCH_C", "1/8")[0])
+_half = len(_overlaps("ARCH_D", "1/2")[0])
+check("a half-inch plot has no colliding labels", _half, 0)
+check("...and 1/8\" is worse than 1/2\"", _eighth >= _half, True)
+
 if FAILS:
+
+
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:
         print("   ", f)

@@ -125,11 +125,23 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # §6.12: the readable layout goes BESIDE the plot, because in plan a boom is
     # a point. Placed off the room's stage-left edge, which is the low-x side.
     _placed = {b["name"]: b for b in _B.layout(plot["positions"], plot["instruments"], system=_system)}
+    # 🔴 ONE FOOTNOTE FOR THE STRIP, not one per boom. Each elevation used to
+    # draw "NOT TO SCALE — heights are the data" centred on its own pipe, so two
+    # booms standing near each other overprinted the sentence and neither copy
+    # was readable. Found on a tester's export, 2026.09.30.
+    _drawn = []
     for p in booms:
         spot = _placed.get((p.get("name") or "").upper())
         if spot:
-            s.boom_elevation(p, _B.units_on(p, plot["instruments"]), spot["x"], spot["y"],
-                             layout=p.get("layout") or plot.get("boomLayout", "option1"))
+            _, _cuts = s.boom_elevation(
+                p, _B.units_on(p, plot["instruments"]), spot["x"], spot["y"],
+                layout=p.get("layout") or plot.get("boomLayout", "option1"),
+                note=False)
+            _drawn.append((spot["x"], spot["y"], _cuts))
+    if _drawn:
+        s.boom_note(min(d[0] for d in _drawn), max(d[0] for d in _drawn),
+                    min(d[1] for d in _drawn),
+                    compressed=sum(1 for d in _drawn if d[2]), total=len(_drawn))
 
     # ⭐ A unit on a BOOM is drawn in its elevation, not in plan — see
     # Sheet.unit(in_plan=...). Its focus and its pool are still drawn here.

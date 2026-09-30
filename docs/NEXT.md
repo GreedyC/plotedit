@@ -186,6 +186,31 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
 
 ## Next, in no particular order
 
+- **🔴 PLAN LABELS ARE SPACED IN FEET, SO THEY COLLIDE AS THE SCALE SHRINKS.**
+  Measured on `sample.plot.json`, 2026.09.30, counting word boxes that overlap
+  by more than half their area:
+
+  | | |
+  |---|---|
+  | ARCH D at 1/2" | **0** colliding pairs |
+  | ARCH C at 1/4" | **1** |
+  | ARCH C at 1/8" | **3** |
+
+  The de-collision in `plot_to_pdf` pushes colour labels apart by a distance in
+  **stage feet**, and the comment beside it already half-knows the problem:
+  *"The text is 7pt on paper, so how much of the STAGE it covers depends on the
+  scale."* It is compensated for, not solved — at 1/8" a 7pt label covers twice
+  the stage it covers at 1/4", and the spacing does not double with it.
+
+  ⚠ **The fix is to space in POINTS and convert back**, not to add another
+  fudge factor. What collides at 1/8" here is a colour label against an address
+  (`R52+R119` over `2/21`) and an accessory string against itself.
+
+  ⭐ **Not urgent, and worth saying why:** a plot issued at 1/8" is already
+  hard to read, and `Fit` picks the largest scale that fits rather than the
+  smallest. This bites the designer who chooses 1/8" deliberately to get a big
+  room onto a small sheet — which is exactly when they can least afford it.
+
 - **🔴 `_fits` COMPARES A SPAN AGAINST A SHEET, AND THE RENDERER PLACES BY
   ORIGIN.** Found 2026.09.30 while adding A2/A1/A0 to `PAGES`.
 
