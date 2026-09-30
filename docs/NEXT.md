@@ -191,10 +191,11 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
   intact. They were the kind that need numbers next to them, so they were written
   up here first and then moved once the repository started using issues.
 
-  - **[#57](https://github.com/jerryjonas3/plotedit/issues/57)** — `_fits`
-    compares a SPAN against a sheet while the renderer places by ORIGIN. **Blocks
-    A2, A1 and A0**, which are three lines of arithmetic and stay out until the
-    clipping advice can be trusted.
+  - **✅ [#57](https://github.com/jerryjonas3/plotedit/issues/57) — DONE
+    2026.09.30.** `_fits` compared a SPAN against a sheet while the renderer
+    placed by ORIGIN. What closed it was not `_fits` but the PLACEMENT: the
+    centring added the same day made a span that fits actually fit, so the
+    comparison became true. **A2, A1 and A0 are in.**
   - **[#58](https://github.com/jerryjonas3/plotedit/issues/58)** — plan labels
     are spaced in stage FEET while the text is 7pt on PAPER, so they collide as
     the scale shrinks. 0 pairs at 1/2", 1 at 1/4", 3 at 1/8".
@@ -992,7 +993,7 @@ pins that for every existing scale.
    Generalise to points-per-foot, add a metric list to the fit-to-sheet chooser,
    and a scale bar that reads 0–10 m. **Give this its own pass** — it is where
    the risk is.
-4. **Paper.** A3 and A4 exist; metric drafting wants **A2, A1, A0**.
+4. **✅ Paper — done 2026.09.30.** A4, A3, A2, A1 and A0 are all offered on a metric plot.
 
 **🔴 The one judgement call, and it is Jerry's: defaults must be IDIOMATIC, not
 converted.** Head height is 5'-6" imperial; a metric designer says **1.7 m**, not

@@ -172,7 +172,23 @@ _imp = [r["name"] for r in _pg["imperial"]]
 _met = [r["name"] for r in _pg["metric"]]
 check("imperial sheets are offered", "ARCH_E" in _imp, True)
 check("...largest last", _imp[-1], "ARCH_E")
-check("metric sheets are separate", _met, ["A4", "A3"])
+check("metric sheets are separate", _met, ["A4", "A3", "A2", "A1", "A0"])
+
+# ⭐ A METRIC SHEET IS LABELLED IN MILLIMETRES. "A2 (16.54 x 23.39 in)" is the
+# right sheet described in units its user does not think in — the same error as
+# offering ARCH D on a metric plot, one layer down.
+#
+# ⚠ AND THE NUMBERS DOUBLE AS A CHECK ON THE TABLE. PAGES stores inches, so if a
+# row were mistyped the millimetres would not land on the ISO sizes. They do,
+# exactly, which is why these are pinned rather than merely pattern-matched.
+_labels = {r["name"]: r["label"] for r in _pg["metric"]}
+check("A4 is 210 x 297 mm", "A4 (210 x 297 mm)", _labels["A4"])
+check("A3 is 297 x 420 mm", "A3 (297 x 420 mm)", _labels["A3"])
+check("A2 is 420 x 594 mm", "A2 (420 x 594 mm)", _labels["A2"])
+check("A1 is 594 x 841 mm", "A1 (594 x 841 mm)", _labels["A1"])
+check("A0 is 841 x 1189 mm", "A0 (841 x 1189 mm)", _labels["A0"])
+check("...and an imperial sheet is still in inches",
+      "in)" in _pg["imperial"][0]["label"], True)
 # 🔴 A metric plot offered ARCH D is the same error as one offered 1/4".
 check("the two lists do not overlap", set(_imp) & set(_met), set())
 check("every sheet in PAGES is in one of them",

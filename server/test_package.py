@@ -1151,6 +1151,51 @@ _sec_up = _S.render(_SAMPLE, os.path.join(_tmp, "sec-up.pdf"), scale="3/4")[0]
 check("...and is zoomed in as far as it goes (3/4in clips)",
       any("CLIPPED" in w for w in _sec_up.warnings), True)
 
+# ⭐ EVERY RECOMMENDATION THE GUARD MAKES, RE-RENDERED AND MEASURED.
+#
+# 🔴 This is the test #57 needed and did not have. The guard's advice names a
+# sheet to move to and a scale that would fit, and nothing checked that either
+# was true. Adding A2 exposed it: A2 is 387 sq in, so it sorts between TABLOID
+# and ARCH C in the area-ordered list the advice walks, and it started being
+# recommended for a drawing it does not hold.
+#
+# The single case above catches one combination. This catches all of them, which
+# is what it takes — the failure was a SIZE that sorts into the MIDDLE of the
+# list, so it can only be found by walking the list.
+#
+# ⚠ USE `_render`, NOT A NEW HELPER. The first cut of this defined its own and
+# called `_S.render` — but `_S` is rebound to plot_to_section further down this
+# file, so it rendered SECTIONS and reported five failures that were not real.
+# A name collision in a long file, found only because the failures disagreed
+# with a check run by hand.
+print()
+print("every recommendation the guard makes is true")
+import itertools as _it
+
+_bad = []
+_recs = 0
+for _page, _land, _scale in _it.product(
+        ["LETTER", "TABLOID", "ARCH_C", "ARCH_D", "A4", "A3", "A2", "A1"],
+        [True, False], ["1/8", "1/4", "1/2"]):
+    _w = _render(_page, _land, _scale)
+    if not _w:
+        continue
+    _m = _re.search(r"Or keep .*? on (\w+) (portrait|landscape)", _w[0])
+    if _m:
+        _recs += 1
+        if _render(_m.group(1), _m.group(2) == "landscape", _scale):
+            _bad.append(f"{_page}/{_land}/{_scale} -> sheet {_m.group(1)} {_m.group(2)}")
+    _sc = _re.search(r'fits this sheet: ([\d/]+)"', _w[0])
+    if _sc:
+        _recs += 1
+        if _render(_page, _land, _sc.group(1)):
+            _bad.append(f"{_page}/{_land}/{_scale} -> scale {_sc.group(1)}")
+
+check("the guard made recommendations worth checking", _recs > 20, True)
+check("...and every one of them really does fit", _bad, [])
+print(f"       ({_recs} recommendations re-rendered and measured)")
+
+
 print()
 print("the build says which build it is")
 # ⭐ Jerry, 2026.09.26: "I'd like to print the version number on the UI so they

@@ -728,14 +728,22 @@ def paper_sizes() -> Dict[str, Any]:
     drawing issued on a sheet the reader does not stock is no more use than one
     at a ratio their rule does not have.
     """
-    def _rows(names):
-        return [{"name": n,
-                 "w_in": sp.PAGES[n][0], "h_in": sp.PAGES[n][1],
-                 "label": f"{n.replace('_', ' ')} "
-                          f"({sp.PAGES[n][0]:g} x {sp.PAGES[n][1]:g} in)"}
-                for n in names]
+    def _rows(names, metric=False):
+        # ⚠ LABEL A METRIC SHEET IN MILLIMETRES. A2 is 420 x 594 mm to everyone
+        # who asks for A2; "16.54 x 23.39 in" is the same sheet described in
+        # units its user does not think in — the same error as offering ARCH D
+        # on a metric plot, one layer down. The inches stay in w_in/h_in because
+        # that is what the renderer works in.
+        out = []
+        for n in names:
+            w, h = sp.PAGES[n]
+            size = (f"{round(w * 25.4)} x {round(h * 25.4)} mm" if metric
+                    else f"{w:g} x {h:g} in")
+            out.append({"name": n, "w_in": w, "h_in": h,
+                        "label": f"{n.replace('_', ' ')} ({size})"})
+        return out
     return {"imperial": _rows(sp.PAGES_IMPERIAL),
-            "metric": _rows(sp.PAGES_METRIC),
+            "metric": _rows(sp.PAGES_METRIC, metric=True),
             "default": "ARCH_D"}
 
 

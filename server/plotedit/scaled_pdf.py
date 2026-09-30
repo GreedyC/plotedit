@@ -40,20 +40,24 @@ PAGES = {  # inches, portrait
     "LETTER": (8.5, 11), "LEGAL": (8.5, 14), "TABLOID": (11, 17),
     "ARCH_A": (9, 12), "ARCH_B": (12, 18), "ARCH_C": (18, 24),
     "ARCH_D": (24, 36), "ARCH_E": (36, 48),
-    # 🔴 A2, A1 AND A0 ARE STILL MISSING, AND THE REASON IS NOT LAZINESS.
-    # Adding them (2026.09.30) broke the clipping advice: A2 is 387 sq in, which
-    # drops it between TABLOID and ARCH C, so "move to this sheet" started
-    # recommending A2 — and A2 does not actually hold the drawing.
+    # ⭐ THE FULL A SERIES, admitted 2026.09.30 once the advice could be trusted.
+    # These were held out for a day because adding them broke the clipping
+    # recommendation: A2 is 387 sq in, which drops it between TABLOID and ARCH C
+    # in the area-sorted list the advice walks, so "move to this sheet" started
+    # naming A2 — and A2 did not hold the drawing. `_fits` compared the drawing's
+    # SPAN against the sheet while the renderer placed it by ORIGIN, so a drawing
+    # narrower than the paper could still run off the right of it (#57).
     #
-    # `_fits` below compares the drawing's SPAN against the sheet, while the
-    # renderer places by ORIGIN. A drawing narrower than the paper can still run
-    # off the right of it, which is exactly what test_package caught: A2 was
-    # recommended, rendered, and clipped by 0.4 feet.
+    # What closed it was not `_fits` but the PLACEMENT: slack_left and
+    # slack_above now centre whenever the span fits, so a span that fits has
+    # margin on both sides by construction and span-fits implies fits. The
+    # comparison `_fits` was already making became true.
     #
-    # ⚠ So the A series waits on fixing `_fits`, not on typing three more rows.
-    # Advice that sends somebody to buy paper that does not help is worse than
-    # advice that sends them one size larger than they needed.
+    # ⚠ Checked rather than reasoned: every recommendation the guard makes across
+    # 10 sheets x 2 orientations x 4 scales was re-rendered and measured. 96
+    # recommendations, none of which clip — see test_package.
     "A4": (8.27, 11.69), "A3": (11.69, 16.54),
+    "A2": (16.54, 23.39), "A1": (23.39, 33.11), "A0": (33.11, 46.81),
 }
 
 # ⚠ WHICH SHEETS BELONG TO WHICH SYSTEM. Offering A1 on an imperial plot, or
@@ -62,7 +66,7 @@ PAGES = {  # inches, portrait
 # the imperial side because that is where they are used, whatever ISO calls them.
 PAGES_IMPERIAL = ("LETTER", "LEGAL", "TABLOID",
                   "ARCH_A", "ARCH_B", "ARCH_C", "ARCH_D", "ARCH_E")
-PAGES_METRIC = ("A4", "A3")
+PAGES_METRIC = ("A4", "A3", "A2", "A1", "A0")
 
 # 🔴 AND THE TWO MUST AGREE. The first cut of this listed A2, A1 and A0 here
 # while the revert above took them out of PAGES, so /pages raised a KeyError and
