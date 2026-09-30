@@ -16,6 +16,7 @@ import json
 import os
 import tempfile
 import unicodedata
+from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
@@ -32,6 +33,7 @@ from . import booms
 from . import store as plotstore
 from . import labels as lbl
 from . import fixture_names
+from . import scaled_pdf as sp
 
 app = FastAPI(
     title="plotedit",
@@ -660,6 +662,65 @@ def symbol_geometry(types: str, lens_rotation: Optional[float] = None) -> Dict[s
 class SaveRequest(BaseModel):
     name: str
     plot: Dict[str, Any]
+
+
+@app.get("/pages")
+def paper_sizes() -> Dict[str, Any]:
+    """The sheets a plot can be issued on, largest last, split by system.
+
+    ⭐ SERVED, NOT TYPED INTO THE BROWSER. The sizes live in scaled_pdf.PAGES and
+    a second copy in TypeScript is how the lamp list ended a whole release behind
+    the table it was meant to mirror.
+
+    ⚠ Split imperial/metric for the same reason the scale menu is split: a
+    drawing issued on a sheet the reader does not stock is no more use than one
+    at a ratio their rule does not have.
+    """
+    def _rows(names):
+        return [{"name": n,
+                 "w_in": sp.PAGES[n][0], "h_in": sp.PAGES[n][1],
+                 "label": f"{n.replace('_', ' ')} "
+                          f"({sp.PAGES[n][0]:g} x {sp.PAGES[n][1]:g} in)"}
+                for n in names]
+    return {"imperial": _rows(sp.PAGES_IMPERIAL),
+            "metric": _rows(sp.PAGES_METRIC),
+            "default": "ARCH_D"}
+
+
+# ⭐ WHAT SHIPPED WITH IT, kept separate from what the designer has saved.
+# Jerry's tester Leo, 2026.09.30: "I created a test file, and I wonder if there's
+# a way to open the demo file?" — there was not. The demo lives in samples/ and
+# Open… lists the plots folder, so pressing New put it permanently out of reach.
+# 🔴 They stay two lists rather than one. A sample is not your work, and
+# offering to overwrite it from Save would be worse than not offering it at all.
+SAMPLES = Path(__file__).resolve().parents[2] / "samples"
+
+
+@app.get("/samples")
+def list_samples() -> Dict[str, Any]:
+    """The plots bundled with the program."""
+    out = []
+    for f in sorted(SAMPLES.glob("*.plot.json")):
+        try:
+            show = json.loads(f.read_text()).get("show", "")
+        except (OSError, ValueError):
+            show = "— will not parse —"
+        out.append({"name": f.name, "show": show})
+    return {"samples": out}
+
+
+@app.get("/samples/{name}")
+def read_sample(name: str) -> Dict[str, Any]:
+    """One bundled plot.
+
+    ⚠ The name is matched against the listing rather than joined onto a path.
+    "../plots/whatever.json" is a name too, and resolve() in store.py exists
+    because that is not a theoretical concern.
+    """
+    for f in sorted(SAMPLES.glob("*.plot.json")):
+        if f.name == name:
+            return {"name": name, "plot": json.loads(f.read_text())}
+    raise HTTPException(status_code=404, detail=f"no sample called {name}")
 
 
 @app.get("/plots")

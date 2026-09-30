@@ -56,6 +56,7 @@ keyboard-operable — tab to it and use the arrow keys, or Enter to reset.
 | **Open…** | Lists the plots in your plots folder. |
 | **Save** / **Save As…** | ⌘S and ⇧⌘S. |
 | **Export…** | See [§10](#10-exports). |
+| **Sheet** | The paper the PDF is drawn on — LETTER through **ARCH E (36 × 48)** on an imperial plot, A4 and A3 on a metric one. ⚠ A sheet too small **refuses** rather than cropping, and names one that fits. |
 | **Scale** | Paper scale for the exported PDF. **Fit** picks the largest standard scale at which nothing runs off the sheet. ⚠ The list is imperial fractions on an imperial plot and metric ratios on a metric one, never both — offering ¼" on a metric plot would let you issue a drawing at a ratio your scale rule does not have. |
 
 **Ground plan…** imports the venue — **DXF or PDF**. This never draws
@@ -313,6 +314,10 @@ Plots go in a **`plots`** folder next to `run.command`, as `.plot.json`.
 
 **Save** writes the file you are on. **Save As…** starts a new one. **Open…**
 lists what is there.
+
+⭐ **The demo is at the bottom of Open…**, under *"Comes with plotedit"*. It opens
+as **a copy with no name**, so ⌘S asks where to put it rather than writing back
+over the file that shipped. Pressing **New** does not lose it.
 
 To keep them somewhere else — a show folder, or Dropbox — set `PLOTEDIT_PLOTS`
 to that path before starting.

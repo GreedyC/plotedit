@@ -21,7 +21,23 @@ from plotedit.booms import BOOM_PITCH
 
 def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=None,
            pool_plane=None, show_pools=True, show_focus=True, show_labels=True,
-           rulers=None):
+           rulers=None, lift=None):
+    """Draw the plot.
+
+    ⭐ `lift` is how far up the sheet the drawing sits, in feet, and None means
+    WORK IT OUT. The origin below pads for the FOH catwalk and the boom
+    elevations so neither is clipped off the bottom or the left — it is a FLOOR,
+    and nothing ever asked what was left over above, so every spare inch landed
+    at the top. Measured 2026.09.30 on Jerry's own exports: 31% of the height
+    wasted on Letter, 38% on ARCH C, 47% on TABLOID, always with the bare 0.5"
+    margin below.
+
+    ⚠ It takes two passes because the extent is not knowable in advance — booms,
+    key, labels and the title block all contribute, and the title block is drawn
+    last. The sheet already tracks what it drew for the clipping guard, so pass
+    one measures and pass two draws. The fit search above already renders
+    repeatedly for the same reason.
+    """
     from plotedit import units as _units
     # "fit" means: zoom in as far as the sheet allows. An explicit scale is
     # still honoured — a plot issued at 1/4" stays at 1/4" when it is reissued.
@@ -36,12 +52,28 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
         # them on and then issuing with them off picks a scale far smaller than
         # the sheet can hold — a drawing correct in every dimension and half the
         # size it should be.
+        # ⚠ lift=0 through the search. Centring only ever happens on a drawing
+        # that ALREADY FITS (see below), so it cannot change which scale fits —
+        # and letting each trial run its own two passes would double the work of
+        # a search that already renders the plot six times.
         scale = largest_scale(
             lambda k, path: render(plot_path, path, scale=k, page=page,
                                    landscape=landscape, pool_plane=pool_plane,
                                    show_pools=show_pools, show_focus=show_focus,
-                                   show_labels=show_labels, rulers=rulers)[0],
+                                   show_labels=show_labels, rulers=rulers,
+                                   lift=0.0)[0],
             system=_system)
+
+    # ⭐ PASS ONE: draw it at the floor to find out how much room is left.
+    if lift is None:
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as _d:
+            _probe, _ = render(plot_path, os.path.join(_d, "probe.pdf"),
+                               scale=scale, page=page, landscape=landscape,
+                               dxf=dxf, pool_plane=pool_plane,
+                               show_pools=show_pools, show_focus=show_focus,
+                               show_labels=show_labels, rulers=rulers, lift=0.0)
+        lift = _probe.slack_above()
 
     plot = json.load(open(plot_path))
     room = plot["room"]
@@ -67,7 +99,8 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # clipping guard afterwards.
     from plotedit import booms as _B
     boom_space = _B.space_needed(plot["positions"], plot["instruments"])
-    s.origin(ft(4) + boom_space, ft(4) + (house + 1.5 if house else 0))
+    _floor_y = ft(4) + (house + 1.5 if house else 0)
+    s.origin(ft(4) + boom_space, _floor_y + (lift or 0.0))
 
     s.layer("BASE")
     # §6.18: architecture is HEAVY; the reference lines are MEDIUM and dashed;
@@ -125,11 +158,23 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # §6.12: the readable layout goes BESIDE the plot, because in plan a boom is
     # a point. Placed off the room's stage-left edge, which is the low-x side.
     _placed = {b["name"]: b for b in _B.layout(plot["positions"], plot["instruments"], system=_system)}
+    # 🔴 ONE FOOTNOTE FOR THE STRIP, not one per boom. Each elevation used to
+    # draw "NOT TO SCALE — heights are the data" centred on its own pipe, so two
+    # booms standing near each other overprinted the sentence and neither copy
+    # was readable. Found on a tester's export, 2026.09.30.
+    _drawn = []
     for p in booms:
         spot = _placed.get((p.get("name") or "").upper())
         if spot:
-            s.boom_elevation(p, _B.units_on(p, plot["instruments"]), spot["x"], spot["y"],
-                             layout=p.get("layout") or plot.get("boomLayout", "option1"))
+            _, _cuts = s.boom_elevation(
+                p, _B.units_on(p, plot["instruments"]), spot["x"], spot["y"],
+                layout=p.get("layout") or plot.get("boomLayout", "option1"),
+                note=False)
+            _drawn.append((spot["x"], spot["y"], _cuts))
+    if _drawn:
+        s.boom_note(min(d[0] for d in _drawn), max(d[0] for d in _drawn),
+                    min(d[1] for d in _drawn),
+                    compressed=sum(1 for d in _drawn if d[2]), total=len(_drawn))
 
     # ⭐ A unit on a BOOM is drawn in its elevation, not in plan — see
     # Sheet.unit(in_plan=...). Its focus and its pool are still drawn here.
@@ -187,13 +232,21 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                  bottom=_opt.get("bottom", True),
                  side=_opt.get("side", "left"))
 
-    if room.get("source"):
-        # ⚠ This note is the one that says the room was never measured and may
-        # not be quoted. It used to be cut to 110 characters, which ended it
-        # mid-word — losing the half that named the source. Wrapped to the room
-        # now, so all of it is there and none of it is off the paper.
-        s.note(1, room["depth"] - 1.5, f"Room: {room['source']}",
-               width_ft=max(room["width"] - 2.0, 8.0))
+    # 🔴 THE ROOM SOURCE IS NO LONGER PRINTED ON THE PLOT (Jerry, 2026.09.30:
+    # "lets lose the room site visit stuff"). It was drawn inside the room at
+    # depth - 1.5, which is where a pipe label lives — on his own export
+    # "Room: Site visit 08-29-2026" sat across "ELECTRIC 7" and neither read.
+    #
+    # ⚠ IT IS STILL IN THE FILE. `room.source` is data and travels with the
+    # plot; what changed is that the sheet stops carrying it. Anything that
+    # needs the provenance reads the .plot.json, where it was always the
+    # authority — the note was a copy of it.
+    #
+    # ⚠ AND ONE THING WENT WITH IT. server/testdata/blackbox.plot.json carries
+    # "NOT MEASURED and not a real room, so nothing here may be quoted" in that
+    # field, so a PDF rendered from the fixture used to say on its face that its
+    # dimensions were invented. It no longer does. If that warning is wanted
+    # back it belongs in the title block, not across a pipe.
     s.finish()
     return s, rows
 

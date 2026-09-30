@@ -44,6 +44,34 @@ export interface FixtureRow {
   reference_lamp: string; family: string; modes: string[] | null; source: string;
 }
 
+/** One sheet a plot can be issued on. */
+export interface PaperSize { name: string; w_in: number; h_in: number; label: string }
+
+/** The sheets, split by measuring system.
+ *
+ *  ⚠ ASKED FOR, never typed here. A second copy of the table in TypeScript is
+ *  exactly how the lamp dropdown ended a release behind LAMP_MF. */
+export async function paperSizes(): Promise<{
+  imperial: PaperSize[]; metric: PaperSize[]; default: string;
+}> {
+  const r = await fetch("/api/pages");
+  if (!r.ok) throw new Error(`cannot load the paper sizes: ${r.status}`);
+  return r.json();
+}
+
+/** The plots bundled with the program, kept apart from the designer's own. */
+export async function samples(): Promise<{ name: string; show: string }[]> {
+  const r = await fetch("/api/samples");
+  if (!r.ok) throw new Error(`cannot list the samples: ${r.status}`);
+  return (await r.json()).samples;
+}
+
+export async function readSample(name: string): Promise<Plot> {
+  const r = await fetch(`/api/samples/${encodeURIComponent(name)}`);
+  if (!r.ok) throw new Error(`cannot open ${name}: ${r.status}`);
+  return (await r.json()).plot as Plot;
+}
+
 /** The fixture table, so the inspector can offer real types rather than free text. */
 export async function fixtures(): Promise<Record<string, FixtureRow>> {
   const r = await fetch("/api/fixtures");
@@ -72,6 +100,10 @@ export type ExportKind = "pdf" | "dxf" | "schedule" | "hookup" | "eos";
 /** Ask the server for a file and hand it to the browser as a download. */
 export interface ExportOptions {
   scale?: string;
+  /** The sheet, e.g. "ARCH_D" or "A1". Omitted means the server's default —
+   *  which is what every export did until a tester asked for something bigger
+   *  than ARCH D and found there was no way to say so. */
+  page?: string;
   landscape?: boolean;
   /** What the plan/pools/focus/labels checkboxes are showing. Sent so the
    *  print matches the screen; omitted entirely for the CSV and patch exports,
@@ -98,6 +130,7 @@ export async function exportFile(
     body: JSON.stringify({
       plot,
       ...(opts.scale ? { scale: opts.scale } : {}),
+      ...(opts.page ? { page: opts.page } : {}),
       ...(opts.landscape === undefined ? {} : { landscape: opts.landscape }),
       ...(opts.showPools === undefined ? {} : { showPools: opts.showPools }),
       ...(opts.showFocus === undefined ? {} : { showFocus: opts.showFocus }),
