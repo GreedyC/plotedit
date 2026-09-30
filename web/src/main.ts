@@ -657,10 +657,10 @@ async function refreshOpenList(): Promise<void> {
     // The list is a convenience; failing to fetch it must not stop the editor.
     sel.title = e instanceof Error ? e.message : String(e);
   }
-  // ⭐ WHAT SHIPPED WITH IT, in its own group at the bottom. Leo, 2026.09.30:
-  // "I created a test file, and I wonder if there's a way to open the demo
-  // file?" — there was not. The demo lives in samples/ and this list reads the
-  // plots folder, so New put it permanently out of reach.
+  // ⭐ WHAT SHIPPED WITH IT, in its own group at the bottom. A beta tester
+  // asked, 2026.09.30, whether there was a way to open the demo file again —
+  // there was not. The demo lives in samples/ and this list reads the plots
+  // folder, so New put it permanently out of reach.
   //
   // 🔴 A GROUP, not another row. A sample is not the designer's work, and a
   // list that mixes the two invites Save to overwrite something that shipped.

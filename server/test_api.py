@@ -163,10 +163,9 @@ check("the listing names the folder", "folder" in client.get("/plots").json(), T
 
 print()
 
-# ⭐ BOTH OF THESE CAME FROM ONE TESTER IN ONE EMAIL. Leo, 2026.09.30: "I created
-# a test file, and I wonder if there's a way to open the demo file? And how to
-# set the size of the paper... Seems I'm stuck in a letter size paper in drafting
-# and an arch D for PDF export."
+# ⭐ BOTH OF THESE CAME FROM ONE BETA TESTER IN ONE EMAIL, 2026.09.30: he could
+# not reopen the demo file after making his own, and he could not choose the
+# paper size — every export came out ARCH D whatever he did.
 print("\nthe sheets are served, not typed into the browser")
 _pg = client.get("/pages").json()
 _imp = [r["name"] for r in _pg["imperial"]]

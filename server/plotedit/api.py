@@ -688,9 +688,9 @@ def paper_sizes() -> Dict[str, Any]:
 
 
 # ⭐ WHAT SHIPPED WITH IT, kept separate from what the designer has saved.
-# Jerry's tester Leo, 2026.09.30: "I created a test file, and I wonder if there's
-# a way to open the demo file?" — there was not. The demo lives in samples/ and
-# Open… lists the plots folder, so pressing New put it permanently out of reach.
+# A beta tester asked, 2026.09.30, whether there was a way to open the demo file
+# again — there was not. The demo lives in samples/ and Open… lists the plots
+# folder, so pressing New put it permanently out of reach.
 # 🔴 They stay two lists rather than one. A sample is not your work, and
 # offering to overwrite it from Save would be worse than not offering it at all.
 SAMPLES = Path(__file__).resolve().parents[2] / "samples"
