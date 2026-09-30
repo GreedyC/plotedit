@@ -361,6 +361,51 @@ with _tfd.TemporaryDirectory() as _d:
     check("side-to-side centring raises no CLIPPED warning",
           [w for w in _s2.warnings if "CLIPPED" in w], [])
 
+
+# ------------------------------- a base plan DOWNSTAGE of the room still prints
+print("\nsomething below the room is made room for, not clipped")
+# 🔴 Jerry's own venue plan. The room is the STAGE, 35' x 50', and the house runs
+# 42 feet downstage of it — which is where the FOH catwalk and the box booms
+# live, so it belongs on the sheet. It was refused: "42.1' off the BOTTOM,
+# drawing spans 68.8' x 97.1' but ARCH_D portrait holds 92.0' x 134.8'". Both
+# dimensions fit. The drawing was parked, not too big — and the advice then
+# recommended the very sheet and scale that had just failed.
+#
+# slack_above used to give up the moment anything was clipped. It now uses the
+# same rule as slack_left: centre whenever the SPAN fits, because a span that
+# fits, centred, has margin on both sides by construction.
+_stage = _json.load(open(_DEMO))
+_stage["room"] = dict(_stage["room"])
+_stage["room"]["width"], _stage["room"]["depth"] = 35, 50
+# a house 42' deep sitting downstage of the room, at negative y
+_house = {"paths": [{"layer": "SEATS", "points": [[2, -n], [37, -n]]}
+                    for n in range(0, 43, 3)]}
+
+with _tfd.TemporaryDirectory() as _d:
+    _pj = os.path.join(_d, "stage.plot.json")
+    _json.dump(_stage, open(_pj, "w"))
+    _sh, _ = _P.render(_pj, os.path.join(_d, "o.pdf"), scale="1/4",
+                       page="ARCH_D", landscape=False, base=_house)
+    check("a house downstage of the room does not clip",
+          [w for w in _sh.warnings if "CLIPPED" in w], [])
+
+    # ⚠ And the drawing genuinely moved rather than the guard going quiet.
+    _sh0, _ = _P.render(_pj, os.path.join(_d, "z.pdf"), scale="1/4",
+                        page="ARCH_D", landscape=False, base=_house, lift=0.0)
+    check("...because it was lifted, not ignored",
+          round(_sh._bounds[1] - _sh0._bounds[1]) > 0, True)
+
+# 🔴 And a drawing that truly is too tall still gets nothing, so the guard keeps
+# naming the edge rather than quietly renaming it.
+_tall = {"paths": [{"layer": "X", "points": [[0, -400], [1, 300]]}]}
+with _tfd.TemporaryDirectory() as _d:
+    _pj = os.path.join(_d, "tall.plot.json")
+    _json.dump(_stage, open(_pj, "w"))
+    _sh2, _ = _P.render(_pj, os.path.join(_d, "t.pdf"), scale="1/4",
+                        page="ARCH_D", landscape=False, base=_tall)
+    check("a drawing too tall for any placement is still refused",
+          bool([w for w in _sh2.warnings if "CLIPPED" in w]), True)
+
 if FAILS:
 
 

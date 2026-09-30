@@ -103,6 +103,16 @@ def scale_ratio(scale):
     """
     if isinstance(scale, str) and scale.startswith("1:"):
         return float(scale[2:])
+    # ⚠ Say what is wrong and what is allowed. A bare KeyError here came back as
+    # a 500 with a stack trace, and the scale that produced it was "3/16" — which
+    # the PDF IMPORTER offers, because the scale a borrowed drawing was made at
+    # is not the same question as the scale this plot is drawn at. Two honest
+    # lists that a caller can easily confuse, so the error has to be readable.
+    if isinstance(scale, str) and scale not in IMPERIAL_SCALES:
+        raise ValueError(
+            f'unknown scale "{scale}" — this plot can be drawn at '
+            + ", ".join(f'{k}" = 1\'-0"' for k in IMPERIAL_SCALES)
+            + ", or a metric ratio like 1:50")
     inches_per_foot = IMPERIAL_SCALES[scale] if isinstance(scale, str) else float(scale)
     return 12.0 / inches_per_foot
 

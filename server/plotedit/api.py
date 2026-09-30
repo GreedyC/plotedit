@@ -436,14 +436,22 @@ def export_pdf(req: ExportRequest) -> Response:
     """
     with tempfile.TemporaryDirectory() as d:
         pdf = os.path.join(d, "plot.pdf")
-        sheet, _ = exports.plot_pdf(req.plot, pdf, scale=req.scale,
-                                    page=req.page, landscape=req.landscape,
-                                    show_pools=req.showPools,
-                                    show_focus=req.showFocus,
-                                    show_labels=req.showLabels,
-                                    pool_plane=req.poolPlane,
-                                    rulers=req.rulers,
-                                    base=req.base)
+        try:
+            sheet, _ = exports.plot_pdf(req.plot, pdf, scale=req.scale,
+                                        page=req.page, landscape=req.landscape,
+                                        show_pools=req.showPools,
+                                        show_focus=req.showFocus,
+                                        show_labels=req.showLabels,
+                                        pool_plane=req.poolPlane,
+                                        rulers=req.rulers,
+                                        base=req.base)
+        # ⚠ A scale this plot cannot be drawn at is a BAD REQUEST, not a crash.
+        # It used to be a bare KeyError deep in units.py, surfacing as a 500 with
+        # a stack trace — found by asking for "3/16", which the PDF importer
+        # offers because the scale a borrowed drawing was made at is a different
+        # question from the scale this plot is drawn at.
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
         # ⚠ Refuse only what makes the drawing WRONG. A clipped sheet is
         # unusable, so it is a 422. Everything else — a grazing pool, an
         # unrecognised accessory — is a true note ABOUT the plot, and refusing

@@ -213,6 +213,94 @@ check("an unknown sample is 404", client.get("/samples/nope.plot.json").status_c
 check("traversal is refused",
       client.get("/samples/..%2F..%2Fplots%2Fsample.plot.json").status_code, 404)
 
+
+# ------------------------------------------ a PDF import stops at the page edge
+print("\nan imported PDF keeps only what the page shows")
+from plotedit import pdf_bridge as _pb
+
+# 🔴 A PDF clips to its MediaBox, so anything outside is invisible in every
+# viewer — but get_drawings() hands it over all the same. Jerry's own She Loves
+# Me plan carries 134 such paths plus a construction line that starts on the page
+# and runs ten inches past the bottom edge. Imported whole they reported 141.8'
+# of depth for a 96' drawing: a phantom 47 feet, which is enough to send the
+# clipping guard after a scale nobody needed. The drawing itself is the only
+# check a designer has on the scale they typed, so a wrong size is not cosmetic.
+_R = (0.0, 0.0, 100.0, 50.0)          # a 100 x 50 "page"
+
+
+def _pieces(poly):
+    return _pb._clip(list(poly), *_R)
+
+
+check("a line wholly inside is untouched",
+      _pieces([(10, 10), (90, 40)]), [[(10, 10), (90, 40)]])
+check("a line wholly outside is dropped",
+      _pieces([(200, 10), (300, 40)]), [])
+check("a line wholly BELOW is dropped too",
+      _pieces([(10, -80), (90, -60)]), [])
+check("a line crossing the right edge is cut AT the edge",
+      [[(round(x, 3), round(y, 3)) for x, y in seg] for seg in
+       _pieces([(50, 25), (150, 25)])],
+      [[(50.0, 25.0), (100.0, 25.0)]])
+check("a line crossing the bottom is cut there",
+      [[(round(x, 3), round(y, 3)) for x, y in seg] for seg in
+       _pieces([(50, 25), (50, -75)])],
+      [[(50.0, 25.0), (50.0, 0.0)]])
+
+# ⚠ A cut must END the piece. Joining across the gap would draw a wall the
+# drawing never had — a polyline that leaves the page and comes back is two
+# lines, not one.
+_out_and_back = _pieces([(10, 25), (10, -25), (90, -25), (90, 25)])
+check("leaving the page and returning gives TWO pieces", len(_out_and_back), 2)
+check("...and neither bridges the gap",
+      all(len(seg) == 2 for seg in _out_and_back), True)
+
+# ⭐ End to end on a page built for the purpose: ink inside, ink outside.
+import tempfile as _tf2
+from reportlab.pdfgen import canvas as _cv
+with _tf2.TemporaryDirectory() as _d:
+    _f = os.path.join(_d, "edge.pdf")
+    _c = _cv.Canvas(_f, pagesize=(72 * 10, 72 * 10))     # 10" x 10"
+    _c.line(72 * 1, 72 * 1, 72 * 9, 72 * 9)              # on the page
+    _c.line(72 * 5, 72 * 5, 72 * 40, 72 * 5)             # runs 30" off the right
+    _c.line(72 * 50, 72 * 2, 72 * 60, 72 * 2)            # entirely off the page
+    _c.save()
+    _g = _pb.paths(_f, page=1, scale="1/4")
+    _x0, _y0, _x1, _y1 = _g["extents"]
+    # 10" at 1/4" = 1'-0" is 40 feet. Unclipped the second line alone would make
+    # it 160.
+    check("the import is the size of the PAGE, not of the stray ink",
+          round(_x1 - _x0) <= 41, True)
+    check("...and the note says what was left out",
+          "outside the page" in _g["note"], True)
+
+
+# ------------------------------------------------- an unknown scale is a 400
+print("\na scale this plot cannot be drawn at is a bad request")
+# 🔴 It used to be a bare KeyError deep in units.py, surfacing as a 500 with a
+# stack trace. Found by asking for "3/16" — which the PDF IMPORTER offers,
+# because the scale a borrowed drawing was made at is a different question from
+# the scale this plot is drawn at. Two honest lists that are easy to confuse, so
+# the error has to name the allowed ones.
+from plotedit import units as _u
+from plotedit import pdf_bridge as _pb2
+
+_r = client.post("/export/pdf", json={"plot": _plot, "scale": "3/16"})
+check("an import-only scale is refused, not a crash", _r.status_code, 400)
+check("...and the message names it", '"3/16"' in _r.json()["detail"], True)
+check("...and lists what IS allowed",
+      all(f'{k}"' in _r.json()["detail"] for k in _u.IMPERIAL_SCALES), True)
+check("nonsense is refused the same way",
+      client.post("/export/pdf", json={"plot": _plot, "scale": "banana"}).status_code, 400)
+
+# ⚠ Named so the gap cannot close silently: these are the scales the importer
+# accepts that a plot cannot be DRAWN at. If the ladders are ever unified this
+# list goes empty and the test above needs a different input.
+check("the two ladders still differ, which is why this matters",
+      sorted(s_ for s_ in _pb2.SCALES if not s_.startswith("1:")
+             and s_ not in _u.IMPERIAL_SCALES),
+      ["1/16", "3/16", "3/32"])
+
 if FAILS:
     print(f"{len(FAILS)} FAILED")
     for f in FAILS:

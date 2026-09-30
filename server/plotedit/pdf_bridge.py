@@ -129,6 +129,68 @@ def _flatten(item, height):
     return []
 
 
+def _clip(poly, x0, y0, x1, y1):
+    """A polyline cut to the page rectangle. Returns the pieces that survive.
+
+    🔴 Liang-Barsky per segment, because "is it wholly outside" is not enough.
+    Jerry's She Loves Me plan has construction lines that START on the page and
+    run ten inches past its bottom edge. A PDF viewer clips them at the boundary;
+    importing them whole reported 141.8' of depth for a 94.5' drawing — a phantom
+    47 feet, enough to send the clipping guard after a scale nobody needed.
+
+    ⚠ A cut segment ENDS the piece. Joining across a gap would draw a wall where
+    the drawing had none.
+    """
+    out, run = [], []
+    for a, b in zip(poly, poly[1:]):
+        seg = _clip_seg(a, b, x0, y0, x1, y1)
+        if seg is None:
+            if len(run) > 1:
+                out.append(run)
+            run = []
+            continue
+        pa, pb = seg
+        if not run:
+            run = [pa, pb]
+        elif abs(run[-1][0] - pa[0]) < 1e-9 and abs(run[-1][1] - pa[1]) < 1e-9:
+            run.append(pb)
+        else:
+            if len(run) > 1:
+                out.append(run)
+            run = [pa, pb]
+    if len(run) > 1:
+        out.append(run)
+    # A single point is not a line; a one-point "polyline" draws nothing.
+    if not out and len(poly) == 1 and x0 <= poly[0][0] <= x1 and y0 <= poly[0][1] <= y1:
+        return [list(poly)]
+    return out
+
+
+def _clip_seg(a, b, x0, y0, x1, y1):
+    """One segment against the rectangle, or None if it misses entirely."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t0, t1 = 0.0, 1.0
+    for p_, q_ in ((-dx, a[0] - x0), (dx, x1 - a[0]),
+                   (-dy, a[1] - y0), (dy, y1 - a[1])):
+        if p_ == 0:
+            if q_ < 0:
+                return None          # parallel to this edge and outside it
+            continue
+        t = q_ / p_
+        if p_ < 0:
+            if t > t1:
+                return None
+            t0 = max(t0, t)
+        else:
+            if t < t0:
+                return None
+            t1 = min(t1, t)
+    if t0 > t1:
+        return None
+    return ((a[0] + t0 * dx, a[1] + t0 * dy),
+            (a[0] + t1 * dx, a[1] + t1 * dy))
+
+
 def paths(path, page=1, scale="1/4", origin="bounding-box"):
     """A page's vectors as polylines in FEET.
 
@@ -144,10 +206,32 @@ def paths(path, page=1, scale="1/4", origin="bounding-box"):
             raise ValueError(f"page {page} — the file has {len(doc)}")
         pg = doc[page - 1]
         h = pg.rect.height
-        raw = []
+        r = pg.rect
+        # 🔴 KEEP ONLY WHAT THE PAGE ACTUALLY SHOWS. A PDF clips to its MediaBox,
+        # so geometry outside it is invisible in every viewer — but get_drawings()
+        # hands it over all the same. Jerry's own She Loves Me plan carries 294
+        # such paths, and they made the import report 141.8' of depth for a
+        # drawing that is 94.5' deep: a phantom 47 feet, which is enough to send
+        # the clipping guard after a scale nobody needed.
+        #
+        # ⚠ WHOLLY outside, not partly. A wall that runs off the edge is still a
+        # wall you can see, and cutting it at the boundary would move its end
+        # point to a place the drawing never claimed.
+        lo_x, hi_x = r.x0, r.x1
+        lo_y, hi_y = h - r.y1, h - r.y0        # _flatten has already flipped y
+        pad = 1.0                               # a point of slack for the border
+
+        raw, dropped, trimmed = [], 0, 0
         for group in pg.get_drawings():
             for item in group["items"]:
-                raw.extend(_flatten(item, h))
+                for poly in _flatten(item, h):
+                    kept = _clip(poly, lo_x - pad, lo_y - pad, hi_x + pad, hi_y + pad)
+                    if not kept:
+                        dropped += 1
+                    else:
+                        if len(kept) != 1 or len(kept[0]) != len(poly):
+                            trimmed += 1
+                        raw.extend(kept)
 
     if not raw:
         return {"paths": [], "extents": None, "scale": scale,
@@ -165,4 +249,7 @@ def paths(path, page=1, scale="1/4", origin="bounding-box"):
            round((max(xs) - ox) * fpp, 3), round((max(ys) - oy) * fpp, 3)]
     return {"paths": out, "extents": ext, "scale": scale,
             "note": f"{len(out)} paths at {scale}\" = 1'-0\". A PDF has no layers, so "
-                    f"the border, the title block and the dimensions came in too."}
+                    f"the border, the title block and the dimensions came in too."
+                    + (f" {dropped} path(s) lay outside the page and were left out, "
+                       f"{trimmed} were cut at its edge — a PDF viewer does not show "
+                       f"those parts either." if dropped or trimmed else "")}

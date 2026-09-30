@@ -285,12 +285,22 @@ class Sheet:
         m = self.margin
         page_top = self.page_pt[1] - m
         guard_top = page_top - 1.3 * inch           # the band finish() polices
-        if y0b < m or y1b > guard_top:
-            return 0.0                              # already clipped; leave it
-        # Centre between the margins...
+        # ⭐ THE RULE IS THE SPAN, matching slack_left. This used to give up the
+        # moment anything was clipped, on the reasoning below — which is right
+        # when the drawing is too tall and wrong when it is merely parked badly.
+        # Found by putting a venue plan behind a rig: the house sits downstage
+        # of the room, so 42.1' hung off the BOTTOM of a sheet holding 134.8'
+        # for a drawing 97.1' deep, and the advice then recommended the very
+        # sheet and scale that had just failed.
+        if (y1b - y0b) > (guard_top - m):
+            return 0.0                              # too tall at any placement
+        # Centre on the PAGE...
         want = ((page_top - y1b) - (y0b - m)) / 2.0
-        # ...but never past the line the guard draws.
-        return max(0.0, min(want, guard_top - y1b)) / self.pt_per_ft
+        # ...then clamp into what the guard actually allows. Since the span
+        # fits, these two bounds cannot cross, so the result never clips.
+        low = m - y0b                               # or the bottom loses
+        high = guard_top - y1b                      # or the band loses
+        return max(low, min(want, high)) / self.pt_per_ft
 
     def slack_left(self):
         """How far RIGHT this drawing should move to sit centred, in FEET.
