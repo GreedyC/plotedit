@@ -76,6 +76,12 @@ jobs:
           # does get committed, a release would quietly start redistributing it.
           # An exclusion in the packaging step is a fact; .gitignore is a hope.
           rsync -a --exclude 'reference/' docs/ out/plotedit/docs/
+          # ⭐ The manual as a PDF, at the top level where somebody who has just
+          # unzipped this will see it. GENERATED from docs/MANUAL.md at build
+          # time rather than committed, so it cannot drift from the Markdown —
+          # and it is the ONLY PDF allowed into the download (see the guard
+          # below, and the exclusion above for why that guard exists).
+          python3 server/make_manual.py out/plotedit/plotedit-manual.pdf
           # ⚠ Nothing only a developer needs: no node_modules, no .git.
           find out/plotedit -name '__pycache__' -type d -prune -exec rm -rf {} +
           cd out && zip -qr ../plotedit.zip plotedit
@@ -97,11 +103,26 @@ jobs:
         run: |
           # A guard, not a hope. If a PDF or an office document ever reaches the
           # download, stop — a release cannot be unsent once someone has it.
-          found=$(unzip -Z1 plotedit.zip | grep -iE '\.(pdf|docx?|xlsx?|pptx?)$' || true)
+          # What it is really protecting against is docs/reference/, which holds
+          # a bought copy of USITT RP-2 (2006) and now the 2025 practice.
+          #
+          # 🔴 ONE EXACT PATH IS ALLOWED, not a pattern. Our own manual is
+          # generated into plotedit/plotedit-manual.pdf and may ship; anything
+          # matching *manual*.pdf could one day match somebody else's, and the
+          # whole point of this step is that it cannot be argued with.
+          found=$(unzip -Z1 plotedit.zip \
+                    | grep -iE '\.(pdf|docx?|xlsx?|pptx?)$' \
+                    | grep -vx 'plotedit/plotedit-manual.pdf' || true)
           if [ -n "$found" ]; then
             echo "::error::Documents in the release zip:"; echo "$found"; exit 1
           fi
-          echo "no third-party documents in the download"
+          # And it must actually be there — a guard that passes because the file
+          # is missing is the LICENSE bug of v0.1.1 repeated.
+          if ! unzip -Z1 plotedit.zip | grep -qx 'plotedit/plotedit-manual.pdf'; then
+            echo "::error::the manual PDF was not generated into the download"
+            exit 1
+          fi
+          echo "no third-party documents in the download; the manual is"
 
       # ⚠ These two run ONLY on a tag, so a push to a branch never exercises
       # them — the first time they run for real is a release nobody can take
