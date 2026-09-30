@@ -494,7 +494,20 @@ function fieldOf(type: string): number | null {
  */
 function labels(inst: Instrument, c?: Computed, symbolAngle?: string,
                 prims?: SymbolPrim[]): SVGElement {
-  const g = el("g", { class: "annot" });
+  // 🔴 pointer-events NONE, or the unit's own number swallows the click that
+  // was aimed at the unit. Found 2026.09.30 while building click-to-number: a
+  // click on the middle of a symbol hit this `text` instead of the body circle,
+  // and `interact.ts` does `closest("[data-index]")` and DESELECTS when there is
+  // no hit — so clicking a light's number cleared the selection.
+  //
+  // ⚠ NOT a new bug. It arrived when the unit number moved INSIDE the body on
+  // 2026.09.23 (see above), and went unnoticed because the ring around the digit
+  // still works — you can select a light by clicking just off its centre, which
+  // is what anyone does after the first try fails.
+  //
+  // This layer is decoration: 33 text and 13 circles in the sample, nothing that
+  // is ever a drag target. Labels should not be grabbable.
+  const g = el("g", { class: "annot", "pointer-events": "none" });
   const add = (dx: number, dy: number, s: string, size: number, weight = "400", fill = "#111") => {
     const t = el("text", {
       transform: counterFlip(inst.x + dx, inst.y + dy),

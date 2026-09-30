@@ -17,7 +17,10 @@
  */
 /** Load a plot, draw it, let it be edited. */
 import { fitView, fohExtent, setUnitSystem, fmtFt, toPlot, type View, placeBase } from "./geometry.js";
-import { isPlot, symbolKey, plotFileName, newPlot, type Plot } from "./plot.js";
+import { isPlot, symbolKey, plotFileName, newPlot, type Plot,
+         type Position } from "./plot.js";
+import { startSeq, seqClick, clickLine, seqReport, runIndices,
+         type Seq } from "./sequence.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          positionLabels, savePlot, listPlots, loadPlot, pdfPages, pdfPaths,
@@ -269,6 +272,7 @@ function drawInspector() {
   renderPositions($("positions"), store, {
     onChange: () => { draw(); recompute(); },
     onStatus: (msg, bad) => status(msg, bad),
+    onNumberSeq: (pos, start) => startNumbering(pos, start),
   });
   renderInspector($("inspector"), store, computed, {
     fixtures: Object.keys(fixtureTable).sort(),
@@ -726,6 +730,70 @@ function calibrationClick(x: number, y: number): boolean {
   draw();
   status(`Backdrop scaled — it is now ${fmtFt(baseImage.wide)} wide. `
        + `Set x and y to put it where it goes. Nothing on it is a measurement.`);
+  return true;
+}
+
+// --------------------------------------------------- number by clicking
+/** Numbering a run by pointing at the units in hanging order.
+ *
+ *  ⭐ Jerry, 2026.09.30: "pick a starting sequence number and then letting the
+ *  user fix the sequence by selecting units."
+ *
+ *  Same shape as `calibrating` and `drawingPipe` — a mode the PLAN is in, not a
+ *  dialog, because the thing being pointed at is the rig. The rules live in
+ *  `sequence.ts` so they can be tested without a browser; this is the wiring.
+ */
+let numbering: Seq | undefined;
+
+function startNumbering(pos: Position, start: number): void {
+  stopCalibration();
+  numbering = startSeq(pos.name, start);
+  svg.style.cursor = "crosshair";
+  const n = runIndices(store.plot.instruments, pos.name).length;
+  status(`Click the ${n} unit${n > 1 ? "s" : ""} on ${pos.name} in hanging order. `
+       + `Next: ${start}. Escape to stop.`);
+}
+
+function stopNumbering(): void {
+  if (!numbering) return;
+  // ⚠ Report on the way out however the pass ended, including abandoned. A run
+  // left half-numbered is the one case that genuinely breaks, and it must not
+  // end in silence — see `seqReport`.
+  const verdict = seqReport(numbering, store.plot.instruments);
+  numbering = undefined;
+  svg.style.cursor = "";
+  status(verdict, verdict.includes("🔴"));
+}
+
+/** A click while numbering. Returns true if it was consumed.
+ *
+ *  ⚠ Consumed EITHER WAY, including a refusal. A click on the wrong unit must
+ *  not fall through and select or drag it — the pointer is in a mode, and the
+ *  refusal says why.
+ */
+function numberingClick(target: Element | null): boolean {
+  if (!numbering) return false;
+  const hit = target?.closest("[data-index]");
+  if (!hit) {
+    status(`Click a unit on ${numbering.name}, or Escape to stop.`, true);
+    return true;
+  }
+  const index = Number(hit.getAttribute("data-index"));
+  const r = seqClick(numbering, store.plot.instruments, index);
+  if (!r.ok) { status(r.why, true); return true; }
+
+  // ⚠ ONE UNDO STEP PER CLICK, deliberately. Jerry, 2026.09.30: "you can't just
+  // renumber the units." A misclick in the middle of a run should cost one ⌘Z,
+  // not the whole pass.
+  store.begin(null);
+  const inst = store.plot.instruments[index];
+  if (inst) inst.unit = r.to;
+  store.commit();
+  store.select(index);
+  draw(); recompute();
+
+  const line = clickLine(r);
+  if (r.last) { stopNumbering(); status(line); } else { status(line); }
   return true;
 }
 
@@ -1209,7 +1277,14 @@ async function boot() {
     // light by accident while measuring a wall is the kind of thing that makes
     // somebody stop trusting a tool.
     svg.addEventListener("pointerdown", (e) => {
-      if (!calibrating) return;
+      if (!calibrating && !numbering) return;
+      // ⚠ Numbering is asked FIRST and by TARGET, not by coordinate. It picks a
+      // unit out of the app's own hit regions, which is what makes a unit in the
+      // boom ELEVATION clickable too — on a boom that diagram is where you would
+      // naturally point along the run.
+      if (numberingClick(e.target as Element | null)) {
+        e.preventDefault(); e.stopPropagation(); return;
+      }
       const r = svg.getBoundingClientRect();
       const pt = toPlot({ x: e.clientX - r.left, y: e.clientY - r.top }, view());
       if (calibrationClick(pt.x, pt.y)) {
@@ -1219,7 +1294,9 @@ async function boot() {
     }, true);
     // Escape abandons it rather than leaving the cursor a crosshair for ever.
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && calibrating) { stopCalibration(); status(""); }
+      if (e.key !== "Escape") return;
+      if (calibrating) { stopCalibration(); status(""); }
+      if (numbering) stopNumbering();
     });
 
     wireBackdropBar();

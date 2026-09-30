@@ -7,7 +7,8 @@
     "build": "tsc && vite build",
     "test": "tsx src/geometry.test.ts",
     "test:store": "tsx src/store.test.ts",
-    "test:all": "npm test && npm run test:store"
+    "test:seq": "tsx src/sequence.test.ts",
+    "test:all": "npm test && npm run test:store && npm run test:seq"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

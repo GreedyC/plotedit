@@ -29,6 +29,9 @@ const MOUNTS = ["", "boom-base", "floor-plate", "flange"] as const;
 
 export interface PositionDeps {
   onChange: () => void;
+  /** Start numbering this run by clicking the units in order. Optional so a
+   *  caller without a plan to click on still compiles — see `onDrawPipe`. */
+  onNumberSeq?: (pos: Position, start: number) => void;
   /** Say something the user needs to read — a refusal, or a nudge to renumber.
    *  Optional so a caller that does not have a status line still compiles. */
   onStatus?: (msg: string, bad?: boolean) => void;
@@ -518,6 +521,36 @@ export function renderPositions(
       }
     });
     actions.appendChild(renumberBtn);
+
+    // ⭐ Jerry, 2026.09.30: "pick a starting sequence number and then letting the
+    // user fix the sequence by selecting units." It sits BESIDE renumber rather
+    // than replacing it: renumber is one click when §2.3.2's order is the right
+    // one, and this is for when it is not — a V, a curved cove, or a rig
+    // somebody else hung. See `sequence.ts`.
+    if (deps.onNumberSeq) {
+      const seqBtn = document.createElement("button");
+      seqBtn.textContent = "number by clicking";
+      seqBtn.title = "Pick a starting number, then click the units in hanging order";
+      seqBtn.addEventListener("click", () => {
+        const units = plot.instruments.filter(
+          i => (i.position ?? "").trim().toLowerCase() === p.name.trim().toLowerCase()).length;
+        if (!units) { alert(`${p.name} has no units on it.`); return; }
+        // ⚠ Default 1, not max+1. A pass usually renumbers a run from the top;
+        // offering the number after the highest would silently continue a run
+        // the designer is trying to rewrite.
+        const raw = window.prompt(
+          `Number ${units} unit${units > 1 ? "s" : ""} on ${p.name}, starting at:`, "1");
+        if (raw === null) return;
+        const start = Number(raw.trim());
+        if (!Number.isInteger(start) || start < 1) {
+          alert(`"${raw.trim()}" is not a unit number. Give a whole number, 1 or more.`);
+          return;
+        }
+        deps.onNumberSeq?.(p, start);
+      });
+      actions.appendChild(seqBtn);
+    }
+
     box.appendChild(actions);
 
     host.appendChild(box);

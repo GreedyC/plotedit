@@ -589,5 +589,51 @@ check("the duplicate-unit note offers the by-hand fix instead",
 // And the button itself is still there — this was never about removing it.
 check("the renumber button survives", _src.includes('textContent = "renumber"'), true);
 
+// ------------------------------------------------- every suite actually runs
+// 🔴 `test:all` LISTS THE SUITES BY HAND, so a new test file runs on the author's
+// machine and never in CI — which is the same failure `verify_suites.py` exists
+// for on the Python side, where `for t in test_*.py` at least globs. Nothing
+// checked the web side until `sequence.test.ts` was added and this was noticed.
+//
+// ⚠ Asserted from package.json, not from a list typed here. A list typed here
+// would be a THIRD place suites live.
+{
+  const fsS = await import("node:fs");
+  const pkg = JSON.parse(fsS.readFileSync(
+    new URL("../package.json", import.meta.url), "utf8")) as
+    { scripts: Record<string, string> };
+  const scripts = Object.values(pkg.scripts).join(" ");
+  const dirS = new URL("./", import.meta.url).pathname;
+  const suites = fsS.readdirSync(dirS).filter(f => f.endsWith(".test.ts")).sort();
+  check("there is more than one suite to check", suites.length > 1, true);
+  const unrun = suites.filter(f => !scripts.includes(f));
+  check("every *.test.ts is reachable from a script", unrun, []);
+  // And reachable from test:all specifically — a script nothing calls is not run.
+  const all = pkg.scripts["test:all"] ?? "";
+  const called = [...all.matchAll(/npm (?:run )?([\w:]+)/g)].map(m => m[1]!);
+  const reached = ["test:all", ...called]
+    .map(n => pkg.scripts[n] ?? "").join(" ");
+  check("...and from test:all", suites.filter(f => !reached.includes(f)), []);
+}
+
+// ------------------------------------------- labels must not eat the click
+// 🔴 A UNIT'S OWN NUMBER USED TO SWALLOW THE CLICK AIMED AT THE UNIT. §6.14.2
+// puts the number INSIDE the body, so the `text` sits exactly over the body
+// circle — and `interact.ts` resolves a click with `closest("[data-index]")`,
+// which the annotation layer is not inside. No hit means `store.select(null)`,
+// so clicking a light's number DESELECTED it.
+//
+// ⚠ Found only by opening the app — every suite passed throughout. It is
+// pinned here because the symptom is invisible in a diff and easy to reintroduce
+// by rebuilding the label group.
+{
+  const fsA = await import("node:fs");
+  const r = fsA.readFileSync(new URL("./render.ts", import.meta.url), "utf8");
+  const m = /el\("g", \{ class: "annot"([^}]*)\}\)/.exec(r);
+  check("the annotation group is still created here", !!m, true);
+  check("...and is not clickable",
+        (m?.[1] ?? "").includes('"pointer-events": "none"'), true);
+}
+
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");
