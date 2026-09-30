@@ -125,13 +125,17 @@ print()
 # each other overprinted it and neither copy was readable. Found on a tester's
 # export, 2026.09.30 — the words "NOT TO SCALE" sat on top of "heights", and
 # "1 break" on top of "compressed".
+# 🔴 samples/demo.plot.json, NOT plots/sample.plot.json. The plots folder is
+# GITIGNORED — it holds the designer's own saved work — so a test that reads
+# from it passes on the machine that wrote it and fails in CI on a checkout
+# that has never had one. Caught by CI, 2026.09.30, not by any local run.
 print("\nthe boom footnote is drawn once, not once per boom")
 import pymupdf as _mu
 from fastapi.testclient import TestClient as _TC
 from plotedit.api import app as _app
 _c = _TC(_app)
-_plot = json.load(open(os.path.join(os.path.dirname(__file__), "..", "plots",
-                                    "sample.plot.json"), encoding="utf-8"))
+_plot = json.load(open(os.path.join(os.path.dirname(__file__), "..", "samples",
+                                    "demo.plot.json"), encoding="utf-8"))
 
 
 def _overlaps(page, scale):
@@ -184,8 +188,8 @@ import tempfile as _tfd
 def _white(page, lift):
     with _tfd.TemporaryDirectory() as d:
         f = os.path.join(d, "x.pdf")
-        _P.render(os.path.join(os.path.dirname(__file__), "..", "plots",
-                               "sample.plot.json"),
+        _P.render(os.path.join(os.path.dirname(__file__), "..", "samples",
+                               "demo.plot.json"),
                   f, scale="fit", page=page, lift=lift)
         pg = _mu.open(f)[0]
         H = pg.rect.height
@@ -214,8 +218,8 @@ check("ARCH D is not made worse", _d_after <= _d_before + 0.01, True)
 # ⚠ And centring must never create a clipping warning. The lift is clamped out
 # of the band finish() polices, so a drawing that fitted still fits.
 with _tfd.TemporaryDirectory() as _d:
-    _s, _ = _P.render(os.path.join(os.path.dirname(__file__), "..", "plots",
-                                   "sample.plot.json"),
+    _s, _ = _P.render(os.path.join(os.path.dirname(__file__), "..", "samples",
+                                   "demo.plot.json"),
                       os.path.join(_d, "x.pdf"), scale="fit", page="LETTER")
     check("centring raises no CLIPPED warning",
           [w for w in _s.warnings if "CLIPPED" in w], [])
