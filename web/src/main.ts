@@ -328,6 +328,19 @@ function paint() {
   $("dirty").textContent = store.dirty ? "Unsaved changes" : "";
   ($("undo") as HTMLButtonElement).disabled = !store.canUndo;
   ($("redo") as HTMLButtonElement).disabled = !store.canRedo;
+  // ⭐ Jerry, 2026.09.30: "make the UI save button inactive if there is nothing
+  // to save." It sits with undo and redo because it is the same rule — a control
+  // that cannot do anything should not look like it can.
+  //
+  // ⚠ SAVE ONLY, never Save As. Saving a copy under a new name is a real thing
+  // to want with nothing changed, and it is also the only way to write a plot
+  // that has never been saved — `save()` falls through to `saveAs()` when there
+  // is no file name yet, and a brand new plot is not dirty.
+  //
+  // The title changes with it. A greyed button with no explanation is a puzzle.
+  const saveBtn = $("save") as HTMLButtonElement;
+  saveBtn.disabled = !store.dirty;
+  saveBtn.title = store.dirty ? "Save (⌘S)" : "No changes to save";
   // ⭐ Each section header says what is IN it. The three panels were three grey
   // blocks that had to be read to be told apart; a count in the header answers
   // "which one is this" and "is there anything here" in one glance.
@@ -1309,7 +1322,12 @@ async function boot() {
     window.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        void (e.shiftKey ? saveAs() : save());
+        if (e.shiftKey) { void saveAs(); return; }
+        // ⚠ The shortcut follows the button. A disabled Save whose ⌘S still
+        // writes the file is two answers to one question — and saying nothing
+        // would read as a save that silently failed, which is worse than both.
+        if (!store.dirty) { status("No changes to save."); return; }
+        void save();
       }
     });
     window.addEventListener("beforeunload", (e) => {
