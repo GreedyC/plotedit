@@ -51,7 +51,7 @@ function field(
           options?: { value: string; label: string }[] } = {},
 ): HTMLElement {
   const wrap = document.createElement("label");
-  wrap.className = "pos-field" + (opts.wide ? " wide" : "");
+  wrap.className = "card-field" + (opts.wide ? " wide" : "");
   const cap = document.createElement("span");
   cap.textContent = label;
   if (opts.hint) { cap.title = opts.hint; wrap.title = opts.hint; }
@@ -96,7 +96,7 @@ export function renderDetails(host: HTMLElement, store: Store, deps: DetailDeps)
 
   const group = (title: string, fields: HTMLElement[]) => {
     const box = document.createElement("div");
-    box.className = "pos-row";
+    box.className = "card";
     const h = document.createElement("p");
     h.className = "group-label";
     h.textContent = title;

@@ -683,7 +683,7 @@ check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
   // and Number by clicking were CLIPPED rather than merely tight, and the panel
   // is resizable so no fixed width is safe.
   const htmlB = fsB.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const posRule = /\.pos-actions \{[^}]*\}/.exec(htmlB)?.[0] ?? "";
+  const posRule = /\.card-actions \{[^}]*\}/.exec(htmlB)?.[0] ?? "";
   check("the action row is a flex row", /display:flex/.test(posRule), true);
   check("...that wraps rather than clipping", /flex-wrap:wrap/.test(posRule), true);
 
@@ -895,6 +895,43 @@ console.log("\nrevert goes back to the file on disk");
   check("...and saving moves that point", /onDisk = structuredClone\(store\.plot\)/.test(mainR), true);
   check("Revert is disabled when there is nothing to go back from",
         /revertBtn\.disabled = !store\.dirty \|\| !onDisk/.test(mainR), true);
+}
+
+// ------------------------------------------- the card classes say what they are
+// 🔴 They were `.pos-row`, `.pos-field`, `.pos-note`, `.pos-actions` — and they
+// are not about positions. `details.ts` renders Show & Venue with the same
+// classes, because the layout IS the same; the name described where the CSS was
+// first needed rather than what it is.
+//
+// ⚠ That cost three bugs in one day, all the same shape — "the first `.pos-row`"
+// is Show & Venue, not a position. One wrote 12'-6" into DESIGNER and the value
+// reached a file before anyone noticed.
+{
+  const fsC = await import("node:fs");
+  const pathC = await import("node:path");
+  const dirC = new URL("./", import.meta.url).pathname;
+  const files = ["index.html", "src/details.ts", "src/positions.ts", "src/main.ts"]
+    .map(f => pathC.join(dirC, "..", f))
+    .filter(f => fsC.existsSync(f));
+  check("the files to check are there", files.length, 4);
+  // ⚠ COMMENTS STRIPPED FIRST — HTML and TS both. The comment that explains this
+  // rename necessarily names the classes it renamed, and a check that failed on
+  // its own explanation would push the explanation out of the file. The same
+  // thing happened to the renumber check; the lesson stuck this time.
+  const strip = (t: string) => t
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+  const offenders = files.filter(f =>
+    /\bpos-(row|field|note|actions)\b/.test(strip(fsC.readFileSync(f, "utf8"))));
+  check("nothing is called pos-* any more", offenders.map(f => pathC.basename(f)), []);
+
+  // ⭐ THE REAL POINT: the class is SHARED, and the test says so. If a future
+  // reader believes `.card` means "a position", this is where they find out.
+  const det = fsC.readFileSync(pathC.join(dirC, "details.ts"), "utf8");
+  const pos = fsC.readFileSync(pathC.join(dirC, "positions.ts"), "utf8");
+  check("Show & Venue uses the card class", /className = "card"/.test(det), true);
+  check("...and so does a position row", /className = "card"/.test(pos), true);
 }
 
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

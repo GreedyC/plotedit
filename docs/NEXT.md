@@ -6,7 +6,7 @@ In order. Each step should leave something that runs.
 [`MENUS-AND-MATERIAL.md`](MENUS-AND-MATERIAL.md), written for #56 and delivered
 in #77 the same day. It measures what was inconsistent, works out what Material
 Design 3 actually requires, and records why each control ended up the shape it
-is. ⚠ Kept as reasoning rather than as a to-do — but **three of its eight steps
+is. ⚠ Kept as reasoning rather than as a to-do — but **two of its eight steps
 did not land**, and they are named at the top of it along with the open questions.
 
 ## 1. Make the Python importable as a package ✅ done 2026.09.23

@@ -398,21 +398,38 @@
       opacity:.55; cursor:not-allowed; background:var(--surface-container-low); }
 
     /* ---- positions --------------------------------------------------- */
-    .pos-row { border:1px solid var(--outline-variant); border-radius:var(--shape-s);
+    /* ---- a card of fields, in any panel --------------------------------
+       🔴 THESE WERE CALLED `.pos-row`, `.pos-field`, `.pos-note` AND
+       `.pos-actions`, AND THEY ARE NOT ABOUT POSITIONS. `details.ts` renders
+       Show & Venue with the same classes, because the layout is the same — so
+       the name described where the CSS was first needed rather than what it is.
+
+       ⚠ That cost three real bugs in one day, all the same shape: "the first
+       `.pos-row`" is Show & Venue, not a position.
+         · a test wrote 12'-6" into DESIGNER believing it was a trim, and the
+           value reached a file before anyone noticed;
+         · a later check read the wrong row and reported a position unchanged
+           when it had never been touched;
+         · and a third read "The Odd Couple" as a position name.
+       Each time the code was right and the NAME was lying.
+
+       ⭐ `card` is what it is: a bordered box of fields inside a panel. Nothing
+       about it belongs to positions, and now nothing says it does. */
+    .card { border:1px solid var(--outline-variant); border-radius:var(--shape-s);
                padding:10px 12px; margin-bottom:10px; display:grid;
                grid-template-columns:repeat(auto-fit,minmax(92px,1fr)); gap:8px 10px;
                background:var(--surface-container-lowest); transition:box-shadow .15s; }
-    .pos-row:hover { box-shadow:var(--elev-1); }
-    .pos-field { display:flex; flex-direction:column; gap:2px; }
-    .pos-field.wide { grid-column:1/-1; }
+    .card:hover { box-shadow:var(--elev-1); }
+    .card-field { display:flex; flex-direction:column; gap:2px; }
+    .card-field.wide { grid-column:1/-1; }
     /* A sub-heading inside a card, for the groups in Show & Venue. M3 label-small. */
     .group-label { grid-column:1/-1; margin:0 0 2px; font-size:11px; line-height:16px;
                    letter-spacing:.5px; font-weight:500; text-transform:uppercase;
                    color:var(--on-surface-variant); }
-    .pos-field span { font-size:11px; line-height:16px; letter-spacing:.5px;
+    .card-field span { font-size:11px; line-height:16px; letter-spacing:.5px;
                       color:var(--on-surface-variant); }
-    .pos-field input, .pos-field select { font-size:13px; height:30px; }
-    .pos-note { grid-column:1/-1; margin:2px 0 0; font-size:11px; line-height:16px; }
+    .card-field input, .card-field select { font-size:13px; height:30px; }
+    .card-note { grid-column:1/-1; margin:2px 0 0; font-size:11px; line-height:16px; }
     /* 🔴 WRAP, because this row has always been too wide and nobody had measured
        it. Five buttons need 431px as main shipped them — with no icons at all —
        inside a panel that is 302px by default, so `renumber` and `number by
@@ -425,13 +442,13 @@
        needs the menu component, so it waits for that step. Wrapping is what makes
        the row honest in the meantime: a second line is visible, a clipped button
        is not. */
-    .pos-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    .card-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
     /* ⚠ The size rule that used to live here duplicated `.small` exactly —
        height, padding, font-size and letter-spacing, all written out a second
        time. That is how the panel became a third control height. The buttons
        now ask for `small` themselves (see `button.ts`), so there is one
        definition of what dense means. What stays here is only LAYOUT. */
-    .pos-actions .material-symbols-outlined { font-size:16px; }
+    .card-actions .material-symbols-outlined { font-size:16px; }
     #positions > button { margin-top:4px; }
 
     /* ---- schedule ---------------------------------------------------- */

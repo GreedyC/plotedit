@@ -108,7 +108,7 @@ function field(
   opts?: { options?: readonly string[]; step?: number; hint?: string; feet?: boolean },
 ): HTMLElement {
   const wrap = document.createElement("label");
-  wrap.className = "pos-field";
+  wrap.className = "card-field";
   const cap = document.createElement("span");
   cap.textContent = label;
   if (opts?.hint) cap.title = opts.hint;
@@ -155,7 +155,7 @@ export function renderPositions(
 
   plot.positions.forEach((p) => {
     const box = document.createElement("div");
-    box.className = "pos-row";
+    box.className = "card";
 
     const set = (patch: Partial<Position>) => {
       store.begin(null);
@@ -307,7 +307,7 @@ export function renderPositions(
     }
 
     const note = document.createElement("p");
-    note.className = "muted pos-note";
+    note.className = "muted card-note";
     const bits: string[] = [];
 
     // ⭐ SHARING A NAME IS ALLOWED, and is how you say "these two segments are
@@ -368,7 +368,7 @@ export function renderPositions(
     box.appendChild(note);
 
     const actions = document.createElement("div");
-    actions.className = "pos-actions";
+    actions.className = "card-actions";
 
     // ⭐ DRAW IT, rather than compute it. Six boxes describe a pipe exactly and
     // none of them is how anybody thinks about where a tower goes — you point
