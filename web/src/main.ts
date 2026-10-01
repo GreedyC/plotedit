@@ -22,9 +22,11 @@ import { isPlot, symbolKey, plotFileName, newPlot, type Plot, type Position,
          lengthOf, angleOf, runOf } from "./plot.js";
 import { startSeq, seqClick, clickLine, seqReport, runIndices,
          type Seq } from "./sequence.js";
+import { openMenu, type MenuGroup, type MenuItem } from "./menu.js";
+import { confirmRevert } from "./confirm.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
-         positionLabels, savePlot, listPlots, loadPlot, pdfPages, pdfPaths,
+         positionLabels, savePlot, listPlots, pickPlotsFolder, loadPlot, pdfPages, pdfPaths,
          serverVersion,
          type FixtureRow, type ExportKind, type DxfPaths, type SymbolPrim,
          type BoomElevation, type PositionLabel,
@@ -204,7 +206,7 @@ function draw() {
   // would label a metric plot in feet and look like a conversion bug rather
   // than a missing assignment.
   setUnitSystem(store.plot.units);
-  fillScaleMenu(); fillPageMenu(); render(svg, store.plot, view(), computed, opts()); }
+  fillScaleMenu(); fillPageMenu(); syncSheetInfo(); render(svg, store.plot, view(), computed, opts()); }
 
 /** The dimmer, or the address where there is no dimmer, and which of the two it
  *  is. ⚠ ONE COLUMN CANNOT SAY WHICH ON ITS OWN — "12" is a plausible dimmer and
@@ -348,6 +350,13 @@ function paint() {
   const saveBtn = $("save") as HTMLButtonElement;
   saveBtn.disabled = !store.dirty;
   saveBtn.title = store.dirty ? "Save (⌘S)" : "No changes to save";
+  // Revert follows the same rule, and for the same reason: with nothing changed
+  // there is nothing to go back from.
+  const revertBtn = $("revert") as HTMLButtonElement;
+  revertBtn.disabled = !store.dirty || !onDisk;
+  revertBtn.title = store.dirty
+    ? "Reload the plot from disk, dropping every change since"
+    : "Nothing has changed since this was opened";
   // ⭐ Each section header says what is IN it. The three panels were three grey
   // blocks that had to be read to be told apart; a count in the header answers
   // "which one is this" and "is there anything here" in one glance.
@@ -645,6 +654,9 @@ function recompute(delay = 120) {
  * the class of divergence that has cost a day already in this repo.
  */
 let savedAs: string | null = null;
+/** The plot as it is on disk — what Revert goes back to. Set when a plot is
+ *  adopted and again on every save. */
+let onDisk: Plot | null = null;
 
 function plotJson(): string {
   return JSON.stringify(store.plot, null, 2);
@@ -653,6 +665,12 @@ function plotJson(): string {
 async function saveTo(name: string): Promise<void> {
   const { path } = await savePlot(name, store.plot);
   savedAs = name;
+  // ⚠ Saving MOVES the point Revert goes back to. "As you opened it" and "as it
+  // is on disk" are the same thing until you save, and after that only the
+  // second one is coherent — reverting to a pre-save state would leave the
+  // editor disagreeing with a file it had just written, and still calling
+  // itself clean. Revert means "reload from disk".
+  onDisk = structuredClone(store.plot);
   store.markSaved();
   status(`Saved ${path}`);
   void refreshOpenList();
@@ -1021,24 +1039,30 @@ function wireBackdropBar(): void {
 }
 
 /** Keep the Open menu in step with what is actually on disk. */
+/** What Open’s menu will show, refreshed when the plots folder changes.
+ *
+ *  ⚠ Held rather than fetched on click, so pressing Open never waits on the
+ *  network — but refreshed after every save, because a menu that caches its
+ *  items is a menu that lies about what is on disk. */
+let openItems: { label: string; value: string }[] = [];
+let sampleItems: { label: string; value: string }[] = [];
+let openFolder = "";
+let canPickFolder = false;
+
 async function refreshOpenList(): Promise<void> {
-  const sel = $("open") as HTMLSelectElement;
+  const btn = $("open") as HTMLButtonElement;
   try {
-    const { plots, folder } = await listPlots();
-    sel.replaceChildren();
-    const head = document.createElement("option");
-    head.value = ""; head.textContent = plots.length ? "Open…" : "Open… (none saved yet)";
-    sel.appendChild(head);
-    for (const p of plots) {
-      const o = document.createElement("option");
-      o.value = p.name;
-      o.textContent = p.show ? `${p.show} — ${p.name}` : p.name;
-      sel.appendChild(o);
-    }
-    sel.title = `Plots in ${folder}`;
+    const { plots, folder, canPickFolder: can } = await listPlots();
+    openFolder = folder;
+    canPickFolder = can ?? false;
+    openItems = plots.map(p => ({
+      label: p.show ? `${p.show} — ${p.name}` : p.name, value: p.name,
+    }));
+    btn.title = `Open a saved plot — ${folder}`;
   } catch (e) {
     // The list is a convenience; failing to fetch it must not stop the editor.
-    sel.title = e instanceof Error ? e.message : String(e);
+    openItems = [];
+    btn.title = e instanceof Error ? e.message : String(e);
   }
   // ⭐ WHAT SHIPPED WITH IT, in its own group at the bottom. A beta tester
   // asked, 2026.09.30, whether there was a way to open the demo file again —
@@ -1051,19 +1075,203 @@ async function refreshOpenList(): Promise<void> {
   // wrong side.
   try {
     const bundled = await samples();
-    if (!bundled.length) return;
-    const g = document.createElement("optgroup");
-    g.label = "Comes with plotedit";
-    for (const b of bundled) {
-      const o = document.createElement("option");
-      o.value = `sample:${b.name}`;
-      o.textContent = b.show ? `${b.show} — ${b.name}` : b.name;
-      g.appendChild(o);
-    }
-    sel.appendChild(g);
+    sampleItems = bundled.map(b => ({
+      label: b.show ? `${b.show} — ${b.name}` : b.name,
+      value: `sample:${b.name}`,
+    }));
   } catch (e) {
     console.warn("samples unavailable:", e);
+    sampleItems = [];
   }
+}
+
+/** Run one export.
+ *
+ *  ⭐ Lifted out of the <select>'s change handler when Export became a button.
+ *  Jerry, 2026-10-01: "I think the export and open should be a button, just
+ *  like save as, and ground plan." The body is unchanged — which options
+ *  belong to which kind is the delicate part and was not worth re-deriving.
+ */
+async function runExport(kind: ExportKind): Promise<void> {
+    try {
+      // ⚠ Encoded ONCE — the image goes through base64 and a big plan is
+      // megabytes of string.
+      const exportBase = kind === "pdf" ? await baseForExport() : undefined;
+      // ⭐ The PDF is a drawing and honours what the checkboxes are showing:
+      // a designer who hides the pools to read the plan expects the print to
+      // match. The CSV and patch exports have no drawing in them, so they are
+      // sent the plot alone and cannot be changed by a checkbox.
+      await exportFile(kind, store.plot, {
+        scale: $<HTMLSelectElement>("scale").value,
+        // ⚠ The sheet goes with the PDF only. A CSV has no paper.
+        ...(kind === "pdf" && $<HTMLSelectElement>("page").value
+            ? { page: $<HTMLSelectElement>("page").value } : {}),
+        ...(kind === "pdf" ? {
+          showPools: $<HTMLInputElement>("pools").checked,
+          showFocus: $<HTMLInputElement>("focus").checked,
+          showLabels: $<HTMLInputElement>("labels").checked,
+          ...(poolPlane() === undefined ? {} : { poolPlane: poolPlane() }),
+          rulers: $<HTMLInputElement>("rulers").checked,
+          // 🔴 Until now the import went on the SCREEN and never on the
+          // paper. exports.plot_pdf has taken a base plan the whole time and
+          // nothing ever handed it one, so an imported venue drawing looked
+          // like it had worked right up to the moment you printed it.
+          ...(exportBase ? { base: exportBase } : {}),
+        } : {}),
+      });
+      status("");
+    } catch (err) {
+      // The commonest failure is the sheet refusing to clip, and it says
+      // which scale would fit. That belongs in front of the user, not a console.
+      status(err instanceof Error ? err.message : String(err), true);
+    }
+}
+
+/** Open the plots menu under its button. */
+function showOpenMenu(): void {
+  const btn = $("open") as HTMLButtonElement;
+  const groups: MenuGroup[] = [];
+  if (openItems.length) {
+    groups.push({ items: openItems.map(i => ({
+      label: i.label, icon: "description", onSelect: () => void openPlot(i.value),
+    })) });
+  } else {
+    // ⚠ M3: an item that cannot be used is DISABLED, not removed. An empty
+    // menu that opens and shows nothing reads as a broken button.
+    groups.push({ items: [{ label: "No saved plots yet", disabled: true }] });
+  }
+  if (sampleItems.length) {
+    // 🔴 Its own group, as it was its own optgroup. A sample is not the
+    // designer’s work, and a list that mixes the two invites Save to overwrite
+    // something that shipped.
+    groups.push({ heading: "Comes with plotedit", items: sampleItems.map(i => ({
+      label: i.label, icon: "inventory_2",
+      // ⚠ A sample opens UNSAVED and UNNAMED, so the first ⌘S asks where to
+      // put it rather than writing back over the file that shipped.
+      onSelect: () => void openSample(i.value.slice(7)),
+    })) });
+  }
+  // ⭐ WHERE THEY LIVE, AND HOW TO CHANGE IT, at the foot of the list. Jerry,
+  // 2026-10-01: "folder picking should work just like ground plan" — a native
+  // dialog, which it is, though the server has to be the one to open it. The
+  // folder itself stays a disabled item: it is a fact about the list above, not
+  // something to click.
+  const tail: MenuItem[] = [];
+  if (openFolder) tail.push({ label: openFolder, disabled: true, icon: "folder" });
+  if (canPickFolder) {
+    tail.push({ label: "Change folder…", icon: "folder_open", onSelect: () => void changeFolder() });
+  }
+  if (tail.length) groups.push({ items: tail });
+  openMenu(btn, groups);
+}
+
+/** Ask where plots should live, then show what is there.
+ *
+ *  ⚠ Nothing is sent. The server opens the operating system's dialog and reads
+ *  the answer; the browser never handles a path. See `api.pickPlotsFolder`.
+ */
+async function changeFolder(): Promise<void> {
+  try {
+    status("Choose a folder — the dialog may be behind this window.");
+    const { changed, folder } = await pickPlotsFolder();
+    if (!changed) { status(""); return; }
+    await refreshOpenList();
+    status(`Plots are now kept in ${folder}.`);
+  } catch (e) {
+    status(e instanceof Error ? e.message : String(e), true);
+  }
+}
+
+/** Say what the PDF will print at, in the toolbar, without opening anything.
+ *
+ *  ⭐ Jerry, 2026-10-01: "where is the scale" — asked right after Sheet and Scale
+ *  moved into the Export menu, which is the question answering itself. Moving the
+ *  CONTROLS was right; losing the READOUT was not. The toolbar used to display
+ *  the scale at all times, so what the plot would print at was ambient. It had
+ *  become something you went looking for.
+ *
+ *  ⚠ Shows the sheet too, because the two are not independent: Fit means "the
+ *  largest scale at which nothing runs off the CHOSEN sheet", so a scale without
+ *  its sheet is half an answer.
+ */
+function syncSheetInfo(): void {
+  const el = document.getElementById("sheetinfo");
+  if (!el) return;
+  const label = (sel: HTMLSelectElement) =>
+    Array.from(sel.options).find(o => o.value === sel.value)?.textContent ?? sel.value;
+  const sheet = label($<HTMLSelectElement>("page"));
+  const scale = label($<HTMLSelectElement>("scale"));
+  // The sheet's bracketed dimensions are for choosing, not for glancing at.
+  const short = sheet.replace(/\s*\(.*\)\s*$/, "");
+  el.replaceChildren();
+  el.append(short);
+  const sep = document.createElement("span");
+  sep.className = "sep";
+  sep.textContent = " · ";
+  el.append(sep, scale);
+}
+
+/** One submenu of radio choices, built from a hidden <select>.
+ *
+ *  ⚠ The SELECT IS THE STATE. `fillPageMenu` and `fillScaleMenu` keep it
+ *  unit-correct and carry a fallback that matters — the sheet list's first entry
+ *  is the SMALLEST, so defaulting to it would silently issue a D-sized plot on
+ *  Letter. Reading the options instead of re-deriving them keeps that care.
+ */
+function optionsSubmenu(selectId: string, after?: () => void): MenuGroup[] {
+  const sel = $<HTMLSelectElement>(selectId);
+  return [{ items: Array.from(sel.options).map(o => ({
+    label: o.textContent ?? o.value,
+    selection: "radio" as const,
+    checked: o.value === sel.value,
+    onSelect: () => { sel.value = o.value; syncSheetInfo(); after?.(); },
+  })) }];
+}
+
+/** Open the export menu under its button.
+ *
+ *  ⭐ Grouped by what it PRODUCES — drawings, paperwork, then the console file —
+ *  which is the indent #56 asked for. And Sheet, Scale and Rulers now live HERE,
+ *  because the exported PDF is the only thing any of them changes. In the
+ *  toolbar they read as app state; the screen drawing has never looked at them.
+ */
+function showExportMenu(): void {
+  const btn = $("export") as HTMLButtonElement;
+  const sheet = $<HTMLSelectElement>("page");
+  const scale = $<HTMLSelectElement>("scale");
+  const rulers = $<HTMLInputElement>("rulers");
+  const chosen = (sel: HTMLSelectElement) =>
+    Array.from(sel.options).find(o => o.value === sel.value)?.textContent ?? "";
+
+  openMenu(btn, [
+    { items: [
+      { label: "Plot PDF", icon: "picture_as_pdf", onSelect: () => void runExport("pdf") },
+      { label: "Plot DXF", icon: "architecture", onSelect: () => void runExport("dxf") },
+    ] },
+    { items: [
+      { label: "Instrument schedule", icon: "table_rows", onSelect: () => void runExport("schedule") },
+      { label: "Channel hookup", icon: "cable", onSelect: () => void runExport("hookup") },
+    ] },
+    { items: [
+      { label: "Eos patch", trailing: "untested", icon: "memory",
+        onSelect: () => void runExport("eos") },
+    ] },
+    // ⚠ PDF ONLY, and the heading says so. A CSV has no paper, and the DXF
+    // carries its own units — offering them a sheet would be a lie.
+    { heading: "PDF only", items: [
+      { label: "Sheet", icon: "description", trailing: chosen(sheet),
+        submenu: optionsSubmenu("page") },
+      { label: "Scale", icon: "straighten", trailing: chosen(scale),
+        // ⭐ Changing the SHEET can change the SCALE, because Fit means "the
+        // largest scale at which nothing runs off the chosen sheet". Showing
+        // both here, one under the other, is the first time that has been
+        // visible — in the toolbar they looked like independent menus.
+        submenu: optionsSubmenu("scale") },
+      { label: "Rulers", icon: "straighten", selection: "check",
+        checked: rulers.checked,
+        onSelect: () => { rulers.checked = !rulers.checked; } },
+    ] },
+  ]);
 }
 
 /** Bring in a ground plan from a PDF.
@@ -1152,6 +1360,10 @@ function mayDiscard(what: string): boolean {
  */
 async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
   store = new Store(plot);
+  // ⭐ WHAT REVERT GOES BACK TO. #56: "save the state before we open it."
+  // Cloned, because the store mutates its plot in place and a reference would
+  // quietly become the live document.
+  onDisk = structuredClone(plot);
   savedAs = savedName;
   store.subscribe(paint);
   attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute() });
@@ -1258,6 +1470,12 @@ async function boot() {
     }
 
     store = new Store(opened);
+    // 🔴 THE SECOND PLACE A STORE IS BORN. `adoptPlot` handles Open and New and
+    // sets `onDisk` there; startup builds its own and did not, so Revert sat
+    // disabled for the whole session on the plot you actually opened the app
+    // with. Found by pressing it: the plot went dirty, Save lit up, and Revert
+    // did not — because `!onDisk` was still true.
+    onDisk = structuredClone(opened);
     fixtureTable = await fixtures();
     // ⚠ Not fatal. A missing DMX table means the Model and personality lists
     // come up empty; it must not stop the editor opening a plot.
@@ -1303,44 +1521,41 @@ async function boot() {
       $(id).addEventListener("input", draw);
     $("poolplane").addEventListener("change", () => { void recompute(); });
 
+    // ⭐ `at …` belongs to `pools`, not to the row. When pools is off it has
+    // nothing to say, so it goes INERT — greyed and unclickable — rather than
+    // disappearing. DECISIONS.md, "Fields that do not apply go inert, not
+    // hidden": a control that vanishes takes its explanation with it, and the
+    // reader is left wondering where the height went.
+    const syncPoolPlane = () => {
+      const on = $<HTMLInputElement>("pools").checked;
+      $("poolplane-label").classList.toggle("inert", !on);
+      ($("poolplane") as HTMLSelectElement).disabled = !on;
+    };
+    $("pools").addEventListener("input", syncPoolPlane);
+    syncPoolPlane();
+
     // ---- export
-    $("export").addEventListener("change", async (e) => {
-      const sel = e.target as HTMLSelectElement;
-      const kind = sel.value as ExportKind;
-      sel.value = "";
-      if (!kind) return;
-      try {
-        // ⚠ Encoded ONCE — the image goes through base64 and a big plan is
-        // megabytes of string.
-        const exportBase = kind === "pdf" ? await baseForExport() : undefined;
-        // ⭐ The PDF is a drawing and honours what the checkboxes are showing:
-        // a designer who hides the pools to read the plan expects the print to
-        // match. The CSV and patch exports have no drawing in them, so they are
-        // sent the plot alone and cannot be changed by a checkbox.
-        await exportFile(kind, store.plot, {
-          scale: $<HTMLSelectElement>("scale").value,
-          // ⚠ The sheet goes with the PDF only. A CSV has no paper.
-          ...(kind === "pdf" && $<HTMLSelectElement>("page").value
-              ? { page: $<HTMLSelectElement>("page").value } : {}),
-          ...(kind === "pdf" ? {
-            showPools: $<HTMLInputElement>("pools").checked,
-            showFocus: $<HTMLInputElement>("focus").checked,
-            showLabels: $<HTMLInputElement>("labels").checked,
-            ...(poolPlane() === undefined ? {} : { poolPlane: poolPlane() }),
-            rulers: $<HTMLInputElement>("rulers").checked,
-            // 🔴 Until now the import went on the SCREEN and never on the
-            // paper. exports.plot_pdf has taken a base plan the whole time and
-            // nothing ever handed it one, so an imported venue drawing looked
-            // like it had worked right up to the moment you printed it.
-            ...(exportBase ? { base: exportBase } : {}),
-          } : {}),
-        });
-        status("");
-      } catch (err) {
-        // The commonest failure is the sheet refusing to clip, and it says
-        // which scale would fit. That belongs in front of the user, not a console.
-        status(err instanceof Error ? err.message : String(err), true);
-      }
+    // ⭐ BUTTONS THAT OPEN MENUS. Both were <select>s whose change handler fired
+    // an action and then set `sel.value = ""` — a control that clears itself
+    // after every use was never holding a value. See menu.ts.
+    $("export").addEventListener("click", () => showExportMenu());
+    $("open").addEventListener("click", () => showOpenMenu());
+    // ⚠ Anchored to the EXPORT button, not to itself, so the menu lands where it
+    // does from every other route. A menu that moves depending on which of two
+    // things you pressed is a menu you have to look for twice.
+    $("sheetinfo").addEventListener("click", () => showExportMenu());
+
+    $("revert").addEventListener("click", () => {
+      if (!onDisk || !store.dirty) return;
+      if (!confirmRevert(savedAs)) return;
+      store.revertTo(onDisk);
+      // ⚠ The same four things every other plot-level change does. A revert that
+      // restored the data and left the drawing, the levels and the chrome stale
+      // would look like it had half worked.
+      symbolCache = {};
+      draw(); recompute(); paintChrome();
+      status(savedAs ? `${savedAs} reloaded from disk.`
+                     : "Back to the plot as you opened it.");
     });
 
     // ---- import a venue ground plan

@@ -356,9 +356,27 @@ export async function positionLabels(
 /** A plot on disk, as GET /plots lists it. */
 export interface PlotFile { name: string; show: string; bytes: number; modified: number }
 
-export async function listPlots(): Promise<{ plots: PlotFile[]; folder: string }> {
+export async function listPlots(): Promise<
+  { plots: PlotFile[]; folder: string; canPickFolder?: boolean }> {
   const r = await fetch("/api/plots");
   if (!r.ok) throw new Error(`could not list plots: ${r.status}`);
+  return r.json();
+}
+
+/** Ask the SERVER to ask the person where plots should live.
+ *
+ *  🔴 SENDS NOTHING. A browser will not tell a page a real folder path — checked
+ *  in the running app, `"path" in File.prototype` is false — so the page cannot
+ *  pick the folder even if it wanted to. The server opens the operating system's
+ *  own dialog instead, and the only string that reaches the filesystem is one
+ *  the person chose there.
+ *
+ *  `changed` is false when the dialog was cancelled, which is not an error.
+ */
+export async function pickPlotsFolder(): Promise<
+  { changed: boolean; folder: string }> {
+  const r = await fetch("/api/plots/folder", { method: "POST" });
+  if (!r.ok) throw new Error(await detailOf(r));
   return r.json();
 }
 

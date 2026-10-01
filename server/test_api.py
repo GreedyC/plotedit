@@ -6,6 +6,7 @@
 Uses FastAPI's TestClient, so no server needs to be running.
 """
 import sys
+from pathlib import Path as _P
 import json
 import os
 
@@ -316,6 +317,51 @@ check("the two ladders still differ, which is why this matters",
       sorted(s_ for s_ in _pb2.SCALES if not s_.startswith("1:")
              and s_ not in _u.IMPERIAL_SCALES),
       ["1/16", "3/16", "3/32"])
+
+# ------------------------------------------------- picking the plots folder
+# ⭐ Jerry, 2026-10-01: "folder picking should work just like ground plan."
+# Same feel — a native dialog — but NOT the same mechanism, and the dialog
+# itself cannot be tested here, so what is tested is the fence around it.
+print("\nthe plots folder can move, and the fence moves with it")
+import tempfile as _tf2
+from plotedit import folderpick as _fp
+
+check("this machine can show a folder dialog", isinstance(_fp.available(), bool), True)
+check("an unavailable picker is its own error, not a crash",
+      issubclass(_fp.PickerUnavailable, RuntimeError), True)
+
+_was = _ps.root()
+try:
+    with _tf2.TemporaryDirectory() as _d:
+        _new = _ps.set_root(_P(_d))
+        check("the folder moves", str(_new), str(_P(_d).resolve()))
+        check("...and root() follows it", str(_ps.root()), str(_P(_d).resolve()))
+
+        # 🔴 THE FENCE MOVED; THE GATE DID NOT. Every guard in resolve() still
+        # applies, now against the new folder.
+        check("a plain name resolves inside the new folder",
+              str(_ps.resolve("Show.plot.json").parent), str(_P(_d).resolve()))
+        for bad in ("../escape.plot.json", "/etc/passwd.plot.json",
+                    "sub/dir.plot.json", "CON.plot.json"):
+            try:
+                _ps.resolve(bad)
+                check(f"{bad!r} is still refused", "accepted", "refused")
+            except ValueError:
+                check(f"{bad!r} is still refused", "refused", "refused")
+
+    # ⚠ A folder that is not there is refused rather than created silently — the
+    # person picked it in a dialog, so if it has gone, something is wrong.
+    try:
+        _ps.set_root(_P(_d) / "gone")
+        check("a missing folder is refused", "accepted", "refused")
+    except ValueError:
+        check("a missing folder is refused", "refused", "refused")
+finally:
+    _ps.set_root(_was)
+# ⚠ Compared RESOLVED both ways. On a Mac /var is a symlink to /private/var and
+# set_root resolves, so the honest comparison is between two resolved paths —
+# the first version of this check failed on the symlink, not on the behaviour.
+check("the folder is put back", str(_ps.root()), str(_was.resolve()))
 
 if FAILS:
     print(f"{len(FAILS)} FAILED")

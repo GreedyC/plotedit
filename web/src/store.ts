@@ -288,6 +288,37 @@ export class Store {
   }
 
   markSaved(): void { this._savedSeq = this._seq; this.emit(); }
+
+  /**
+   * Put the plot back to `plot`, which is what is on disk.
+   *
+   * ⭐ #56: "a revert to return the file to the way it was before we touched it
+   * in this session - save the state before we open it." Most of it was already
+   * here: `adoptPlot` builds a fresh Store from the loaded plot and `dirty` is
+   * literally `_seq !== _savedSeq`. What was missing is KEEPING that plot, so
+   * going back is one step rather than a walk up the undo stack.
+   *
+   * ⚠ IT IS UNDOABLE. A revert that cannot be taken back is a second way to
+   * lose an afternoon, and this store already has the machinery — so the
+   * snapshot goes on the undo stack like any other edit.
+   *
+   * 🔴 AND IT ENDS CLEAN. `_savedSeq` is moved to meet `_seq`, because the plot
+   * now matches the file. Bumping the sequence without that would leave the
+   * editor claiming unsaved changes against a document it had just restored —
+   * and "Revert" that leaves you dirty is not a word that means anything.
+   */
+  revertTo(plot: Plot): void {
+    this._undo.push(this.snapshot());
+    if (this._undo.length > HISTORY_LIMIT) this._undo.shift();
+    this._redo = [];
+    this.lastKey = null;
+    this.lastBegin = null;
+    this._plot = structuredClone(plot);
+    this._seq++;
+    this._savedSeq = this._seq;
+    this._selected = null;
+    this.emit();
+  }
 }
 
 /**

@@ -24,6 +24,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 # A filename, and nothing that could be a path. Also rules out the empty stem,
 # so ".json" — hidden on macOS and Linux — cannot be created.
@@ -39,16 +40,46 @@ _RESERVED = {"con", "prn", "aux", "nul",
              *(f"lpt{i}" for i in range(1, 10))}
 
 
+#: Set by `set_root` when the designer picks a folder in this session.
+#: ⚠ Session-only on purpose. Writing a chosen path into a config file is a
+#: second place for it to live and a second thing to go stale when the folder
+#: moves; PLOTEDIT_PLOTS is the setting that persists, and it is already there.
+_chosen: Optional[Path] = None
+
+
 def root() -> Path:
     """The plots directory. Created on first use.
 
-    PLOTEDIT_PLOTS overrides it, so a designer can keep plots in Dropbox or in a
-    show folder rather than inside a checkout of the tool.
+    In order: a folder picked in this session, then PLOTEDIT_PLOTS, then `plots`
+    beside the tool — so a designer can keep plots in Dropbox or in a show folder
+    rather than inside a checkout.
     """
+    if _chosen is not None:
+        _chosen.mkdir(parents=True, exist_ok=True)
+        return _chosen
     env = os.environ.get("PLOTEDIT_PLOTS")
     base = Path(env) if env else Path(__file__).resolve().parents[2] / "plots"
     base.mkdir(parents=True, exist_ok=True)
     return base
+
+
+def set_root(path: Path) -> Path:
+    """Point the plots folder somewhere else for this session.
+
+    ⭐ THIS MOVES THE FENCE; IT DOES NOT OPEN THE GATE. `resolve` still matches
+    the name against a pattern AND requires the resolved path to sit inside
+    whatever `root()` now is, so a plot name still cannot escape its folder. The
+    only thing that changed is which folder that is.
+
+    ⚠ The path comes from the operating system's own dialog, chosen by the person
+    at the keyboard — never from the browser. See `folderpick`.
+    """
+    path = Path(path).expanduser().resolve()
+    if not path.is_dir():
+        raise ValueError(f"{path} is not a folder")
+    global _chosen            # pylint: disable=global-statement
+    _chosen = path
+    return path
 
 
 def resolve(name: str) -> Path:

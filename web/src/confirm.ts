@@ -105,3 +105,29 @@ export function sharedNameRenumberNote(name: string, legs: number): string {
     `numbers alternate between them — check the moves before applying.`,
   ].join("\n");
 }
+
+
+/** What to say before throwing away everything since the file was opened.
+ *
+ *  ⚠ NAMES WHAT GOES, like every other dialog here. "Are you sure?" asks the
+ *  reader to remember what they just clicked, which is exactly what someone
+ *  about to lose an afternoon has got wrong.
+ *
+ *  ⭐ And it says the one thing that makes it safe to press: this can be undone.
+ *  `Store.revertTo` puts a snapshot on the undo stack, so ⌘Z brings the work
+ *  back. A revert nobody dares press is no more use than no revert.
+ */
+export function revertMessage(name: string | null): string {
+  return [
+    name ? `Reload ${name} from disk?` : "Go back to the plot as you opened it?",
+    "",
+    "Every change since then is dropped — positions, units, focus, the lot.",
+    "",
+    "This can be undone with ⌘Z.",
+  ].join("\n");
+}
+
+/** Ask before reverting. True means go ahead. */
+export function confirmRevert(name: string | null): boolean {
+  return window.confirm(revertMessage(name));
+}

@@ -587,7 +587,10 @@ check("no note tells the reader to press renumber",
 check("the duplicate-unit note offers the by-hand fix instead",
       _src.includes("Give one of each pair a free number"), true);
 // And the button itself is still there — this was never about removing it.
-check("the renumber button survives", _src.includes('textContent = "renumber"'), true);
+// ⚠ It moved from `textContent = "renumber"` to a `button({label: "Renumber"})`
+// call when the panels got their emphasis. This check CAUGHT that rather than
+// sleeping through it, which is the only reason to write it against the source.
+check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
 
 // ------------------------------------------------- every suite actually runs
 // 🔴 `test:all` LISTS THE SUITES BY HAND, so a new test file runs on the author's
@@ -650,6 +653,248 @@ check("the renumber button survives", _src.includes('textContent = "renumber"'),
   // The shortcut follows the button, or a greyed Save still writes on ⌘S.
   check("⌘S follows the same rule",
         /if \(!store\.dirty\) \{ status\("No changes to save\."\); return; \}/.test(m), true);
+}
+
+// ------------------------------------------- every button states its emphasis
+// 🔴 The panels had seven buttons and no hierarchy: `+ unit`, `draw`,
+// `renumber`, `number by clicking` and `delete` were all the same weight, so
+// nothing said which was the ordinary thing to do. M3 publishes five emphases
+// for exactly that, and index.html already defined four of them.
+//
+// ⚠ The fix is not a stylesheet — it is that `button()` REQUIRES a variant. This
+// pins it: no panel may go back to raw createElement, which is how the emphasis
+// got skipped seven times without anyone deciding to skip it.
+{
+  const fsB = await import("node:fs");
+  const pathB = await import("node:path");
+  const dirB = new URL("./", import.meta.url).pathname;
+  const uiFiles = ["positions.ts", "inspector.ts", "details.ts"]
+    .filter(f => fsB.existsSync(pathB.join(dirB, f)));
+  check("the panel files are where we think", uiFiles.length >= 2, true);
+  const raw: string[] = [];
+  for (const f of uiFiles) {
+    const src = fsB.readFileSync(pathB.join(dirB, f), "utf8");
+    if (/createElement\("button"\)/.test(src)) raw.push(f);
+  }
+  check("no panel builds a button by hand", raw, []);
+
+  // 🔴 The action row must WRAP. Measured in the app: five buttons need 431px as
+  // main shipped them — with no icons at all — inside a 302px panel, so Renumber
+  // and Number by clicking were CLIPPED rather than merely tight, and the panel
+  // is resizable so no fixed width is safe.
+  const htmlB = fsB.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const posRule = /\.pos-actions \{[^}]*\}/.exec(htmlB)?.[0] ?? "";
+  check("the action row is a flex row", /display:flex/.test(posRule), true);
+  check("...that wraps rather than clipping", /flex-wrap:wrap/.test(posRule), true);
+
+  // ⭐ Jerry, 2026-10-01: "Can we do tool tips on the buttons?" Measured first:
+  // 29 controls in the two bars, 11 with none — and they were almost exactly the
+  // row he was pointing at. These are the ones that had none.
+  //
+  // ⚠ Looks at the control's line AND the two above it, because a title often
+  // sits on the wrapping <label> — which is where `zoom`'s lives, and the first
+  // version of this check failed on exactly that. It is a smoke test for
+  // "somebody added a control and forgot the tooltip", not proof of coverage;
+  // the real count was taken in the running browser.
+  const lines = htmlB.split("\n");
+  const needTip = ["base", "pools", "focus", "labels", "poolplane",
+                   "bdx", "bdy", "bdw", "bdr", "bdo", "zoom"];
+  const untipped = needTip.filter(id => {
+    const i = lines.findIndex(l => l.includes(`id="${id}"`));
+    if (i < 0) return true;
+    return !lines.slice(Math.max(0, i - 2), i + 1).some(l => /title="/.test(l));
+  });
+  check("every control that had no tooltip now has one", untipped, []);
+
+  // ⭐ The four layer toggles are one connected group, not four loose boxes.
+  check("the layer toggles are grouped", /class="toggles"/.test(htmlB), true);
+  check("...and announced as a group", /role="group" aria-label="Layers/.test(htmlB), true);
+  check("the zoom slider and its buttons are grouped",
+        /class="zoomgroup"/.test(htmlB), true);
+
+  // 🔴 THE TOOLBAR GROUP MUST WRAP. `.bar` wrapped; the `.group` inside it did
+  // not, so the row overflowed the window and the LAST control left the screen.
+  // Caught by Jerry — "I couldnt see ground plan" — after it was moved to the end
+  // of row one at his own request. At 1024px it sat at x=1212, a button that
+  // existed and could not be seen.
+  const groupRule = /\.group \{[^}]*\}/.exec(htmlB)?.[0] ?? "";
+  check("the toolbar group wraps", /flex-wrap:wrap/.test(groupRule), true);
+
+  // ⚠ A <select> sizes itself to its WIDEST OPTION. Open's options are plot FILE
+  // NAMES, so it was 332px — a quarter of the row — and one long name pushed the
+  // whole toolbar wider. Open is a button now, so the names live in a menu and
+  // cannot reach the toolbar at all; what has to stay capped is the MENU, or a
+  // long name just moves the problem.
+  //
+  // 🔴 This check previously pinned `#open { max-width }`, and it FAILED when
+  // that rule was deleted — correctly. The rule went because the cause went.
+  const menuRule = /\.menu \{[^}]*\}/.exec(htmlB)?.[0] ?? "";
+  check("a long plot name cannot stretch the menu", /max-width:min\(/.test(menuRule), true);
+  check("...and a long item is clipped, not wrapped",
+        /\.menu-label \{[^}]*text-overflow:ellipsis/.test(htmlB), true);
+  // Sheet is still a select, and still sizes to "ARCH E1 (30 x 42 in)".
+  check("Sheet cannot be widened by a long paper name", /#page \{[^}]*max-width/.test(htmlB), true);
+
+  // ⭐ Jerry, 2026-10-01: "I think the export and open should be a button, just
+  // like save as, and ground plan." Both were <select>s whose change handler
+  // fired an action and then set `sel.value = ""` — a control that clears itself
+  // after every use was never holding a value.
+  check("Open is a button", /<button id="open"/.test(htmlB), true);
+  check("Export is a button", /<button id="export"/.test(htmlB), true);
+  check("neither is a select any more",
+        /<select id="(open|export)"/.test(htmlB), false);
+  // A button that opens a menu has to say so, or a screen reader announces a
+  // plain button and the menu arrives unannounced.
+  const openBtn = /<button id="open"[^>]*>/.exec(htmlB)?.[0] ?? "";
+  const expBtn = /<button id="export"[^>]*>/.exec(htmlB)?.[0] ?? "";
+  check("Open announces its menu", /aria-haspopup="menu"/.test(openBtn), true);
+  check("Export announces its menu", /aria-haspopup="menu"/.test(expBtn), true);
+
+  // ⚠ The menu is built on the Popover API — Baseline since April 2025 — which
+  // is what supplies the top layer, light dismiss and Escape. The fallback path
+  // must stay, because `serve.py` opens whatever browser the designer defaults
+  // to and this app cannot pick one.
+  const menuSrc = fsB.readFileSync(new URL("./menu.ts", import.meta.url), "utf8");
+  check("the menu uses popover", /setAttribute\("popover"/.test(menuSrc), true);
+  check("...and still works without it", /hasPopover/.test(menuSrc), true);
+  // M3: an item that does not currently apply is disabled, not removed.
+  check("menu items can be disabled rather than dropped",
+        /disabled\?: boolean/.test(menuSrc), true);
+
+  // 🔴 A SUBMENU MUST BE APPENDED INSIDE ITS PARENT. Showing an `auto` popover
+  // dismisses every other `auto` popover not NESTED inside it, and nesting is
+  // DOM ancestry. Appending to <body> made the browser close the parent —
+  // measured: the Export menu collapsed to 0x0 the moment Sheet was clicked,
+  // which took the submenu's own anchor with it and parked it in the corner.
+  check("a submenu lives inside its parent",
+        /\(parent \?\? document\.body\)\.appendChild/.test(menuSrc), true);
+  check("...and the stack closes children with the parent",
+        /function closeAbove/.test(menuSrc), true);
+  // And a corner case the arithmetic can still reach.
+  check("placement is clamped on screen",
+        /Math\.max\(pad, left\)/.test(menuSrc) && /Math\.max\(pad, top\)/.test(menuSrc), true);
+
+  // ⭐ Sheet, Scale and Rulers moved into Export — they change the exported PDF
+  // and nothing else, so in the toolbar they read as app state.
+  check("the export settings left the toolbar",
+        /id="export-settings" hidden/.test(htmlB), true);
+  const bars = htmlB.slice(htmlB.indexOf('<div class="bar">'), htmlB.indexOf('id="export-settings"'));
+  check("...so Sheet is no longer a toolbar control", /id="page"/.test(bars), false);
+  check("...nor Scale", /id="scale"/.test(bars), false);
+  check("...nor rulers", /id="rulers"/.test(bars), false);
+  // ⚠ But they must still EXIST — they are the state the menu reads and writes,
+  // and `fillPageMenu`/`fillScaleMenu` still fill them.
+  check("Sheet still exists as state", /id="page"/.test(htmlB), true);
+  check("Scale still exists as state", /id="scale"/.test(htmlB), true);
+  check("rulers still exists as state", /id="rulers"/.test(htmlB), true);
+
+  // ⭐ Jerry, 2026-10-01: "where is the scale" — asked right after Sheet and
+  // Scale moved into Export, which is the question answering itself. Moving the
+  // CONTROLS was right; losing the READOUT was not. The toolbar used to display
+  // the scale at all times, so what the plot would print at was ambient.
+  check("the toolbar says what the PDF will print at",
+        /id="sheetinfo"/.test(htmlB), true);
+  const mainSrc = fsB.readFileSync(new URL("./main.ts", import.meta.url), "utf8");
+  check("...kept in step when a menu choice is made",
+        /sel\.value = o\.value; syncSheetInfo\(\);/.test(mainSrc), true);
+  check("...and when the units change the lists",
+        /fillScaleMenu\(\); fillPageMenu\(\); syncSheetInfo\(\)/.test(mainSrc), true);
+  // ⚠ It opens the menu anchored to EXPORT, not to itself — a menu that lands in
+  // a different place depending on which of two controls you pressed is a menu
+  // you have to look for twice.
+  check("the readout opens the same menu, in the same place",
+        /\$\("sheetinfo"\)\.addEventListener\("click", \(\) => showExportMenu\(\)\)/.test(mainSrc), true);
+  check("...and says so for a screen reader", /id="sheetinfo"[^>]*aria-haspopup/.test(htmlB), true);
+  // ⚠ They must stay CHECKBOXES. Swapping in divs would buy the same look and
+  // lose the semantics and every `.checked` read in main.ts.
+  const togglesBlock = /class="toggles"[\s\S]*?<\/span>/.exec(htmlB)?.[0] ?? "";
+  check("the toggles are still checkboxes",
+        (togglesBlock.match(/type="checkbox"/g) || []).length, 4);
+
+  // And the helper itself cannot be called without an emphasis.
+  const bsrc = fsB.readFileSync(pathB.join(dirB, "button.ts"), "utf8");
+  check("variant is required, not optional", /\n  variant: Variant;/.test(bsrc), true);
+  check("...and danger is one of them", /"danger"/.test(bsrc), true);
+
+  // ⚠ M3: sentence case, first word capitalised. "+ unit" and "renumber" were
+  // neither. Checked on the labels actually passed to button().
+  // ⚠ NARROWED to labels passed to `button(`. A plain /label: "…"/ also matched
+  // the SELECT OPTION labels in details.ts — "Imperial — feet and inches",
+  // "Dimmer per circuit (most houses)" — which are prose for a dropdown and have
+  // no business being three words. The first version failed on those: the right
+  // failure for the wrong reason.
+  const labels: string[] = [];
+  for (const f of uiFiles) {
+    const src = fsB.readFileSync(pathB.join(dirB, f), "utf8");
+    for (const m of src.matchAll(/button\(\{[\s\S]*?label: "([^"]+)"/g)) labels.push(m[1]!);
+  }
+  check("there are labels to check", labels.length >= 6, true);
+  const badCase = labels.filter(l => !/^[A-Z]/.test(l));
+  check("every label is sentence case", badCase, []);
+  // M3 asks for one to three words, ideally.
+  const tooLong = labels.filter(l => l.split(/\s+/).length > 3);
+  check("no label runs past three words", tooLong, []);
+}
+
+// ------------------------------------------------------------------- revert
+// #56: "a revert to return the file to the way it was before we touched it in
+// this session - save the state before we open it."
+console.log("\nrevert goes back to the file on disk");
+{
+  const p0 = newPlot();
+  p0.show = "As opened";
+  const onDisk = structuredClone(p0);
+  const st = new Store(p0);
+  check("a freshly opened plot is clean", st.dirty, false);
+
+  st.addPosition({ name: "GRID Z", type: "electric", x1: 0, y1: 10, x2: 20, y2: 10 });
+  st.setMeta({ show: "Edited" });
+  check("editing makes it dirty", st.dirty, true);
+  check("...and the edits are there", st.plot.positions.length, 1);
+
+  st.revertTo(onDisk);
+  check("revert restores the plot", st.plot.show, "As opened");
+  check("...including what was added", st.plot.positions.length, 0);
+  // 🔴 ENDS CLEAN. The plot now matches the file, so claiming unsaved changes
+  // against a document just restored would make the word meaningless.
+  check("...and ends clean", st.dirty, false);
+
+  // ⚠ UNDOABLE. A revert that cannot be taken back is a second way to lose an
+  // afternoon, and this store already had the machinery.
+  check("revert can be undone", st.canUndo, true);
+  st.undo();
+  check("...bringing the work back", st.plot.show, "Edited");
+  check("...all of it", st.plot.positions.length, 1);
+  check("...and dirty with it", st.dirty, true);
+
+  // ⚠ A COPY, not a reference. The store mutates its plot in place, so handing
+  // it the same object would make the snapshot the live document.
+  st.revertTo(onDisk);
+  st.setMeta({ show: "Changed again" });
+  check("the snapshot is not the live plot", onDisk.show, "As opened");
+}
+{
+  const fsR = await import("node:fs");
+  const mainR = fsR.readFileSync(new URL("./main.ts", import.meta.url), "utf8");
+  // 🔴 TWO places build a Store: adoptPlot, and startup. Only the first set
+  // `onDisk`, so Revert sat disabled all session on the plot the app opened
+  // with. Found by pressing it — the plot went dirty, Save lit up, Revert did
+  // not. Both call sites are pinned here because a third would do it again.
+  // ⚠ Counting both and comparing totals LOOKED like a check and was not: the
+  // snapshot taken on save made the numbers balance even with a store-creation
+  // site missing. Proved by deleting one and watching it pass. So each site is
+  // checked where it stands — within a few lines of its own `new Store(`.
+  const mainLines = mainR.split("\n");
+  const bornAt = mainLines
+    .map((l, i) => (/store = new Store\(/.test(l) ? i : -1))
+    .filter(i => i >= 0);
+  check("a Store is still born in two places", bornAt.length, 2);
+  const unsnapped = bornAt.filter(i =>
+    !mainLines.slice(i, i + 12).some(l => /onDisk = structuredClone\(/.test(l)));
+  check("every Store that is born records what is on disk", unsnapped, []);
+  check("...and saving moves that point", /onDisk = structuredClone\(store\.plot\)/.test(mainR), true);
+  check("Revert is disabled when there is nothing to go back from",
+        /revertBtn\.disabled = !store\.dirty \|\| !onDisk/.test(mainR), true);
 }
 
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

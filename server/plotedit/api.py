@@ -14,6 +14,7 @@ the EDLT figures got mistaken for standard-tube figures in the first place.
 import io
 import json
 import os
+import subprocess
 import tempfile
 import unicodedata
 from pathlib import Path
@@ -30,6 +31,7 @@ from . import photometrics as ph
 from . import positions as P
 from . import exports, dxf_bridge, pdf_bridge, symbols as sym
 from . import booms
+from . import folderpick
 from . import store as plotstore
 from . import labels as lbl
 from . import fixture_names
@@ -786,7 +788,50 @@ def read_sample(name: str) -> Dict[str, Any]:
 @app.get("/plots")
 def list_plots() -> Dict[str, Any]:
     """Every plot in the plots folder, newest first."""
-    return {"plots": plotstore.listing(), "folder": str(plotstore.root())}
+    return {"plots": plotstore.listing(), "folder": str(plotstore.root()),
+            "canPickFolder": folderpick.available()}
+
+
+@app.post("/plots/folder")
+def pick_plots_folder() -> Dict[str, Any]:
+    """Ask the person where plots should live, in their own folder dialog.
+
+    ⭐ Jerry, 2026-10-01: "folder picking should work just like ground plan."
+    Same feel — a native dialog — but it cannot be the same mechanism: a browser
+    will not tell a page a real path, by design. Checked in the running app:
+    `"path" in File.prototype` is False. Ground plan works because the browser
+    hands over a file's CONTENTS; a plots folder needs a PATH, because the server
+    is what writes there.
+
+    🔴 SO THIS TAKES NO INPUT. The client asks the server to ask the person; the
+    only string that reaches the filesystem is one chosen in the operating
+    system's own dialog. There is no path from the browser to validate, and no
+    traversal to defend against.
+
+    ⚠ And it moves the FENCE, not the gate: `plotstore.resolve` still requires
+    every plot name to sit inside whatever the folder now is.
+    """
+    try:
+        chosen = folderpick.choose(plotstore.root())
+    except folderpick.PickerUnavailable as e:
+        # 🔴 Say so. A button that opens nothing looks broken, and the answer
+        # (set PLOTEDIT_PLOTS) is not one anybody guesses.
+        raise HTTPException(
+            status_code=501,
+            detail=f"This machine has no folder dialog ({e}). Set PLOTEDIT_PLOTS "
+                   f"to the folder you want and restart plotedit.") from e
+    except subprocess.TimeoutExpired as e:
+        raise HTTPException(
+            status_code=504,
+            detail="The folder dialog was not answered. It may be behind another "
+                   "window.") from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if chosen is None:
+        return {"changed": False, "folder": str(plotstore.root())}
+    plotstore.set_root(chosen)
+    return {"changed": True, "folder": str(plotstore.root()),
+            "plots": plotstore.listing()}
 
 
 @app.get("/plots/{name}")

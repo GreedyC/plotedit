@@ -18,6 +18,7 @@ import { renumber } from "./api.js";
 import { confirmDelete, confirmSharedName, sharedNameRenumberNote } from "./confirm.js";
 import { parseFeet } from "./feet.js";
 import { fmtFt } from "./geometry.js";
+import { button } from "./button.js";
 
 /** Two decimals, for a box a human types into. A pipe at 11.999999 degrees is
  *  at twelve degrees, and showing the noise invites someone to retype it. */
@@ -373,16 +374,20 @@ export function renderPositions(
     // none of them is how anybody thinks about where a tower goes — you point
     // at the two ends. #62's real ask.
     if (!isVertical(p) && deps.onDrawPipe) {
-      const drawBtn = document.createElement("button");
-      drawBtn.textContent = "draw";
-      drawBtn.title = "Click one end on the plan, then the other";
-      drawBtn.addEventListener("click", () => deps.onDrawPipe!(p));
+      const drawBtn = button({
+        label: "Draw", variant: "text", icon: "timeline", dense: true,
+        title: "Click one end on the plan, then the other",
+        onClick: () => deps.onDrawPipe!(p),
+      });
       actions.appendChild(drawBtn);
     }
 
-    const addUnit = document.createElement("button");
-    addUnit.textContent = "+ unit";
-    addUnit.title = "Hang a unit on this position, at its trim";
+    // ⭐ TONAL, because hanging a unit is the thing you come to a position row
+    // to do. Everything else here is occasional, and now looks it.
+    const addUnit = button({
+      label: "Add unit", variant: "tonal", icon: "add", dense: true,
+      title: "Hang a unit on this position, at its trim",
+    });
     addUnit.addEventListener("click", () => {
       const name = p.name.trim().toLowerCase();
       const on = plot.instruments.filter(
@@ -480,9 +485,10 @@ export function renderPositions(
     });
     actions.appendChild(addUnit);
 
-    const del = document.createElement("button");
-    del.textContent = "delete";
-    del.className = "danger";
+    const del = button({
+      label: "Delete", variant: "danger", icon: "delete", dense: true,
+      title: "Remove this position. Units on it are kept.",
+    });
     del.addEventListener("click", () => {
       const idx = plot.positions.indexOf(p);
       const name = p.name.trim().toLowerCase();
@@ -506,9 +512,10 @@ export function renderPositions(
     });
     actions.appendChild(del);
 
-    const renumberBtn = document.createElement("button");
-    renumberBtn.textContent = "renumber";
-    renumberBtn.title = "Renumber the units on this position, per RP-2 §2.3.2";
+    const renumberBtn = button({
+      label: "Renumber", variant: "text", icon: "sort", dense: true,
+      title: "Order the units by geometry, per RP-2 §2.3.2. Shows every move first.",
+    });
     renumberBtn.addEventListener("click", async () => {
       try {
         const r = await renumber(plot, p);
@@ -551,9 +558,10 @@ export function renderPositions(
     // one, and this is for when it is not — a V, a curved cove, or a rig
     // somebody else hung. See `sequence.ts`.
     if (deps.onNumberSeq) {
-      const seqBtn = document.createElement("button");
-      seqBtn.textContent = "number by clicking";
-      seqBtn.title = "Pick a starting number, then click the units in hanging order";
+      const seqBtn = button({
+        label: "Number by clicking", variant: "text", icon: "pin", dense: true,
+        title: "Pick a starting number, then click the units in hanging order",
+      });
       seqBtn.addEventListener("click", () => {
         const units = plot.instruments.filter(
           i => (i.position ?? "").trim().toLowerCase() === p.name.trim().toLowerCase()).length;
@@ -579,8 +587,13 @@ export function renderPositions(
     host.appendChild(box);
   });
 
-  const addPos = document.createElement("button");
-  addPos.textContent = "+ Add position";
+  // ⭐ FILLED: the one primary action in the Positions panel. M3 puts the most
+  // important action at the top of the emphasis ladder, and until now this
+  // looked exactly like `renumber`.
+  const addPos = button({
+    label: "Add position", variant: "filled", icon: "add",
+    title: "Create a hanging position — you name it",
+  });
   addPos.addEventListener("click", () => {
     // ⭐ THE USER NAMES IT. The old button invented `Electric ${count + 1}`,
     // which is one delete away from a collision — the demo ships seven

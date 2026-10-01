@@ -2,6 +2,11 @@
 
 In order. Each step should leave something that runs.
 
+➡ **The menus and toolbars have their own plan:**
+[`MENUS-AND-MATERIAL.md`](MENUS-AND-MATERIAL.md), written for #56. It measures
+what is inconsistent, works out what Material Design 3 actually requires, and
+puts the work in order smallest-first. Nothing in it is built yet.
+
 ## 1. Make the Python importable as a package ✅ done 2026.09.23
 
 - `scaled_pdf.py` now uses relative imports for `photometrics` and `dxf_bridge`.

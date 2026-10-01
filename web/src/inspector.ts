@@ -7,6 +7,7 @@
  */
 import { isVertical, type Instrument } from "./plot.js";
 import { confirmDelete, describeUnit } from "./confirm.js";
+import { button } from "./button.js";
 import { parseFeet } from "./feet.js";
 import { fmtFt, fmtFc } from "./geometry.js";
 import type { Store } from "./store.js";
@@ -408,9 +409,10 @@ export function renderInspector(
   }
   host.appendChild(grid);
 
-  const del = document.createElement("button");
-  del.className = "danger";
-  del.textContent = "Delete instrument";
+  const del = button({
+    label: "Delete instrument", variant: "danger", icon: "delete",
+    title: "Remove this unit from the plot. Asks first.",
+  });
   del.addEventListener("click", () => {
     if (!confirmDelete(describeUnit(inst))) return;
     store.remove(i);

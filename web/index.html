@@ -83,7 +83,25 @@
     }
     #status { font-size:12px; line-height:16px; letter-spacing:.4px; max-width:34em; }
     .grow { margin-left:auto; }
-    .group { display:flex; gap:8px; align-items:center; }
+    /* 🔴 WRAPS. `.bar` already wrapped, but the group inside it did not, so the
+       row overflowed the window instead and the LAST control simply left the
+       screen. Found when Ground plan moved to the end of row one at Jerry's
+       request: at a 1024px viewport it sat at x=1212–1299, a button that
+       existed and could not be seen. A control pushed off the edge is worse
+       than a crowded one, because nothing says it is there. */
+    .group { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+    /* 🔴 A <select> SIZES ITSELF TO ITS WIDEST OPTION, and Open's options are
+       plot FILE NAMES. It was 332px — a quarter of the whole row — and one plot
+       with a long name would push it wider still, taking the toolbar with it.
+       The same is true of Sheet, whose longest option is "ARCH E1 (30 x 42 in)".
+
+       ⚠ This is a holding fix. Both become menu buttons in the next step, and a
+       menu's width is the menu's problem, not the toolbar's. */
+    /* ⚠ Open is a BUTTON now, so nothing it lists can widen the toolbar — that
+       was the whole problem, and it is the menu's business instead. Sheet is
+       still a select and still sizes to "ARCH E1 (30 x 42 in)". */
+    #page { max-width:190px; }
     .divider { width:1px; align-self:stretch; background:var(--outline-variant); margin:0 2px; }
 
     /* ---- buttons (M3 filled / tonal / outlined / text), dense ---------- */
@@ -128,6 +146,86 @@
                font-weight:500; font-size:14px; letter-spacing:.1px; background:none;
                border:1px solid var(--outline); }
     .filebtn:hover { background:rgba(37,105,72,.08); }
+    /* A readout, not a control: it states what the PDF will print at, and
+       opens the menu that changes it. Quiet enough to be glanced past, present
+       enough to be glanced AT. */
+    .sheetinfo { height:32px; padding:0 10px; border-radius:var(--shape-xs);
+                 flex:0 0 auto;
+                 color:var(--on-surface-variant); font-weight:400; font-size:13px;
+                 letter-spacing:.25px; gap:4px; }
+    .sheetinfo:hover { background:var(--surface-container-high); }
+    .sheetinfo .sep { opacity:.5; }
+
+    /* ---- menus (M3 Menus, on the Popover API) --------------------------
+       A temporary surface of actions, opened from a button. `popover` puts it in
+       the top layer and dismisses it on an outside click, so none of that is
+       written here. See menu.ts. */
+    .menu {
+      min-width:200px; max-width:min(420px, 90vw); max-height:70vh; overflow-y:auto;
+      padding:8px 0; margin:0; border:none;
+      background:var(--surface-container-low); color:var(--on-surface);
+      border-radius:var(--shape-s); box-shadow:var(--elev-2);
+    }
+    .menu::backdrop { background:transparent; }
+    .menu-item {
+      display:flex; align-items:center; gap:12px; width:100%;
+      height:40px; padding:0 12px; border:none; border-radius:0;
+      background:none; color:var(--on-surface); text-align:left;
+      font-size:14px; letter-spacing:.1px; font-weight:400; cursor:pointer;
+    }
+    .menu-item .material-symbols-outlined { font-size:20px; color:var(--on-surface-variant); }
+    .menu-label { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .menu-trailing { color:var(--on-surface-variant); font-size:12px; flex:0 0 auto; }
+    .menu-item:hover { background:var(--surface-container-high); }
+    .menu-item:focus-visible { background:var(--surface-container-high); outline:2px solid var(--primary); outline-offset:-2px; }
+    /* M3: an item that cannot be used now is DISABLED, not removed. */
+    .menu-item:disabled { opacity:.38; cursor:default; background:none; }
+    .menu-divider { height:1px; margin:8px 0; background:var(--outline-variant); }
+    .menu-heading { padding:6px 12px 4px; font-size:11px; line-height:16px;
+                    letter-spacing:.5px; text-transform:uppercase;
+                    color:var(--on-surface-variant); }
+    /* The chevron is smaller than a leading icon and sits tight to the label. */
+    .chev { font-size:18px !important; margin-left:-2px; margin-right:-6px; }
+    /* The tick sits in the same slot a leading icon would, so a list of options
+       does not shuffle sideways as the chosen one moves. */
+    .menu-tick { width:20px; flex:0 0 20px; font-size:18px !important;
+                 color:var(--primary) !important; }
+    .menu-more { font-size:18px !important; margin-right:-4px;
+                 color:var(--on-surface-variant) !important; }
+
+    /* ---- connected toggle group (M3 "segmented"/toggle buttons) --------
+       ⭐ The four layer toggles are ONE control. Connecting them says so: a
+       single outlined container, hairlines between, and the selected ones
+       filled with the primary container colour.
+
+       ⚠ They remain <input type=checkbox> inside <label>, so the accessibility
+       and every `.checked` read in main.ts are untouched. This is appearance
+       only, which is why it is safe. */
+    .toggles { display:inline-flex; align-items:stretch; flex:0 0 auto;
+               border:1px solid var(--outline); border-radius:var(--shape-full);
+               overflow:hidden; }
+    .toggles label { border-radius:0; padding:0 12px; margin:0; height:32px;
+                     border-left:1px solid var(--outline-variant); }
+    .toggles label:first-child { border-left:none; }
+    /* The tick is redundant once the whole chip fills, and it is what made four
+       identical squares read as four identical squares. */
+    .toggles input[type=checkbox] { position:absolute; opacity:0; width:1px; height:1px; }
+    .toggles label:has(input:checked) {
+      background:var(--primary-container); color:var(--on-primary-container); font-weight:500; }
+    .toggles label:hover { background:var(--surface-container-high); }
+    .toggles label:has(input:checked):hover { background:var(--primary-container); filter:brightness(.97); }
+    .toggles label:has(input:focus-visible) { outline:2px solid var(--primary); outline-offset:-2px; }
+
+    /* `at …` belongs to `pools`, so it sits tight against the group and goes
+       inert — not hidden — when pools is off. */
+    .attached { margin-left:2px; }
+    .attached.inert { opacity:.38; pointer-events:none; }
+
+    /* The zoom slider and its four buttons are one control for one thing. */
+    .zoomgroup { display:inline-flex; align-items:center; gap:4px; flex:0 0 auto;
+                 padding:2px 6px; border-radius:var(--shape-full);
+                 background:var(--surface-container); }
+
     /* M3 switch-ish checkbox row: the label is the target, not just the box. */
     .bar label { display:inline-flex; gap:6px; align-items:center;
                  color:var(--on-surface-variant); font-size:13px; letter-spacing:.25px;
@@ -315,8 +413,25 @@
                       color:var(--on-surface-variant); }
     .pos-field input, .pos-field select { font-size:13px; height:30px; }
     .pos-note { grid-column:1/-1; margin:2px 0 0; font-size:11px; line-height:16px; }
-    .pos-actions { grid-column:1/-1; display:flex; gap:6px; margin-top:4px; }
-    .pos-actions button { height:28px; padding:0 12px; font-size:12px; letter-spacing:.5px; }
+    /* 🔴 WRAP, because this row has always been too wide and nobody had measured
+       it. Five buttons need 431px as main shipped them — with no icons at all —
+       inside a panel that is 302px by default, so `renumber` and `number by
+       clicking` were CLIPPED, not just tight. And the panel is resizable at the
+       splitter, so there is no width at which nowrap is safe.
+
+       ⚠ M3's own advice for a row this full is an overflow menu — "don't clutter
+       your UI with too many buttons… consider presenting low-priority actions in
+       overflow menus or as icon buttons". That is the right end state and it
+       needs the menu component, so it waits for that step. Wrapping is what makes
+       the row honest in the meantime: a second line is visible, a clipped button
+       is not. */
+    .pos-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    /* ⚠ The size rule that used to live here duplicated `.small` exactly —
+       height, padding, font-size and letter-spacing, all written out a second
+       time. That is how the panel became a third control height. The buttons
+       now ask for `small` themselves (see `button.ts`), so there is one
+       definition of what dense means. What stays here is only LAYOUT. */
+    .pos-actions .material-symbols-outlined { font-size:16px; }
     #positions > button { margin-top:4px; }
 
     /* ---- schedule ---------------------------------------------------- */
@@ -354,60 +469,75 @@
         <div class="divider"></div>
         <button id="new" class="outlined" title="New plot (start over)">
           <span class="material-symbols-outlined">note_add</span>New</button>
-        <select id="open" title="Open a saved plot"><option value="">Open…</option></select>
+        <button id="open" class="outlined" title="Open a saved plot" aria-haspopup="menu" aria-expanded="false">
+          <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>Open…<span class="chev material-symbols-outlined" aria-hidden="true">arrow_drop_down</span></button>
         <button id="save" class="filled" title="Save (⌘S)">
           <span class="material-symbols-outlined">save</span>Save</button>
         <button id="saveas" class="outlined" title="Save As… (⇧⌘S)">
           <span class="material-symbols-outlined">save_as</span>Save As…</button>
+        <!-- ⭐ #56: "a revert to return the file to the way it was before we
+             touched it in this session". Disabled when there is nothing to go
+             back from — the same rule Save follows, and M3's rule for a control
+             that cannot act. -->
+        <button id="revert" title="Reload the plot from disk, dropping every change since">
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>Revert</button>
         <div class="divider"></div>
-        <select id="export" title="Export">
-          <option value="">Export…</option>
-          <option value="pdf">Plot PDF</option>
-          <option value="dxf">Plot DXF</option>
-          <option value="schedule">Instrument schedule</option>
-          <option value="hookup">Channel hookup</option>
-          <option value="eos">Eos patch (untested)</option>
-        </select>
-        <select id="page" title="The sheet the PDF is drawn on. Imperial plots are offered ARCH and ANSI sizes, metric ones the A series — a drawing issued on a sheet the reader does not stock is no more use than one at a ratio their rule does not have."></select>
-        <select id="scale" title="Paper scale for the exported PDF. Fit picks the largest standard scale at which nothing runs off the sheet.">
-          <option value="fit" selected>Fit</option>
-          <!-- Filled from the plot's units at render time: imperial fractions or
-               metric ratios, never both. Offering 1/4" on a metric plot would
-               let somebody issue a drawing at a ratio their scale rule does not
-               have on it. -->
-        </select>
+        <button id="export" class="outlined" title="Export a drawing or a paperwork file" aria-haspopup="menu" aria-expanded="false">
+          <span class="material-symbols-outlined" aria-hidden="true">ios_share</span>Export…<span class="chev material-symbols-outlined" aria-hidden="true">arrow_drop_down</span></button>
+        <div class="divider"></div>
+        <!-- ⭐ Jerry, 2026-10-01: "we use a button for the ground plan. but we
+             could move that to the end of the buttons." It is a FILE action —
+             it was only in the second row because that is where things went. -->
+        <label class="filebtn" title="Import a venue ground plan to trace over — a DXF, or a PDF page">
+          <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+          <input type="file" id="dxf" accept=".dxf,.pdf" hidden> Ground plan…
+        </label>
       </div>
     </div>
     <div class="bar">
       <span id="bdbar" hidden>
         <span id="bdwhat" class="muted" style="font-size:12px">backdrop</span>
-        <label class="muted" style="font-size:12px">x <input id="bdx" type="text" value="0'" style="width:56px"></label>
-        <label class="muted" style="font-size:12px">y <input id="bdy" type="text" value="0'" style="width:56px"></label>
-        <label class="muted" style="font-size:12px">wide <input id="bdw" type="text" style="width:62px"></label>
-        <label class="muted" style="font-size:12px">turn <input id="bdr" type="number" value="0" step="0.5" style="width:56px"></label>
-        <label class="muted" style="font-size:12px">fade <input id="bdo" type="range" min="10" max="100" value="45" style="width:70px"></label>
+        <label class="muted" style="font-size:12px" title="Move the backdrop left or right, in feet">x <input id="bdx" type="text" value="0'" style="width:56px"></label>
+        <label class="muted" style="font-size:12px" title="Move the backdrop upstage or downstage, in feet">y <input id="bdy" type="text" value="0'" style="width:56px"></label>
+        <label class="muted" style="font-size:12px" title="How wide the backdrop is in real feet. Calibrate sets this for you.">wide <input id="bdw" type="text" style="width:62px"></label>
+        <label class="muted" style="font-size:12px" title="Rotate the backdrop, in degrees, to square it to the room">turn <input id="bdr" type="number" value="0" step="0.5" style="width:56px"></label>
+        <label class="muted" style="font-size:12px" title="How strongly the backdrop shows through. It is a tracing guide, never a measurement.">fade <input id="bdo" type="range" min="10" max="100" value="45" style="width:70px"></label>
         <button id="bdcal" class="small outlined" title="Click two points you know the distance between">calibrate</button>
         <button id="bdoff" class="small outlined" title="Remove the backdrop">remove</button>
       </span>
-      <label class="filebtn" title="Import a venue ground plan — DXF or PDF">
-        <span class="material-symbols-outlined">upload_file</span>
-        <input type="file" id="dxf" accept=".dxf,.pdf" hidden> Ground plan…
-      </label>
-      <div class="divider"></div>
-      <label><input type="checkbox" id="base" checked> plan</label>
-      <label><input type="checkbox" id="pools" checked> pools</label>
-      <label>at <select id="poolplane">
+      <!-- ⭐ ONE GROUP, because they are ONE FUNCTION. Jerry, 2026-10-01: "The
+           plan, pools, focus, and labels checkboxes are just strewn across.
+           Maybe we can group them by function?" Each of the four shows or hides
+           a LAYER of the drawing — so grouping by function groups all four
+           together rather than splitting them up.
+
+           ⚠ STILL CHECKBOXES. They look like M3's connected toggle buttons, but
+           a checkbox is what they are: on or off, announced correctly, and
+           `main.ts` reads `.checked` on every one. Swapping in <div>s would have
+           bought the same appearance and cost the semantics. -->
+      <span class="toggles" role="group" aria-label="Layers to draw">
+        <label title="Draw the imported ground plan under the plot"><input type="checkbox" id="base" checked> plan</label>
+        <label title="Draw each light's pool where it lands"><input type="checkbox" id="pools" checked> pools</label>
+        <label title="Draw the focus point and its leader line"><input type="checkbox" id="focus" checked> focus</label>
+        <label title="Draw unit numbers, channels, colour and type"><input type="checkbox" id="labels" checked> labels</label>
+      </span>
+      <!-- ⚠ NOT a fifth peer. It says what height the pools are cut at, so it
+           belongs to `pools` — it used to sit between `pools` and `focus` and
+           read as one of them. It goes INERT when pools is off rather than
+           vanishing, per DECISIONS.md: "Fields that do not apply go inert, not
+           hidden." -->
+      <label class="attached" id="poolplane-label" title="The height the pools are measured at. A cone cuts a bigger ellipse low down than at head height.">at <select id="poolplane">
         <option value="">head 5'-6"</option>
         <option value="5.1667">face 5'-2"</option>
         <option value="3.5">seated 3'-6"</option>
         <option value="0">the deck</option>
       </select></label>
-      <label><input type="checkbox" id="focus" checked> focus</label>
-      <label><input type="checkbox" id="labels" checked> labels</label>
-      <label title="PRINT ONLY — the screen never draws these. A dimension scale along the edges of the plan: X across the bottom, Y up the side, so you can read where something is without walking a scale rule across the sheet.">
-        <input type="checkbox" id="rulers"> rulers <span class="print-only">(print)</span></label>
       <div class="divider"></div>
-      <label>drawing zoom: <span class="material-symbols-outlined">zoom_in</span>
+      <!-- ⭐ "the drawing zoom, and the icons to the right seem to make sense
+           together but maybe we could group them somehow." They are one control
+           for one thing, so they get one container and one label. -->
+      <span class="zoomgroup" role="group" aria-label="Zoom">
+      <label title="How many screen pixels one foot is drawn at">drawing zoom: <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
         <input type="range" id="zoom" min="2" max="40" step="0.5" value="14"></label>
       <div class="group">
         <button id="zoom-page" class="icon" title="Fit the whole plot">
@@ -418,6 +548,23 @@
           <span class="material-symbols-outlined">width</span></button>
         <button id="zoom-100" class="small outlined" title="Default zoom (14 px per foot)">100%</button>
       </div>
+      </span>
+      <!-- ⭐ WHAT THE PDF WILL PRINT AT, at a glance. Jerry, 2026-10-01: "where
+           is the scale", then "row under the export button". Moving the CONTROLS
+           into Export was right — they change the exported PDF and nothing else,
+           and side by side their dependence is finally visible — but the toolbar
+           used to DISPLAY the scale at all times, and that readout went with
+           them. Information that was ambient had become something to go and look
+           for.
+
+           ⚠ Pushed to the right of its row rather than pinned under the Export
+           button itself: row one reflows as the window narrows, so any fixed
+           alignment to one control in it would only be true at one width.
+
+           It is a button, so it is keyboard-reachable and opens the same menu —
+           a shortcut as well as a readout. -->
+      <button id="sheetinfo" class="sheetinfo grow" aria-haspopup="menu"
+              title="The sheet and scale the PDF will print at. Click to change them."></button>
       <div class="divider"></div>
     </div>
   </header>
@@ -472,5 +619,30 @@
   </main>
   <div id="err" hidden></div>
   <script type="module" src="/src/main.ts"></script>
+<!-- ⭐ SHEET, SCALE AND RULERS LIVE IN THE EXPORT MENU NOW. Jerry, #56: "the
+     export menu is confusing it should be indented". All three affect the
+     exported PDF and nothing else, so sitting in the toolbar beside the file
+     actions made them read as app state.
+
+     ⚠ THE CONTROLS THEMSELVES STAY HERE, HIDDEN, AND ARE THE STATE. They are
+     filled by `fillPageMenu` and `fillScaleMenu`, which are unit-aware and carry
+     a deliberate fallback — "the first is the SMALLEST, and silently issuing a
+     D-sized plot on Letter is the kind of thing nobody notices until it is
+     printed". Rewriting that to feed a menu would have risked losing the care in
+     it for nothing, so the menu READS AND WRITES these and every existing
+     `$("page").value` keeps working unchanged.
+
+     `hidden` keeps them out of the tab order. They are a model, not a UI. -->
+<div id="export-settings" hidden>
+        <select id="page" title="The sheet the PDF is drawn on. Imperial plots are offered ARCH and ANSI sizes, metric ones the A series — a drawing issued on a sheet the reader does not stock is no more use than one at a ratio their rule does not have."></select>
+        <select id="scale" title="Paper scale for the exported PDF. Fit picks the largest standard scale at which nothing runs off the sheet.">
+          <option value="fit" selected>Fit</option>
+          <!-- Filled from the plot's units at render time: imperial fractions or
+               metric ratios, never both. Offering 1/4" on a metric plot would
+               let somebody issue a drawing at a ratio their scale rule does not
+               have on it. -->
+        </select>
+        <input type="checkbox" id="rulers"> rulers <span class="print-only">(print)</span></label>
+</div>
 </body>
 </html>
