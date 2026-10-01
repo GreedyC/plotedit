@@ -2,6 +2,11 @@
 
 In order. Each step should leave something that runs.
 
+➡ **Layers have their own plan:** [`LAYERS.md`](LAYERS.md), written for #82. ⚠ Its
+finding is that the app **already has layers, in two incompatible schemes**, and
+neither is the one #82 describes — so the work is choosing between three answers,
+not adding a missing one. Nothing in it is built.
+
 ➡ **The menus and toolbars had their own plan, and most of it is built:**
 [`MENUS-AND-MATERIAL.md`](MENUS-AND-MATERIAL.md), written for #56 and delivered
 in #77 the same day. It measures what was inconsistent, works out what Material
