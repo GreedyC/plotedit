@@ -31,6 +31,10 @@ Verify a PDF you did not make here: measure the scale bar with any PDF
 reader's measuring tool, or run  scaled_pdf.py --check file.pdf  which
 reads the 1-inch check bar and reports its width in points (want 72.0).
 """
+import contextlib
+import os
+import tempfile
+import shutil
 import sys, math
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
@@ -191,10 +195,46 @@ def ft(feet, inches=0):
     return feet + inches / 12.0
 
 
+# ⭐ THE EIGHT LAYERS, as PDF optional content groups, in painting order.
+#
+# PDF has had real layers since 1.5 — a reader shows them as a Layers panel with
+# a checkbox each, and switching one off removes it from the page AND from the
+# print. docs/LAYERS.md calls this the single most valuable item on the list:
+# an electrician on a ladder switches the rep plot off in Acrobat.
+#
+# 🔴 reportlab CANNOT MAKE THEM. It draws every plot PDF here, and a search of
+# the installed package for `OCProperties`, `OptionalContent`, `setOCG` and
+# `OCG` returns nothing at all. So this is not a flag to switch on: each layer
+# is drawn to its OWN reportlab canvas and PyMuPDF overlays them onto one page,
+# each tagged with its own group.
+#
+# ⚠ THE NAME ON THE LEFT IS THE DXF LAYER, which the sheet already tracked for
+# the DXF export, so most of the assignment was already written down. Pools and
+# focus had no layer of their own — they were drawn on NOTES — so they are the
+# two that gain one here.
+PDF_LAYERS = [
+    ("base",       "Base plan"),
+    ("pools",      "Pools"),
+    ("positions",  "Positions"),
+    ("focus",      "Focus"),
+    ("units",      "Units"),
+    ("labels",     "Labels"),
+    ("dimensions", "Dimensions"),
+    ("notes",      "Notes"),
+]
+# What the sheet's existing DXF layer names mean as PDF groups.
+PDF_FOR_DXF = {"BASE": "base", "POSITIONS": "positions", "UNITS": "units",
+               "TEXT": "labels", "DIMS": "dimensions", "NOTES": "notes"}
+# ⚠ NOT a layer. The title block, the scale bar and the one-inch check are the
+# SHEET, not the drawing — a reader who switches off every layer must still be
+# holding a drawing that says what it is and what scale it is at.
+FRAME = "frame"
+
+
 class Sheet:
     def __init__(self, path, page="ARCH_D", scale="1/4", landscape=True,
                  show="", venue="", sheet="", rev="A", designer="", studio="",
-                 margin_in=0.5, dxf=None, weights=None, units=None):
+                 margin_in=0.5, dxf=None, weights=None, units=None, layered=True):
         w, h = PAGES[page] if isinstance(page, str) else page
         if landscape: w, h = h, w
         self.page_pt = (w * inch, h * inch)
@@ -205,7 +245,29 @@ class Sheet:
         self.page_name = page if isinstance(page, str) else "custom"
         self.landscape = bool(landscape)
         self.page_in = (w, h)
-        self.c = canvas.Canvas(path, pagesize=self.page_pt)
+        # ⭐ ONE CANVAS PER LAYER, and `self.c` hands out whichever the current
+        # layer is. Everything that draws already goes through `self.c`, so this
+        # is the single place the whole sheet had to change.
+        #
+        # ⚠ Why not one canvas and a null-object proxy for the suppressed
+        # layers: four calls read VALUES back out of the canvas — three
+        # `stringWidth` and a `beginPath` — and a proxy that swallows those
+        # returns None into arithmetic. Real canvases keep working.
+        #
+        # ⚠ Checked before relying on it: seven places capture `c = self.c` into
+        # a local, and NONE of them calls self.layer() afterwards, so no capture
+        # can outlive the layer it was taken for.
+        self.layered = layered
+        self._tmpdir = tempfile.mkdtemp(prefix="plotedit-layers-") if layered else None
+        self._canvases = {}
+        if layered:
+            for lid, _label in [(FRAME, "")] + PDF_LAYERS:
+                self._canvases[lid] = canvas.Canvas(
+                    os.path.join(self._tmpdir, f"{lid}.pdf"), pagesize=self.page_pt)
+        else:
+            self._canvases[FRAME] = canvas.Canvas(path, pagesize=self.page_pt)
+        # The DXF sheet starts on POSITIONS, so the PDF starts there too.
+        self._pdf_layer = "positions" if layered else FRAME
         self.path = path
         # ⭐ BOTH SYSTEMS REDUCE TO POINTS PER FOOT, which is why one number runs
         # the whole drawing. 1/4" = 1'-0" IS 1:48 exactly — a foot is twelve
@@ -381,9 +443,46 @@ class Sheet:
         if self.dxf: self.dxf.layer = "POSITIONS"
         return ext
 
-    def layer(self, name):
-        """Set the DXF layer for what is drawn next (BASE, POSITIONS, UNITS, TEXT, DIMS, NOTES)."""
+    @property
+    def c(self):
+        """The canvas for the layer being drawn right now."""
+        return self._canvases.get(self._pdf_layer) or self._canvases[FRAME]
+
+    @contextlib.contextmanager
+    def on_layer(self, pdf_layer):
+        """Put what is drawn in this block into one PDF group, then put it back.
+
+        ⭐ For the two things the screen's `labels` chip controls — a position's
+        name and a unit's §6.14 notation — which are drawn while POSITIONS and
+        UNITS are current. Without this the PDF has no Labels group at all, and
+        the paper stops agreeing with the screen about what a layer is. The DXF
+        has always put every piece of text on TEXT, so this is the merge doing
+        what it said it would.
+
+        ⚠ NOT "all text". The title block belongs to the frame, and the key's
+        words belong with the key — routing those here would let a reader switch
+        off a drawing's title, or leave the key a set of symbols with no words.
+        """
+        was = self._pdf_layer
+        if self.layered:
+            self._pdf_layer = pdf_layer
+        try:
+            yield
+        finally:
+            self._pdf_layer = was
+
+    def layer(self, name, pdf=None):
+        """Set the DXF layer for what is drawn next (BASE, POSITIONS, UNITS, TEXT, DIMS, NOTES).
+
+        ⭐ `pdf` names the PDF group separately, for the two that have no DXF
+        layer of their own. Pools and focus are drawn on the DXF's NOTES layer
+        because there was nowhere else to put them; in the PDF they get their
+        own group, which is the whole point of being able to switch the pools
+        off on a ladder while keeping the key.
+        """
         if self.dxf: self.dxf.layer = name
+        if self.layered:
+            self._pdf_layer = pdf or PDF_FOR_DXF.get(name, name)
 
     def P(self, x_ft, y_ft):
         """Real feet -> page points. Records extents so finish() can warn about clipping."""
@@ -662,7 +761,9 @@ class Sheet:
         """A hanging position. §6.18: a batten is HEAVY."""
         self.layer("POSITIONS")
         self.line(x1, y, x2, y, style="batten")
-        if label: self.text(x1, y + ft(0, 6), label, size=7, bold=True, knockout=True)
+        if label:
+            with self.on_layer("labels"):
+                self.text(x1, y + ft(0, 6), label, size=7, bold=True, knockout=True)
 
     def position(self, pos, label=None, label_at=None, draw_label=True):
         """Draw one horizontal hanging position from a plot record.
@@ -768,8 +869,9 @@ class Sheet:
         is legible" true rather than "the label is legible for now".
         """
         self.layer("POSITIONS")
-        self.text(spec["x"], spec["y"], spec["text"], size=7, bold=True,
-                  align=spec["align"], knockout=True)
+        with self.on_layer("labels"):
+            self.text(spec["x"], spec["y"], spec["text"], size=7, bold=True,
+                      align=spec["align"], knockout=True)
 
     @staticmethod
     def foh_extent(positions):
@@ -808,13 +910,18 @@ class Sheet:
         # point is, placed OUTBOARD so it never lands on the room or on a
         # position label.
         text = (label if label is not None else pos.get("name", "")).upper()
-        if label_at:
-            self.text(label_at["x"], label_at["y"], text, size=6, bold=True,
-                      align=label_at["align"], knockout=True)
-        else:
-            out = -1 if center_x is None else (1 if x >= center_x else -1)
-            self.text(x + out * ft(1, 4), y - ft(0, 3), text, size=6,
-                      bold=True, center=False if out > 0 else True, knockout=True)
+        # ⚠ A boom's name is drawn HERE and not through position_label(), so it
+        # needs the labels group named again. Found by rendering the ladder view
+        # and looking at it: two boom names were still on the sheet with Labels
+        # switched off, because this is a second place a position gets named.
+        with self.on_layer("labels"):
+            if label_at:
+                self.text(label_at["x"], label_at["y"], text, size=6, bold=True,
+                          align=label_at["align"], knockout=True)
+            else:
+                out = -1 if center_x is None else (1 if x >= center_x else -1)
+                self.text(x + out * ft(1, 4), y - ft(0, 3), text, size=6,
+                          bold=True, center=False if out > 0 else True, knockout=True)
 
     def _unused_marker(self):
         pass
@@ -1018,7 +1125,7 @@ class Sheet:
         # the unit number — which is exactly the mess that putting the number
         # inside the body was meant to avoid.
         if focus_to and show_focus:
-            self.layer("NOTES")
+            self.layer("NOTES", pdf="focus")
             self.line(x, y, focus_to[0], focus_to[1], color=grey, style="leader")
             self.circle(focus_to[0], focus_to[1], ft(0, 3), color=grey, style="leader")
             self.layer("UNITS")
@@ -1045,12 +1152,13 @@ class Sheet:
             _step = (7.0 / self.pt_per_ft if self.pt_per_ft else 0.39) * 1.5
             _above = _clear + (color_tier or 0) * _step
             from . import dmx as _dmx
-            _sym.notation(self, x, y, unit=num, channel=ch, color=color_gel,
-                          circuit=circuit, dimmer=dimmer,
-                          address=_dmx.plot_number(address, dimmer) if address else None,
-                          wattage=wattage,
-                          control=control, rotate_deg=draw_deg,
-                          body_center=_center, above=_above)
+            with self.on_layer("labels"):
+                _sym.notation(self, x, y, unit=num, channel=ch, color=color_gel,
+                              circuit=circuit, dimmer=dimmer,
+                              address=_dmx.plot_number(address, dimmer) if address else None,
+                              wattage=wattage,
+                              control=control, rotate_deg=draw_deg,
+                              body_center=_center, above=_above)
         result = None
         if focus_to:
             fx, fy = focus_to
@@ -1093,7 +1201,7 @@ class Sheet:
                     elif sh.get("note"):
                         self.warnings.append(f"unit {num}: {sh['note']}")
                     if show_pool and sh.get("a"):
-                        self.layer("NOTES")
+                        self.layer("NOTES", pdf="pools")
                         self.ellipse(sh["cx"], sh["cy"], sh["a"], sh["b"],
                                      sh["angle"], color=grey, style="pool")
                         self.layer("UNITS")
@@ -1277,6 +1385,11 @@ class Sheet:
     # ---- sheet furniture ----------------------------------------------
     def finish(self):
         """Scale bar, one-inch check, title block, then save."""
+        # ⚠ BEFORE `c` is captured. The title block, scale bar and one-inch
+        # check go on the frame, which carries no optional-content group — a
+        # reader who switches off every layer must still be holding a drawing
+        # that says what it is and what scale it was drawn at.
+        self._pdf_layer = FRAME
         c = self.c; W, H = self.page_pt; m = self.margin
         # clipping check — a drawing that runs off the sheet is worse than no drawing
         x0b, y0b, x1b, y1b = self._bounds
@@ -1397,8 +1510,71 @@ class Sheet:
             bar_pt, bar_says = 72.0, 'this bar is 1" when printed at 100%'
         c.setLineWidth(1); c.rect(cx, cy, bar_pt, 4, stroke=1, fill=0)
         c.drawString(cx + bar_pt + 4, cy, bar_says)
-        c.save()
+        if self.layered:
+            self._compose()
+        else:
+            c.save()
         if _dxf and self.dxf_path: _dxf.save(self.dxf_path)
+
+    def _compose(self):
+        """Overlay the per-layer canvases onto one page, each its own group.
+
+        ⚠ A LAYER THAT DREW NOTHING GETS NO GROUP. An empty entry in the
+        reader's Layers panel is a switch that does nothing, which is the same
+        "control that lies" the screen chips were kept free of — and several are
+        legitimately empty, because what the designer hid is not drawn at all
+        rather than drawn and switched off.
+
+        ⭐ Emptiness is MEASURED, not assumed: a page counts as inked if
+        PyMuPDF finds any vector drawing or any text on it. A blank reportlab
+        page is not zero bytes, so a file-size test would have called every
+        layer inked.
+        """
+        import pymupdf
+        for cv in self._canvases.values():
+            cv.save()
+        out = pymupdf.open()
+        page = out.new_page(width=self.page_pt[0], height=self.page_pt[1])
+        self.pdf_layers = []
+        try:
+            for lid, label in PDF_LAYERS + [(FRAME, None)]:
+                src = pymupdf.open(os.path.join(self._tmpdir, f"{lid}.pdf"))
+                try:
+                    # ⚠ A canvas nothing was drawn to saves a PDF with NO PAGES at
+                    # all — reportlab only emits one when something lands on it.
+                    # That is the cheap signal; the ink test behind it catches a
+                    # page that exists but carries nothing visible.
+                    if src.page_count == 0:
+                        continue
+                    pg = src[0]
+                    if not (pg.get_drawings() or pg.get_text().strip()):
+                        continue
+                    # 🔴 THE FRAME IS LAST AND CARRIES NO `oc`. Painted first it
+                    # would sit under the drawing; given a group it could be
+                    # switched off, and a sheet with no title block is not a
+                    # drawing anybody should be holding.
+                    if label is None:
+                        page.show_pdf_page(page.rect, src, 0)
+                    else:
+                        ocg = out.add_ocg(label, on=True)
+                        page.show_pdf_page(page.rect, src, 0, oc=ocg)
+                        self.pdf_layers.append(label)
+                finally:
+                    src.close()
+            # ⚠ BYTES, NOT out.save(path). PyMuPDF's save() seeks in its output
+            # and os.devnull cannot be told its position — "Cannot tell in
+            # untellable output stream". A Sheet written to devnull is a real
+            # use: test_package builds one purely to read its clipping warnings.
+            # reportlab never minded, because it only ever writes forwards.
+            data = out.tobytes(garbage=3, deflate=True)
+            if hasattr(self.path, "write"):
+                self.path.write(data)
+            else:
+                with open(self.path, "wb") as fh:
+                    fh.write(data)
+        finally:
+            out.close()
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
 
 
 def _shade_rear_for(kind, lamp=None):

@@ -434,6 +434,25 @@ then the two pieces of paperwork, then the console file. Below them, under
 | **Scale** | **Fit** picks the largest standard scale at which nothing runs off the chosen sheet. ⚠ The list is imperial fractions on an imperial plot and metric ratios on a metric one, never both — offering ¼" on a metric plot would let you issue a drawing at a ratio your scale rule does not have. |
 | **Rulers** | A dimension scale along the edges of the plan. Print only; the screen never draws them. ⭐ This is the **dimensions** layer, so your choice is now saved with the plot rather than forgotten on reload. |
 
+### ⭐ The exported PDF has layers in it
+
+Open a plot PDF in any reader with a **Layers** panel — Acrobat, Preview's
+sidebar, most others — and the eight layers are there with a checkbox each.
+Switching one off removes it from the screen **and from the print**.
+
+**This is for the ladder.** Switch everything off but **Positions** and
+**Units** and you are holding the hang: pipes, symbols, and nothing else. No
+pools, no focus leaders, no key, no imported ground plan.
+
+⚠ **The title block, the scale bar and the one-inch check are not a layer** and
+cannot be switched off. A sheet that can be stripped of what it is and what
+scale it was drawn at is not a drawing anybody should be working from.
+
+⚠ **A layer you hid before exporting is not in the PDF at all**, so it has no
+checkbox either — what you did not print cannot be switched back on by the
+reader. Hiding is a property of the drawing; the schedule and the hookup always
+report the whole rig.
+
 ⭐ **Sheet and Scale are not independent, and sitting together is how you see it.**
 Fit means *the largest scale at which nothing runs off the chosen sheet* — so
 changing the sheet can change the scale. The readout at the right of the second

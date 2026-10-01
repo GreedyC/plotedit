@@ -1,8 +1,9 @@
 # Layers — what they would mean here
 
-**Status: STEP 1 BUILT, 2026-10-01.** The eight layers are in the plot file, six
-of them have chips, and the renderer reads them. Steps 2 to 4 — the DXF, the
-layered PDF, user layers — are not built. §6 records the order; the section at
+**Status: STEPS 1 AND 3 BUILT, 2026-10-01.** The eight layers are in the plot
+file, six of them have chips, the renderer reads them, and **the exported PDF
+carries all eight as optional content groups**. Steps 2 and 4 — the DXF, user
+layers — are not built. §6 records the order; the section at
 the very bottom records what step 1 actually did, including **three places where
 building it contradicted this plan**. Written 2026-10-01 for #82,
 which asks:
@@ -406,3 +407,71 @@ accidental toggle costs one undo.
 - **No user layers, and no reordering** (step 4). Array order is draw order and
   is seeded fixed, which is the shape a reorder will need.
 - The three questions in §7 are still open and still do not block anything.
+
+
+---
+
+## ✅ Step 3, as built — the layered PDF, 2026-10-01
+
+§6 called this *"the one an electrician feels"* and noted it does not depend on
+steps 1 or 2. It does not, and it is built.
+
+**The route is the one proven at the top of this document**, and it survived
+contact: reportlab draws each layer to its own canvas, PyMuPDF overlays them onto
+one page, one optional content group each. Both traps reproduced exactly on
+PyMuPDF 1.28.2 — `get_layers()` comes back empty because the groups are in
+`get_ocgs()`, and `set_layer(-1, off=[…])` changes the stored state without
+changing a pixel while `set_layer_ui_config(n, action=2)` hides the ink.
+
+### What it measures, on the demo plot at ARCH D
+
+| layer | dark pixels it removes |
+|---|---|
+| Positions | 14,222 |
+| Base plan | 9,117 |
+| Notes | 7,103 |
+| Dimensions | 5,431 |
+| Units | 3,564 |
+| Labels | 2,402 |
+| Pools | 1,440 |
+| Focus | 617 |
+
+⭐ **The ladder view works.** Everything off but Positions and Units leaves the
+pipes, the symbols and the title block — and nothing else.
+
+### ⚠ Four things found by building it
+
+- **A canvas nothing was drawn to saves a PDF with NO PAGES**, not a blank one.
+  That is the cheap emptiness test, and it is why a layer that drew nothing gets
+  no group: an empty row in the reader's panel is a switch that does nothing.
+- **`os.devnull` cannot be saved to.** PyMuPDF's `save()` seeks; devnull cannot
+  be told its position. `test_package` builds a Sheet purely to read its clipping
+  warnings, so the output goes through `tobytes()` and a plain write instead.
+  reportlab never minded, because it only writes forwards.
+- **🔴 Two boom names survived the ladder view**, found by rendering it and
+  LOOKING at it. A boom is named in its own method rather than through
+  `position_label()`, so it needed the labels group named a second time. Every
+  structural assertion passed while this was broken.
+- **Pools and focus had no layer of their own** — §0's table says they reach no
+  DXF layer, and what actually happens is that they are drawn on **NOTES**. They
+  have their own PDF group now, so the pools can go while the key stays.
+
+### ⚠ And two assertions that were wrong, not the code
+
+- **Dimensions exists even with the rulers off.** The room's dimension STRINGS
+  are drawn on every plot and live on DIMS. Asserting the opposite was the error.
+- **The extracted text reorders.** A composited page holds its text in one
+  XObject per layer, so extraction walks it in layer order: 176 lines either way,
+  same lines, different order. Comparing raw strings fails for a reason that has
+  nothing to do with what is on the paper.
+
+### The cost
+
+0.65s against 0.29s for the same export, and the file is **smaller** — 32.0 KB
+against 33.5 KB, because the composite is deflated. Both are a sub-second export
+either way.
+
+### Still not built
+
+**Step 2** — the DXF still writes its own six names, and Pools and Focus still
+reach no DXF layer of their own. **Step 4** — no user layers, no reordering.
