@@ -1,6 +1,10 @@
 # Layers — what they would mean here
 
-**Status: PLAN, DECIDED. Nothing here is built yet.** Written 2026-10-01 for #82,
+**Status: STEP 1 BUILT, 2026-10-01.** The eight layers are in the plot file, six
+of them have chips, and the renderer reads them. Steps 2 to 4 — the DXF, the
+layered PDF, user layers — are not built. §6 records the order; the section at
+the very bottom records what step 1 actually did, including **three places where
+building it contradicted this plan**. Written 2026-10-01 for #82,
 which asks:
 
 > If reasonable, design a system where different objects can live on layers and
@@ -327,3 +331,78 @@ rather than a judgement call.
 hide the rep plot, print a schedule, and the house units are still listed. That
 is correct and it will still surprise someone. The schedule should say what it is
 reporting — "all 47 units" — so the count is the hint.
+
+
+---
+
+## ✅ Step 1, as built — 2026-10-01
+
+The eight layers are in the file, the renderer reads them, and six have chips.
+Three things in the plan above turned out to be wrong when built, and they are
+recorded here rather than quietly corrected upstream.
+
+### ⚠ 1. There is no format change, and no migration
+
+§4 said: *"`formatVersion` is 1 and `isPlot` rejects anything else, so this is a
+format change with a migration."* **It is not.** `layers` is optional and purely
+additive:
+
+- An old file has no `layers`, and every layer takes its default.
+- A file written here opens in an older build, which ignores the field and draws
+  by its own toggles.
+
+Nothing is lost in either direction, so `formatVersion` stays **1**. Bumping it
+would have made every plot ever saved unopenable in order to buy nothing.
+
+✅ **And the migration is exercised for real, not just in a test.** Every plot
+file in the repository — the demo, the test fixtures, the saved plots — has no
+`layers` key, so opening any of them runs this path. Checked by opening the app:
+15 units, 9 positions, 24 labels, 20 pools, all drawn, chips all on.
+
+### ⚠ 2. Six chips, not eight
+
+§6 step 1 asked for the four toggles to become eight. **`dimensions` and `notes`
+have no chip**, because the screen draws neither — the rulers and the key exist
+only in the exported PDF. A chip that changes nothing visible is a control that
+lies, and this repository already decided that case the other way round for the
+pool plane: *"a control that vanishes takes its explanation with it."* Both
+layers are still carried in the file and read by the export, so step 2 does not
+have to touch the format again.
+
+⭐ **`rulers` stopped being a special case, as §6 wanted.** It was the last
+display toggle with its own private checkbox. It is now the `dimensions` layer,
+read and written by the Export menu — and *saved with the plot*, which it never
+was before.
+
+### ⭐ 3. A label needs the thing it names
+
+Not in the plan, and found while building. The merged set puts position names on
+**Labels**, which is right — that is where the DXF puts text. But hiding
+**Positions** while **Labels** stays on then prints a name over empty paper.
+
+So text draws only when its own layer AND its subject's layer are on: a position
+name needs `labels && positions`, a unit's channel needs `labels && units`.
+Measured in the app: hiding **units** took 15 unit labels with it and left all 9
+position names; hiding **positions** did the reverse.
+
+⚠ **Pools and focus are deliberately NOT gated on units.** Where a unit's light
+lands is worth drawing with the symbols off — the same reasoning that already
+draws a boom's pool while drawing no symbol for it.
+
+### 🔴 The cost, stated plainly: a toggle now dirties the plot
+
+Layer state lives in the file, so switching a layer off is an edit. Peek at the
+plot with the pools off and it says **Unsaved changes**. That is the price of the
+decision at the top of this document — a state that does not survive reopening is
+not in the file — and it is what every CAD package does. It is undoable, so an
+accidental toggle costs one undo.
+
+### What step 1 did NOT do
+
+- The **DXF still writes its own six names** (step 2). Pools and Focus still
+  reach no DXF layer.
+- The **PDF still has no optional content groups** (step 3), which §6 calls the
+  single most valuable item on the list and which does not depend on this work.
+- **No user layers, and no reordering** (step 4). Array order is draw order and
+  is seeded fixed, which is the shape a reorder will need.
+- The three questions in §7 are still open and still do not block anything.

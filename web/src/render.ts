@@ -13,6 +13,7 @@ import { svgTransform, counterFlip, fmtFt, notationAnchor, symbolRadius,
          symbolTransform, type View } from "./geometry.js";
 import { symbolKey, isVertical, isFoh, type Plot, type Instrument } from "./plot.js";
 import type { SymbolPrim, BoomElevation, PositionLabel } from "./api.js";
+import type { Visibility } from "./layers.js";
 
 const NS = "http://www.w3.org/2000/svg";
 
@@ -54,9 +55,14 @@ export interface Computed {
 }
 
 export interface RenderOptions {
-  showPools: boolean;
-  showFocus: boolean;
-  showLabels: boolean;
+  /** Which of the eight layers are drawn — see layers.ts.
+   *
+   * ⭐ Replaces showPools/showFocus/showLabels and the caller's own decision
+   * about the base plan. The renderer is now the ONLY thing that decides
+   * whether something is drawn; main.ts used to gate the base itself, which
+   * meant two places had an opinion and one of them was always about to
+   * disagree. */
+  layers: Visibility;
   /** Index into plot.instruments, or null. */
   selected?: number | null;
   /** Which position is current, as an index into `positions`. #78 — a position
@@ -113,6 +119,7 @@ export function render(
   svg: SVGSVGElement, plot: Plot, view: View,
   computed: Computed[], opts: RenderOptions,
 ): void {
+  const vis = opts.layers;
   svg.replaceChildren();
   svg.setAttribute("width", String(view.width));
   svg.setAttribute("height", String(view.height));
@@ -134,7 +141,7 @@ export function render(
   // ⚠ SVG's y runs DOWN and the plot's runs UP, and the whole drawing is already
   // flipped by the viewBox. An <image> flips with it, so it is flipped back
   // about its own box or the plan arrives upside down.
-  const bi = opts.baseImage;
+  const bi = vis.base ? opts.baseImage : undefined;
   if (bi) {
     gBase.appendChild(el("image", {
       href: bi.href, x: bi.x, y: bi.y, width: bi.wide, height: bi.tall,
@@ -147,7 +154,7 @@ export function render(
 
   // ---- the venue's own drawing, if one was imported.
   // Their claim, not a measurement — drawn quietly, under everything.
-  for (const path of opts.basePaths ?? []) {
+  for (const path of (vis.base ? opts.basePaths ?? [] : [])) {
     const d = path.points.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
     gBase.appendChild(el("path", {
       d, fill: "none", stroke: "#c9c9c9", "stroke-width": W.dim * 2,
@@ -191,7 +198,11 @@ export function render(
       class: "position" + (pi === opts.selectedPosition ? " selected" : ""),
       "data-position": String(pi),
     });
-    gPos.appendChild(gThis);
+    // ⚠ Not appended when the layer is off, which also takes the invisible
+    // HIT LINE with it — deliberately. A pipe you cannot see is a pipe you
+    // should not be able to click: selecting something invisible puts the
+    // inspector on an object the drawing is not showing.
+    if (vis.positions) gPos.appendChild(gThis);
 
     // 🔴 A HIT LINE, invisible and fat. A pipe is drawn about 1.5 px wide at a
     // normal zoom, and nobody can reliably click a 1.5 px line — the same target
@@ -255,7 +266,12 @@ export function render(
       bar(p.x1, p.y1, p.x2, p.y2, W.position);
     }
 
-    if (opts.showLabels) {
+    // ⚠ A NAME NEEDS BOTH LAYERS. The name is text, so it belongs to `labels`
+    // — that is where the DXF puts it and what the merged set says. But a name
+    // floating where its pipe has been hidden is the "hidden field holding a
+    // live value" problem drawn on paper: it labels something that is not
+    // there. So it draws when labels AND positions are both on.
+    if (vis.labels && vis.positions) {
       // ⭐ The SLOT comes from the server, fitted around the units and around
       // the other names. Placed at the pipe's stage-left end regardless, CAT 1
       // and HOUSE LEFT BOX BOOM 1 landed on each other and on the box boom's
@@ -291,8 +307,13 @@ export function render(
   // instruments so the plan loop can skip them.
   const onABoom = new Set(
     plot.positions.filter(isVertical).map(p => p.name.trim().toLowerCase()));
-  for (const b of opts.booms ?? [])
-    gPos.appendChild(elevation(b, plot.instruments, opts.selected));
+  // ⚠ BOTH LAYERS, because an elevation is a drawing of UNITS on a POSITION
+  // and is nothing without either. With the units off it would be an empty
+  // stick beside the plot; with the positions off it is a stack of symbols
+  // belonging to a pipe that is not drawn.
+  if (vis.positions && vis.units)
+    for (const b of opts.booms ?? [])
+      gPos.appendChild(elevation(b, plot.instruments, opts.selected));
 
   // ---- instruments
   plot.instruments.forEach((inst, i) => {
@@ -312,7 +333,7 @@ export function render(
     // as it is wide, and the long end is the one that reaches the scenery. The
     // circle that used to be drawn here understated the far end by half and hid
     // a grazing focus entirely.
-    if (opts.showPools && hasFocus && c?.pool) {
+    if (vis.pools && hasFocus && c?.pool) {
       // ⭐ Jerry, 2026.09.24: "could we highlight the pool of the selected
       // instrument?" Fifteen ellipses overlap across the middle of this plot
       // and they are all the same grey dashes — knowing WHICH one a unit throws
@@ -324,7 +345,7 @@ export function render(
         class: "pool" + (isSelNow(opts, i) ? " selected" : ""),
         fill: "none", stroke: "#bbb", "stroke-width": W.pool, "stroke-dasharray": "0.6 0.4",
       }));
-    } else if (opts.showPools && hasFocus && c?.pool_note) {
+    } else if (vis.pools && hasFocus && c?.pool_note) {
       // ⚠ Never silently. "No far edge" is a fact about the focus, not an
       // absence of information — mark the aim point so it is visible.
       // ⚠ The "no pool here, and here is why" marker gets the same treatment.
@@ -337,7 +358,7 @@ export function render(
         "stroke-dasharray": "0.3 0.3",
       }));
     }
-    if (opts.showFocus && hasFocus) {
+    if (vis.focus && hasFocus) {
       const selNow = isSelNow(opts, i);
       // ⭐ Jerry, 2026.09.24: "if we click on a lamp, the focus point should be
       // highlighted too." A unit and where it is AIMED are one fact, and with
@@ -407,8 +428,17 @@ export function render(
       cx: inst.x, cy: inst.y, r: 1.1, fill: "transparent",
       class: "hit", "data-index": String(i), "data-handle": "body",
     }));
-    gInst.appendChild(g);
-    if (opts.showLabels) gText.appendChild(
+    // ⭐ THE LAYER ·82 ASKED FOR MOST. "Hide the units and read the pipes" is
+    // a thing designers do and this app could not do at all.
+    //
+    // ⚠ Pools and focus are NOT gated here. Where a unit's light lands is the
+    // most useful thing it contributes, and a plan with the symbols off and the
+    // pools on is a legitimate way to read a rig — the same reasoning that
+    // already draws a boom's pool while drawing no symbol for it.
+    if (vis.units) gInst.appendChild(g);
+    // Same rule as a position's name: a channel number with no symbol under it
+    // is worse than no channel number.
+    if (vis.labels && vis.units) gText.appendChild(
       labels(inst, c, plot.symbolAngle, opts.symbols?.[symbolKey(inst)]));
   });
 }

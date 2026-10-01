@@ -66,24 +66,44 @@ nothing else — the screen has never looked at either — so they live with the
 thing they affect. **The second row says what you would get**, at the right:
 `ARCH D · Fit`. Click it to change them.
 
-### The layer toggles
+### The layers
 
 One connected group, because they are one job: each shows or hides a layer of the
-drawing. A filled chip is on.
+drawing. A filled chip is on. They are listed in **drawing order**, from the
+bottom of the drawing to the top.
 
 | | |
 |---|---|
 | **plan** | The imported ground plan under everything. |
 | **pools** | The light on the floor. See [§7](#7-pools). |
+| **positions** | The pipes, booms and their mounts. |
 | **focus** | The dashed leader from each unit to what it is pointed at. |
-| **labels** | Colour, purpose, and the notation containers. |
+| **units** | The instrument symbols. ⭐ Switch it off to read the pipes alone. |
+| **labels** | Unit numbers, channels, colour, purpose, and the position names. |
 
-**at …** sits beside them and belongs to **pools** — it is the height the pools
-are cut at, not a fifth layer. ⚠ With pools off it goes grey, because there is
+⭐ **The layers are saved with the plot.** Reopen it tomorrow and it is as you
+left it — which also means that switching one off marks the plot unsaved, and
+that an accidental toggle is one **undo** away.
+
+⚠ **Text needs the thing it names.** A position's name is on **labels**, but it
+only prints when **positions** is on as well; a unit's channel and colour need
+**units**. A label floating where its pipe or its symbol has been hidden names
+something that is not on the drawing.
+
+⚠ **Pools and focus are not tied to units.** Where a light lands is worth seeing
+with the symbols off, so switching **units** off leaves the pools where they are.
+
+**at …** sits beside the group and belongs to **pools** — it is the height the
+pools are cut at, not a layer. ⚠ With pools off it goes grey, because there is
 nothing for it to say.
 
-⚠ **Rulers moved into Export**, with Sheet and Scale, for the same reason: it is
-a print-only control and the screen never draws them.
+### Two more layers that only print
+
+**dimensions** and **notes** are carried in the plot with the six above, but they
+have no chip, because there is nothing on screen for a chip to change — the
+rulers and the key exist only in the exported PDF. **dimensions** is the
+**Rulers** tick in the Export menu, and it starts off; **notes** is the key
+block, and it starts on.
 
 ### Zoom
 
@@ -412,7 +432,7 @@ then the two pieces of paperwork, then the console file. Below them, under
 |---|---|
 | **Sheet** | The paper the PDF is drawn on — LETTER through **ARCH E (36 × 48)** on an imperial plot, the A series on a metric one. ⚠ A sheet too small **refuses** rather than cropping, and names one that fits. |
 | **Scale** | **Fit** picks the largest standard scale at which nothing runs off the chosen sheet. ⚠ The list is imperial fractions on an imperial plot and metric ratios on a metric one, never both — offering ¼" on a metric plot would let you issue a drawing at a ratio your scale rule does not have. |
-| **Rulers** | A dimension scale along the edges of the plan. Print only; the screen never draws them. |
+| **Rulers** | A dimension scale along the edges of the plan. Print only; the screen never draws them. ⭐ This is the **dimensions** layer, so your choice is now saved with the plot rather than forgotten on reload. |
 
 ⭐ **Sheet and Scale are not independent, and sitting together is how you see it.**
 Fit means *the largest scale at which nothing runs off the chosen sheet* — so

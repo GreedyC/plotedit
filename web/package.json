@@ -8,7 +8,8 @@
     "test": "tsx src/geometry.test.ts",
     "test:store": "tsx src/store.test.ts",
     "test:seq": "tsx src/sequence.test.ts",
-    "test:all": "npm test && npm run test:store && npm run test:seq"
+    "test:all": "npm test && npm run test:store && npm run test:seq && npm run test:layers",
+    "test:layers": "tsx src/layers.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

@@ -9,6 +9,7 @@
  * Field names follow the Vectorworks/Lightwright exchange so paperwork.py can
  * import old shows with no translation layer.
  */
+import { defaultLayers, type PlotLayer } from "./layers.js";
 
 export interface Instrument {
   /** Unit number, unique within a position. */
@@ -230,6 +231,22 @@ export interface Plot {
   instruments: Instrument[];
   /** Anything true about this plot that the fields cannot hold. */
   notes?: string[];
+  /** Which layers this plot has, in draw order, and which are switched on.
+   *
+   * ⭐ Jerry, 2026-10-01: "the plot file needs to have the layers, because we
+   * would need to display them when we bring it into the app." A layer state
+   * the file does not carry is a layer state that is gone when the plot is
+   * reopened, which is what every CAD package stores and what a designer
+   * expects.
+   *
+   * ⚠ OPTIONAL, AND formatVersion STAYS 1. The plan assumed this needed a
+   * format bump and a migration; it does not, because the field is purely
+   * additive in both directions. An older file has no `layers` and
+   * `visibilityOf` gives every layer its default; a file written here opens in
+   * an older build, which ignores the field and draws by its own toggles.
+   * Nothing is lost either way, and bumping the version would have made every
+   * existing plot unopenable to buy nothing. */
+  layers?: PlotLayer[];
 }
 
 export function isPlot(x: unknown): x is Plot {
@@ -340,6 +357,11 @@ export function newPlot(show = "Untitled"): Plot {
     },
     positions: [],
     instruments: [],
+    // ⭐ Seeded explicitly rather than left to the migration. A NEW plot that
+    // says nothing about layers would still draw correctly, but the reader
+    // could not switch one off and have it persist, and the file would not
+    // show a designer that layers exist at all.
+    layers: defaultLayers(),
   };
 }
 

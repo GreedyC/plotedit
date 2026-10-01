@@ -232,9 +232,6 @@
                  padding:4px 8px; border-radius:var(--shape-full); cursor:pointer; }
     .bar label:hover { background:var(--surface-container-high); }
     input[type=checkbox] { accent-color:var(--primary); width:16px; height:16px; margin:0; }
-    /* ⚠ `rulers` sits among the display toggles but does NOT change the screen.
-       Saying so on the control is cheaper than explaining it afterwards. */
-    .print-only { opacity:.62; font-size:.85em; }
     .version { opacity:.5; font-size:.78em; letter-spacing:.02em; white-space:nowrap; }
     /* A build that is not a release says so, and says it in a colour that asks
        to be noticed — running a working copy and reporting it as a release is
@@ -552,10 +549,17 @@
            `main.ts` reads `.checked` on every one. Swapping in <div>s would have
            bought the same appearance and cost the semantics. -->
       <span class="toggles" role="group" aria-label="Layers to draw">
-        <label title="Draw the imported ground plan under the plot"><input type="checkbox" id="base" checked> plan</label>
-        <label title="Draw each light's pool where it lands"><input type="checkbox" id="pools" checked> pools</label>
-        <label title="Draw the focus point and its leader line"><input type="checkbox" id="focus" checked> focus</label>
-        <label title="Draw unit numbers, channels, colour and type"><input type="checkbox" id="labels" checked> labels</label>
+        <!-- 🔴 THE SIX HERE MUST MATCH SCREEN_LAYERS IN src/layers.ts, and
+             layers.test.ts fails if they drift. This markup is a SECOND COPY of
+             that list; the lamp dropdown was a second copy of LAMP_MF and fell
+             a whole release behind it, twice, because nothing compared them.
+             Order is draw order, bottom of the drawing to the top. -->
+        <label title="Draw the imported ground plan under the plot"><input type="checkbox" id="layer-base" checked> plan</label>
+        <label title="Draw each light's pool where it lands"><input type="checkbox" id="layer-pools" checked> pools</label>
+        <label title="Draw the pipes, booms and their mounts"><input type="checkbox" id="layer-positions" checked> positions</label>
+        <label title="Draw the focus point and its leader line"><input type="checkbox" id="layer-focus" checked> focus</label>
+        <label title="Draw the instrument symbols. Switch off to read the pipes alone"><input type="checkbox" id="layer-units" checked> units</label>
+        <label title="Draw unit numbers, channels, colour and type"><input type="checkbox" id="layer-labels" checked> labels</label>
       </span>
       <!-- ⚠ NOT a fifth peer. It says what height the pools are cut at, so it
            belongs to `pools` — it used to sit between `pools` and `focus` and
@@ -681,7 +685,6 @@
                let somebody issue a drawing at a ratio their scale rule does not
                have on it. -->
         </select>
-        <input type="checkbox" id="rulers"> rulers <span class="print-only">(print)</span></label>
 </div>
 </body>
 </html>
