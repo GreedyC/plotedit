@@ -1,7 +1,45 @@
 # The menus, the toolbars, and what Material actually says
 
-**Status: PLAN. Nothing here is built.** Written 2026-10-01 for #56, at Jerry's
-request:
+**Status: MOSTLY BUILT, 2026-10-01, in #77.** Five of §5's eight steps landed the
+same day this was written; three did not, and are listed below rather than
+quietly left. The document stays because it is the *reasoning* — what was
+measured, what M3 actually requires, and why each control is the shape it is —
+and none of that is recoverable from the diff.
+
+⚠ **Read §0 and §2 as a record, not as a to-do.** Where a measurement was later
+found wrong it is corrected in place and says so; three of them were.
+
+**What landed**
+
+| | |
+|---|---|
+| Buttons | every one states an emphasis — `button()` takes a required variant |
+| Layer toggles | one connected group; `at …` attached to `pools` and inert without it |
+| Open, Export | buttons that open menus, built on the Popover API |
+| Sheet, Scale, Rulers | inside Export, with a readout in row two |
+| Revert | reloads from disk, undoable |
+| Change folder… | the server opens the operating system's own dialog |
+| Tooltips | 11 controls had none; now none do |
+
+🔴 **And five bugs that opening it found, four of them older than this work:** the
+position action row was clipped at 302px, Ground plan went off-screen when moved,
+Open's `<select>` was sized by the longest plot *filename*, a submenu dismissed
+its own parent, and Revert was dead all session on the plot the app opens with.
+
+**What did NOT land**, and why
+
+| §5 step | |
+|---|---|
+| **2. Raise every target to 48×48** | Not done. Measured again after the rebuild: **19 controls, heights 16, 28 and 32, none at 48.** It overlapped step 5 — fixing the checkboxes first would have been thrown away when they became a toggle group — and then was not picked back up. ⚠ Nothing fails WCAG's 24 (see §0); this is M3's figure only. |
+| **6. Reorder the panels** | Not done, and deliberately: Jerry, 2026-10-01, *"I didnt mean the order of the panels on the side"*. The finding stands (Instrument still sits above Positions, against `MANUAL.md` §3's own order) but it was never what #56 asked for. |
+| **8. Rename `.pos-row`** | Not done. It is still the class on Show & Venue's fields as well as on position rows — and it caught me twice more while building this, once writing a trim into **Designer** and once reading the wrong row in a test. |
+
+**Still open** — the three above, §9's questions, and whether Revert should go
+back to the session's start rather than to disk.
+
+---
+
+Written 2026-10-01 for #56, at Jerry's request:
 
 > The menus are very standard - research the material standards and come up with
 > a plan before implementation. read through the guides and examples at
