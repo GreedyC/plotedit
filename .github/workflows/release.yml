@@ -134,8 +134,33 @@ jobs:
           name: plotedit
           path: plotedit.zip
 
+      # 🔴 THE TAG MESSAGE IS THE RELEASE NOTES, and until now it reached nobody.
+      # Every release carries a written note — what a designer will notice, what
+      # is fixed, what is known and not fixed — and all of it lived in the git
+      # tag while the GitHub release published with an EMPTY description.
+      # Measured 2026-10-01: v0.1.25 and v0.1.26 both had a one-character body
+      # against 1,885 characters in the tag.
+      #
+      # ⚠ Somebody arriving from twinoaks.studio/plotedit therefore saw a version
+      # number, nothing explaining it, and a collapsed Assets list in which
+      # GitHub offers its own "Source code" archives beside the real download.
+      - name: Read the tag message, which is the release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        id: notes
+        run: |
+          # ⚠ The checkout is shallow and does not fetch tag OBJECTS, so the
+          # annotation is not present until it is asked for by name. Without
+          # this the body comes back empty and the release looks fine.
+          git fetch --force origin "+${GITHUB_REF}:${GITHUB_REF}"
+          {
+            echo 'body<<PLOTEDIT_NOTES_EOF'
+            git tag -l --format='%(contents)' "${GITHUB_REF_NAME}"
+            echo 'PLOTEDIT_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Attach it to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
           files: plotedit.zip
+          body: ${{ steps.notes.outputs.body }}
