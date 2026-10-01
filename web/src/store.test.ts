@@ -966,5 +966,72 @@ console.log("\nrevert goes back to the file on disk");
         /\$\("open"\)\.addEventListener\("click"/.test(mainV), true);
 }
 
+// ------------------------------------------------ a position can be selected
+// #78: "it's hard to tell when a position is selected." There was nothing to
+// tell — `selected` has always been an index into INSTRUMENTS, and a position
+// could not be selected, clicked or pointed at. This is the missing half.
+console.log("\nselecting a position");
+{
+  const pp = newPlot();
+  const st = new Store(pp);
+  st.addPosition({ name: "GRID A", type: "electric", x1: 0, y1: 10, x2: 20, y2: 10 });
+  st.addPosition({ name: "GRID B", type: "electric", x1: 0, y1: 16, x2: 20, y2: 16 });
+  st.addPosition({ name: "GRID C", type: "electric", x1: 0, y1: 20, x2: 20, y2: 20 });
+  check("nothing is selected to begin with", st.selectedPosition, null);
+
+  st.selectPosition(1);
+  check("a position can be made current", st.selectedPosition, 1);
+
+  // ⚠ ONE THING IS CURRENT AT A TIME. A unit and a pipe lit up together leaves
+  // two answers to "what am I looking at", and the inspector can only show one.
+  st.add({ unit: 1, x: 5, y: 16, position: "GRID B", type: "S4 26" });
+  st.select(0);
+  check("picking a unit clears the position", st.selectedPosition, null);
+  check("...and the unit is current", st.selected, 0);
+  st.selectPosition(2);
+  check("picking a position clears the unit", st.selected, null);
+  check("...and the position is current", st.selectedPosition, 2);
+
+  // 🔴 A STALE INDEX OUTLIVES THE THING IT POINTED AT. Deleting the selected
+  // position must clear it, and deleting one BELOW it must shift it — otherwise
+  // the highlight silently moves to a different pipe.
+  st.selectPosition(2);
+  st.removePosition(2);
+  check("deleting the selected position clears it", st.selectedPosition, null);
+
+  st.selectPosition(1);
+  st.removePosition(0);
+  check("deleting one below it shifts the index", st.selectedPosition, 0);
+  check("...and it is still the same pipe", st.plot.positions[st.selectedPosition!]?.name, "GRID B");
+}
+{
+  const fsP = await import("node:fs");
+  const dirP = new URL("./", import.meta.url).pathname;
+  const rend = fsP.readFileSync(dirP + "render.ts", "utf8");
+  // Each position is its own group, or nothing can be pointed at or lit up.
+  check("every position is drawn as its own group",
+        /class: "position"/.test(rend) && /"data-position"/.test(rend), true);
+  // 🔴 A pipe draws about 1.5px wide and nobody can click a 1.5px line — the
+  // same target problem the toolbar had, in a different place.
+  check("there is an invisible hit line to click",
+        /stroke: "transparent"/.test(rend), true);
+
+  const inter = fsP.readFileSync(dirP + "interact.ts", "utf8");
+  // ⚠ Asked AFTER the unit: a unit sits on its position, and clicking a light
+  // must never select the pipe it hangs from.
+  const iUnit = inter.indexOf('closest("[data-index]")');
+  const iPos = inter.indexOf('closest("[data-position]")');
+  check("a click can select a position", iPos > 0, true);
+  check("...but a unit is asked first", iUnit < iPos, true);
+
+  const htmlP = fsP.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  check("the card shows it is selected", /\.card\.selected \{[^}]*background/.test(htmlP), true);
+  // ⚠ Colour AND weight: the plan is black on white, and a designer may be
+  // printing it or may be colour-blind.
+  const pipeRule = /svg g\.position\.selected line \{[^}]*\}/.exec(htmlP)?.[0] ?? "";
+  check("...and so does the pipe", /stroke:var\(--primary\)/.test(pipeRule), true);
+  check("...by weight as well as colour", /stroke-width/.test(pipeRule), true);
+}
+
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

@@ -420,6 +420,25 @@
                grid-template-columns:repeat(auto-fit,minmax(92px,1fr)); gap:8px 10px;
                background:var(--surface-container-lowest); transition:box-shadow .15s; }
     .card:hover { box-shadow:var(--elev-1); }
+    /* ⭐ #78 — the current position, in the panel and on the plan. The tint is
+       `--primary-container`, the same one the schedule already uses for the
+       selected unit (`tbody tr.sel`), so "this is the one" looks the same
+       wherever it is said. */
+    .card.selected { background:var(--primary-container);
+                     border-color:var(--primary); }
+    /* ⚠ The fields stay on the plain surface inside a tinted card. Letting the
+       tint run under the inputs makes a text box look disabled. */
+    .card.selected input, .card.selected select {
+      background:var(--surface-container-lowest); }
+    /* The pipe itself. A colour AND a weight, because the plan is black on white
+       and a designer may be printing or colour-blind — the line gets visibly
+       thicker as well as green. */
+    svg g.position.selected line { stroke:var(--primary); stroke-width:0.55; }
+    svg g.position.selected circle,
+    svg g.position.selected rect { stroke:var(--primary); }
+    /* ⚠ Except the hit line, which is invisible and must stay that way. */
+    svg g.position.selected line[stroke="transparent"] { stroke:transparent; }
+    svg g.position { cursor:pointer; }
     .card-field { display:flex; flex-direction:column; gap:2px; }
     .card-field.wide { grid-column:1/-1; }
     /* A sub-heading inside a card, for the groups in Show & Venue. M3 label-small. */

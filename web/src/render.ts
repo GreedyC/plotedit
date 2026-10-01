@@ -59,6 +59,9 @@ export interface RenderOptions {
   showLabels: boolean;
   /** Index into plot.instruments, or null. */
   selected?: number | null;
+  /** Which position is current, as an index into `positions`. #78 — a position
+   *  could not be selected at all before this; see `Store.selectedPosition`. */
+  selectedPosition?: number | null;
   /** A venue's DXF, already in feet. Drawn under everything, in gray. */
   basePaths?: { layer: string; points: [number, number][] }[];
   /** A ground plan that has no vectors in it — a photograph, a scan, a planner's
@@ -173,30 +176,57 @@ export function render(
   // units hanging off a rail rather than down its middle, so a unit drawn on its
   // centre is drawn three feet from where it is. A boom is a POINT in plan.
   // Mirrors Sheet.position() and Sheet.boom() in the Python.
+  // ⭐ #78 — EACH POSITION IS NOW ITS OWN GROUP, so it can be pointed at and lit
+  // up. Until now they were loose lines in one bucket with nothing to say which
+  // was which, which is why a position could not be selected at all.
+  let gThis: SVGElement = gPos;
   const bar = (x1: number, y1: number, x2: number, y2: number, w: number) =>
-    gPos.appendChild(el("line", {
+    gThis.appendChild(el("line", {
       x1, y1, x2, y2, stroke: "#222", "stroke-width": w, "stroke-linecap": "round",
     }));
 
-  for (const p of plot.positions) {
+  plot.positions.forEach((p, pi) => {
     const kind = (p.type ?? "electric").trim().toLowerCase();
+    gThis = el("g", {
+      class: "position" + (pi === opts.selectedPosition ? " selected" : ""),
+      "data-position": String(pi),
+    });
+    gPos.appendChild(gThis);
+
+    // 🔴 A HIT LINE, invisible and fat. A pipe is drawn about 1.5 px wide at a
+    // normal zoom, and nobody can reliably click a 1.5 px line — the same target
+    // problem the toolbar had, in a different place. This is a transparent
+    // stroke roughly a foot wide lying along the pipe, so the pointer has
+    // something to land on. It is FIRST in the group, so the real line draws
+    // over it.
+    if (!isVertical(p)) {
+      gThis.appendChild(el("line", {
+        x1: p.x1, y1: p.y1, x2: p.x2 ?? p.x1, y2: p.y2 ?? p.y1,
+        stroke: "transparent", "stroke-width": 1.2, "stroke-linecap": "round",
+      }));
+    } else {
+      gThis.appendChild(el("circle", {
+        cx: p.x1, cy: p.y1, r: Math.max((p.width ?? 1.4) / 2, 0.8),
+        fill: "transparent", stroke: "none",
+      }));
+    }
 
     if (isVertical(p)) {
       // A boom in plan: its mount, and one hatched symbol standing for the
       // stack. Drawing four units on top of each other is just a heavier blob.
       const half = (p.width ?? 1.4) / 2;
       if ((p.mount ?? "boom-base") === "floor-plate") {
-        gPos.appendChild(el("rect", {
+        gThis.appendChild(el("rect", {
           x: p.x1 - half, y: p.y1 - half, width: half * 2, height: half * 2,
           fill: "none", stroke: "#222", "stroke-width": W.position * 0.7,
         }));
       } else if (p.mount === "flange") {
-        gPos.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half * 0.36,
+        gThis.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half * 0.36,
           fill: "none", stroke: "#222", "stroke-width": W.position * 0.7 }));
       } else {
-        gPos.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half,
+        gThis.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half,
           fill: "none", stroke: "#222", "stroke-width": W.position * 0.7 }));
-        gPos.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half * 0.16,
+        gThis.appendChild(el("circle", { cx: p.x1, cy: p.y1, r: half * 0.16,
           fill: "none", stroke: "#222", "stroke-width": W.position * 0.5 }));
       }
       // §6.12: "hatch or shade acceptable for top view of boom." ONE symbol
@@ -208,7 +238,7 @@ export function render(
         });
         paintPrims(st, bm.plan.prims);
         paintPrims(st, bm.plan.hatch, { width: 0.45 });
-        gPos.appendChild(st);
+        gThis.appendChild(st);
       }
     } else if (kind === "catwalk" || kind === "truss") {
       const half = (p.width ?? (kind === "catwalk" ? 3.0 : 1.5)) / 2;
@@ -254,7 +284,7 @@ export function render(
       t.textContent = at ? at.text : fallback;
       gText.appendChild(t);
     }
-  }
+  });
 
   // ---- boom elevations, §6.12 — beside the plot, because in plan a boom is a
   // point and its units all share one x and one y. Drawn BEFORE the

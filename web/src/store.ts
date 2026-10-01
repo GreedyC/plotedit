@@ -34,6 +34,7 @@ const HISTORY_LIMIT = 200;
 export class Store {
   private _plot: Plot;
   private _selected: number | null = null;      // index into instruments
+  private _selectedPosition: number | null = null;   // index into positions
   private _undo: Snapshot[] = [];
   private _redo: Snapshot[] = [];
   // ⭐ DIRTY IS A DIFFERENCE, NOT AN ACTIVITY. `_seq` counts real changes to the
@@ -58,6 +59,15 @@ export class Store {
 
   get plot(): Plot { return this._plot; }
   get selected(): number | null { return this._selected; }
+
+  /** Which POSITION is current, as an index into `positions`.
+   *
+   *  ⭐ #78: "it's hard to tell when a position is selected." There was nothing
+   *  to tell — `_selected` has always been an index into INSTRUMENTS, and a
+   *  position could not be selected, clicked or pointed at. This is the missing
+   *  half, not a colour change.
+   */
+  get selectedPosition(): number | null { return this._selectedPosition; }
   get selectedInstrument(): Instrument | null {
     return this._selected === null ? null : this._plot.instruments[this._selected] ?? null;
   }
@@ -126,8 +136,29 @@ export class Store {
   commit(): void { this.lastKey = null; }
 
   select(index: number | null): void {
-    if (this._selected === index) return;
+    // ⚠ ONE THING IS CURRENT AT A TIME. A unit and a pipe highlighted together
+    // leaves two answers to "what am I looking at", and the inspector can only
+    // show one of them anyway. Picking a unit means you are now on the unit.
+    //
+    // 🔴 THE EARLY RETURN HAS TO ASK ABOUT BOTH. `if (this._selected === index)
+    // return` alone skipped the clearing whenever the unit was ALREADY current
+    // — which `add()` makes the normal case, since adding a unit selects it. So
+    // selecting a pipe, adding a unit to it, then clicking that unit left the
+    // pipe lit as well. Caught by the test, not by reading.
+    const same = this._selected === index
+      && !(index !== null && this._selectedPosition !== null);
+    if (same) return;
     this._selected = index;
+    if (index !== null) this._selectedPosition = null;
+    this.emit();
+  }
+
+  /** Make a position current. Mutually exclusive with the instrument selection,
+   *  for the reason in `select`. */
+  selectPosition(index: number | null): void {
+    if (this._selectedPosition === index) return;
+    this._selectedPosition = index;
+    if (index !== null) this._selected = null;
     this.emit();
   }
 
@@ -179,6 +210,10 @@ export class Store {
    *  orphaned and reported, because losing a unit because a pipe was deleted is
    *  a much worse surprise than a unit with no position. */
   removePosition(index: number): string[] {
+    // ⚠ A stale index outlives the thing it pointed at. Clearing it here rather
+    // than at the call site means every route to delete is covered.
+    if (this._selectedPosition === index) this._selectedPosition = null;
+    else if (this._selectedPosition !== null && this._selectedPosition > index) this._selectedPosition--;
     const pos = this._plot.positions[index];
     if (!pos) return [];
     const name = pos.name.trim().toLowerCase();
@@ -317,6 +352,7 @@ export class Store {
     this._seq++;
     this._savedSeq = this._seq;
     this._selected = null;
+    this._selectedPosition = null;
     this.emit();
   }
 }

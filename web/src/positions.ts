@@ -153,9 +153,18 @@ export function renderPositions(
   // questions is the kind of thing that makes a panel feel slow on a big plot.
   const clashes = duplicateNames(plot.positions);
 
-  plot.positions.forEach((p) => {
+  plot.positions.forEach((p, i) => {
     const box = document.createElement("div");
-    box.className = "card";
+    // ⭐ #78: "it's hard to tell when a position is selected." The card says so
+    // now, and so does the pipe on the plan — the two are the same selection.
+    const isSel = store.selectedPosition === i;
+    box.className = "card" + (isSel ? " selected" : "");
+    if (isSel) box.setAttribute("aria-current", "true");
+    // ⚠ On POINTERDOWN, not click, so selecting a card does not wait for the
+    // mouse to come back up — and on the card, so clicking into any field in it
+    // also makes that position current. Typing in a card you have not selected
+    // is how you lose track of which pipe you are editing.
+    box.addEventListener("pointerdown", () => store.selectPosition(i));
 
     const set = (patch: Partial<Position>) => {
       store.begin(null);

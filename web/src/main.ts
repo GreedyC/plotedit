@@ -114,6 +114,7 @@ function opts(): RenderOptions {
     showFocus: $<HTMLInputElement>("focus").checked,
     showLabels: $<HTMLInputElement>("labels").checked,
     selected: store.selected,
+    selectedPosition: store.selectedPosition,
     basePaths: $<HTMLInputElement>("base").checked ? placedBasePaths() : undefined,
     // ⚠ The same checkbox governs both kinds of base. A designer who turns
     // the plan off means the imported one, whether it is lines or a picture.

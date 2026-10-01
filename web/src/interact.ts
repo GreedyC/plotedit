@@ -36,7 +36,21 @@ export function attachPointer(svg: SVGSVGElement, store: Store, ctx: DragContext
   svg.addEventListener("pointerdown", (e) => {
     const target = e.target as Element | null;
     const hit = target?.closest("[data-index]") as SVGElement | null;
-    if (!hit) { store.select(null); return; }
+    if (!hit) {
+      // ⭐ #78. A pipe is a thing you can point at now. Asked AFTER the unit,
+      // because a unit sits on top of its position and the one under the
+      // pointer is the one meant — clicking a light should never select the
+      // pipe it hangs from.
+      const pos = target?.closest("[data-position]") as SVGElement | null;
+      if (pos) {
+        store.selectPosition(Number(pos.getAttribute("data-position")));
+        e.preventDefault();
+        return;
+      }
+      store.select(null);
+      store.selectPosition(null);
+      return;
+    }
 
     const index = Number(hit.getAttribute("data-index"));
     const handle = (hit.getAttribute("data-handle") ?? "body") as Handle;
