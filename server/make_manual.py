@@ -81,6 +81,10 @@ def _styles():
 # build (see _check_glyphs).
 TRANSLITERATE = {
     "⌘": "Cmd-", "⇧": "Shift-", "⌥": "Alt-", "⏎": "Enter",
+    # ⚠ The menu chevron. On screen it is the arrow on a button that opens a
+    # menu; on paper "(menu)" says the same thing and prints, which a black box
+    # does not. Added 2026-10-01, when the guard below caught it on line 58.
+    "▾": " (menu)",
     "↶": "Undo", "↷": "Redo", "→": "->", "←": "<-",
     "×": "x", "≈": "approx. ", "≤": "<=", "≥": ">=",
     "\u00a0": " ", "\u2011": "-", "\u2212": "-",

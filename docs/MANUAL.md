@@ -51,27 +51,39 @@ keyboard-operable — tab to it and use the arrow keys, or Enter to reset.
 
 | | |
 |---|---|
+| | |
+|---|---|
 | **↶ ↷** | Undo and redo. A whole drag is one step, not fifty. |
 | **New** | Start over. Asks before discarding unsaved work, then asks what the show is called. |
-| **Open…** | Lists the plots in your plots folder. |
-| **Save** / **Save As…** | ⌘S and ⇧⌘S. |
-| **Export…** | See [§10](#10-exports). |
-| **Sheet** | The paper the PDF is drawn on — LETTER through **ARCH E (36 × 48)** on an imperial plot, A4 and A3 on a metric one. ⚠ A sheet too small **refuses** rather than cropping, and names one that fits. |
-| **Scale** | Paper scale for the exported PDF. **Fit** picks the largest standard scale at which nothing runs off the sheet. ⚠ The list is imperial fractions on an imperial plot and metric ratios on a metric one, never both — offering ¼" on a metric plot would let you issue a drawing at a ratio your scale rule does not have. |
+| **Open… ▾** | Opens a menu of the plots in your plots folder, with what shipped with plotedit in its own group below, and **Change folder…** at the foot. |
+| **Save** / **Save As…** | ⌘S and ⇧⌘S. **Save greys out when there is nothing to save**; Save As… does not, because saving a copy under a new name is a real thing to want. |
+| **Revert** | Reloads the plot from disk, dropping every change since. Asks first, and **can be undone with ⌘Z**. Greyed out when nothing has changed. |
+| **Export… ▾** | A menu of everything it can produce, and the three settings that only affect the printed PDF. See [§10](#10-exports). |
+| **Ground plan…** | Imports the venue — **DXF or PDF**. This never draws architecture itself; the room arrives as a drawing somebody else made. |
 
-**Ground plan…** imports the venue — **DXF or PDF**. This never draws
-architecture itself; the room arrives as a drawing somebody else made.
+⭐ **Sheet and Scale are inside Export now.** They change the exported PDF and
+nothing else — the screen has never looked at either — so they live with the
+thing they affect. **The second row says what you would get**, at the right:
+`ARCH D · Fit`. Click it to change them.
 
-### The toggles
+### The layer toggles
+
+One connected group, because they are one job: each shows or hides a layer of the
+drawing. A filled chip is on.
 
 | | |
 |---|---|
 | **plan** | The imported ground plan under everything. |
 | **pools** | The light on the floor. See [§7](#7-pools). |
-| **at …** | Which plane the pools are cut at. |
 | **focus** | The dashed leader from each unit to what it is pointed at. |
 | **labels** | Colour, purpose, and the notation containers. |
-| **rulers** | Margin rulers. Marked *(print)* because they are there for the printed sheet. |
+
+**at …** sits beside them and belongs to **pools** — it is the height the pools
+are cut at, not a fifth layer. ⚠ With pools off it goes grey, because there is
+nothing for it to say.
+
+⚠ **Rulers moved into Export**, with Sheet and Scale, for the same reason: it is
+a print-only control and the screen never draws them.
 
 ### Zoom
 
@@ -359,6 +371,15 @@ lists what is there.
 under a new name is a real thing to want with nothing changed, and it is the only
 way to write a plot you have never saved.
 
+**Revert** reloads the plot from disk and drops every change since. It asks
+first, and ⭐ **it can be undone** — one ⌘Z brings the work back, so it is safe to
+press. ⚠ Saving moves the point it goes back to: Revert means *as the file is on
+disk*, which is the same as *as you opened it* until the first save.
+
+⭐ **To keep plots somewhere else, Open… → Change folder…** — your own folder
+dialog opens and plotedit uses that folder for the rest of the session. For a
+folder that persists, set `PLOTEDIT_PLOTS` before starting.
+
 ⭐ **The demo is at the bottom of Open…**, under *"Comes with plotedit"*. It opens
 as **a copy with no name**, so ⌘S asks where to put it rather than writing back
 over the file that shipped. Pressing **New** does not lose it.
@@ -377,9 +398,24 @@ what is on disk and it clears.
 
 ## 10. Exports
 
+**Export… ▾** opens a menu grouped by what each one produces: the two drawings,
+then the two pieces of paperwork, then the console file. Below them, under
+**PDF only**, sit the three settings that affect nothing else.
+
 | | |
 |---|---|
-| **Plot PDF** | The drawing, to the scale chosen above. |
+| **Sheet** | The paper the PDF is drawn on — LETTER through **ARCH E (36 × 48)** on an imperial plot, the A series on a metric one. ⚠ A sheet too small **refuses** rather than cropping, and names one that fits. |
+| **Scale** | **Fit** picks the largest standard scale at which nothing runs off the chosen sheet. ⚠ The list is imperial fractions on an imperial plot and metric ratios on a metric one, never both — offering ¼" on a metric plot would let you issue a drawing at a ratio your scale rule does not have. |
+| **Rulers** | A dimension scale along the edges of the plan. Print only; the screen never draws them. |
+
+⭐ **Sheet and Scale are not independent, and sitting together is how you see it.**
+Fit means *the largest scale at which nothing runs off the chosen sheet* — so
+changing the sheet can change the scale. The readout at the right of the second
+row always says where they stand.
+
+| | |
+|---|---|
+| **Plot PDF** | The drawing, at the sheet and scale above. |
 | **Plot DXF** | For anyone who needs it in CAD. |
 | **Instrument schedule** | Position, Unit, Channel, Circuit, Dimmer, Address, Thru, Type, Wattage, Color, Gobo, Purpose, Accessory, Notes. |
 | **Channel hookup** | The same rig in channel order. |
