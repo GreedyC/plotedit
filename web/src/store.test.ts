@@ -934,5 +934,37 @@ console.log("\nrevert goes back to the file on disk");
   check("...and so does a position row", /className = "card"/.test(pos), true);
 }
 
+// ------------------------------------------ Show & Venue starts out of the way
+// #56: "We can also have the show and venue tab close on start-up." It is the
+// panel you fill in once and rarely reopen, and it was the first thing between
+// the reader and the rig.
+{
+  const fsV = await import("node:fs");
+  const htmlV = fsV.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const openPanels = [...htmlV.matchAll(/<details class="panel [a-z]+" id="panel-([a-z]+)"( open)?>/g)]
+    .map(m => ({ name: m[1]!, open: !!m[2] }));
+  check("all four panels are still there", openPanels.length, 4);
+  check("Show & Venue starts closed",
+        openPanels.find(p => p.name === "details")?.open, false);
+  check("...and the working panels do not", 
+        openPanels.filter(p => p.name !== "details").every(p => p.open), true);
+
+  // ⚠ `newFile` PRINTS "set the room and the venue in Show & Venue". With the
+  // panel closed by default, that line would point at something collapsed — so
+  // New reopens it. An instruction aimed at a collapsed panel is worse than none.
+  const mainV = fsV.readFileSync(new URL("./main.ts", import.meta.url), "utf8");
+  const newFn = /async function newFile\(\)[\s\S]*?\n\}/.exec(mainV)?.[0] ?? "";
+  check("New sends the reader to Show & Venue",
+        /set the room and the venue in Show & Venue/.test(newFn), true);
+  check("...and opens it first", /panel-details[\s\S]*?\.open = true/.test(newFn), true);
+
+  // 🔴 DEAD CODE from the select→button change: a <button> never fires `change`,
+  // so the old handler sat there reading as live. Found while doing this.
+  check("Open has no leftover change handler",
+        /\$\("open"\)\.addEventListener\("change"/.test(mainV), false);
+  check("...it listens for a click, as a button does",
+        /\$\("open"\)\.addEventListener\("click"/.test(mainV), true);
+}
+
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log("all passed");

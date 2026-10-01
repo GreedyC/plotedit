@@ -590,7 +590,10 @@
     <div id="splitter" role="separator" aria-orientation="vertical"
          title="Drag to resize the side panel · double-click to reset"></div>
     <aside>
-      <details class="panel details" id="panel-details" open>
+      <!-- ⭐ CLOSED ON STARTUP. #56: "We can also have the show and venue tab close
+           on start-up." It is the panel you fill in once and rarely reopen, and it
+           was the first thing between the reader and the rig. -->
+      <details class="panel details" id="panel-details">
         <summary>
           <span class="material-symbols-outlined chevron">expand_more</span>
           <span class="material-symbols-outlined">theater_comedy</span>

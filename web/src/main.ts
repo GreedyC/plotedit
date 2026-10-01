@@ -1405,6 +1405,12 @@ async function newFile(): Promise<void> {
   // ⚠ savedAs is null, so the first Save ASKS where to put it rather than
   // overwriting whatever was open a moment ago.
   await adoptPlot(newPlot(show.trim() || "Untitled"), null);
+  // ⚠ AND OPEN IT, because the line below sends the reader there. Show & Venue
+  // starts CLOSED now (#56), which is right for a plot that already has a room —
+  // but a brand new one has nothing else to do first, and an instruction that
+  // points at a collapsed panel is worse than no instruction.
+  const venue = document.getElementById("panel-details") as HTMLDetailsElement | null;
+  if (venue) venue.open = true;
   status("New plot — set the room and the venue in Show & Venue, "
          + "then add a position.");
 }
@@ -1598,17 +1604,6 @@ async function boot() {
     $("new").addEventListener("click", () => void newFile());
     $("save").addEventListener("click", () => void save());
     $("saveas").addEventListener("click", () => void saveAs());
-    $("open").addEventListener("change", (e) => {
-      const sel = e.target as HTMLSelectElement;
-      const name = sel.value;
-      sel.value = "";
-      if (!name) return;
-      // ⚠ A sample opens as UNSAVED and UNNAMED. savedAs stays null, so the
-      // first ⌘S asks where to put it instead of writing back over the file
-      // that shipped — which is the whole reason the two lists are separate.
-      if (name.startsWith("sample:")) void openSample(name.slice(7));
-      else void openPlot(name);
-    });
     // ⭐ CALIBRATION CLICKS GO FIRST, in the CAPTURE phase, so a click meant for
     // the backdrop never also grabs an instrument underneath it. Dragging a
     // light by accident while measuring a wall is the kind of thing that makes

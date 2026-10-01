@@ -1,8 +1,8 @@
 # The menus, the toolbars, and what Material actually says
 
 **Status: MOSTLY BUILT, 2026-10-01, in #77.** Six of §5's eight steps landed the
-same day this was written; two did not, and are listed below rather than
-quietly left. The document stays because it is the *reasoning* — what was
+same day this was written; one remains, and is listed below rather than quietly
+left. ✅ **Show & Venue now starts closed**, as #56's comments asked. The document stays because it is the *reasoning* — what was
 measured, what M3 actually requires, and why each control is the shape it is —
 and none of that is recoverable from the diff.
 
@@ -31,10 +31,10 @@ its own parent, and Revert was dead all session on the plot the app opens with.
 | §5 step | |
 |---|---|
 | **2. Raise every target to 48×48** | Not done. Measured again after the rebuild: **19 controls, heights 16, 28 and 32, none at 48.** It overlapped step 5 — fixing the checkboxes first would have been thrown away when they became a toggle group — and then was not picked back up. ⚠ Nothing fails WCAG's 24 (see §0); this is M3's figure only. |
-| **6. Reorder the panels** | Not done, and deliberately: Jerry, 2026-10-01, *"I didnt mean the order of the panels on the side"*. The finding stands (Instrument still sits above Positions, against `MANUAL.md` §3's own order) but it was never what #56 asked for. |
+| **6. Reorder the panels** | Not done, and deliberately: Jerry, 2026-10-01, *"I didnt mean the order of the panels on the side"*. The finding stands (Instrument still sits above Positions, against `MANUAL.md` §3's own order) but it was never what #56 asked for. ⭐ Its other half **is** done — Show & Venue starts collapsed, so the first thing between the reader and the rig is gone. |
 | **8. Rename `.pos-row`** | ✅ **Done 2026-10-01.** `pos-row`, `pos-field`, `pos-note` and `pos-actions` became `card`, `card-field`, `card-note` and `card-actions` — which is what they are: a bordered box of fields inside a panel, used by Show & Venue exactly as much as by a position. |
 
-**Still open** — the two above, §9's questions, and whether Revert should go
+**Still open** — the above, §9's questions, and whether Revert should go
 back to the session's start rather than to disk.
 
 ---

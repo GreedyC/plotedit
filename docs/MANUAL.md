@@ -95,6 +95,12 @@ plot, the height, or the width. **100%** returns to 14 px per foot.
 **Show & Venue**, **Instrument**, **Positions**, **Schedule** — each collapses,
 and the number on the right tells you how many of a thing there are.
 
+⭐ **Show & Venue starts closed**, because it is the panel you fill in once. Press
+**New** and it opens itself, since a new plot has nothing else to do first.
+
+⚠ **Whichever panels you leave open is remembered**, so after the first time this
+is yours rather than ours.
+
 ---
 
 ## 3. A plot from nothing
