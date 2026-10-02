@@ -1,9 +1,9 @@
 # Layers — what they would mean here
 
-**Status: STEPS 1 AND 3 BUILT, 2026-10-01.** The eight layers are in the plot
-file, six of them have chips, the renderer reads them, and **the exported PDF
-carries all eight as optional content groups**. Steps 2 and 4 — the DXF, user
-layers — are not built. §6 records the order; the section at
+**Status: STEPS 1, 2 AND 3 BUILT, 2026-10-01.** The eight layers are in the plot
+file, six have chips, the renderer reads them, the DXF writes all eight, and the
+exported PDF carries all eight as optional content groups. **Only step 4 — user
+layers and reordering — is not built.** §6 records the order; the section at
 the very bottom records what step 1 actually did, including **three places where
 building it contradicted this plan**. Written 2026-10-01 for #82,
 which asks:
@@ -475,3 +475,74 @@ either way.
 
 **Step 2** — the DXF still writes its own six names, and Pools and Focus still
 reach no DXF layer of their own. **Step 4** — no user layers, no reordering.
+
+
+---
+
+## ✅ Step 2, as built — the DXF writes the eight, 2026-10-01
+
+§6 asked for the DXF to write "the same eight names instead of its own six",
+with Pools and Focus reaching it for the first time. It does. Three changes, and
+the third was not in the plan.
+
+| | before | now |
+|---|---|---|
+| Layers | 6 | **8** |
+| Pools, Focus | drawn on `NOTES` | **their own layers** |
+| Text | all forced onto `TEXT` | **follows its subject** |
+
+### ⚠ 1. `TEXT` became `LABELS`, and stopped being forced
+
+`TEXT` named the ENTITY KIND rather than what the text is, and `DxfOut.text()`
+forced every string onto it — so a dimension's number, a unit's channel and the
+key's words all shared a layer with nothing else in common. Text follows the
+current layer now, which is what the PDF does, and `LABELS` holds exactly what
+the screen's `labels` chip holds.
+
+✅ Nothing in the repository depended on the old name, and the manual never
+listed it. The title block was never on it either — `finish()` detaches the DXF
+first, because "sheet furniture stays off the DXF".
+
+### 🔴 2. A boom elevation is not a note — found by looking, not by reading
+
+`boom_elevation()` set `NOTES` once at the top and drew the whole thing there:
+the pipe, the units, their numbers and their trims. So **hiding the key took
+every boom elevation with it**, and the ladder view — everything off but
+positions and units — came out with no elevations at all and, absurdly, with the
+footnote about them still printed.
+
+It is a POSITION with UNITS on it, and it is drawn that way now, which matches
+the screen: the renderer already requires both layers before it draws an
+elevation. The footnote stays on `notes`, because it is about the drawing rather
+than part of it.
+
+⚠ **Only switching the layers off and looking at the sheet found this.** Every
+structural assertion passed the whole time.
+
+### What it measures, on the demo plot
+
+| layer | entities | |
+|---|---|---|
+| POOLS | 1,024 | new |
+| UNITS | 260 | +63 from the elevations |
+| DIMS | 158 | |
+| LABELS | 156 | was `TEXT` |
+| POSITIONS | 114 | +21 from the elevations |
+| NOTES | 109 | was 205 — pools, focus and the elevations left |
+| FOCUS | 36 | new |
+| BASE | 2 | |
+
+1,859 entities before and after: things moved between layers, none were added or
+lost.
+
+### 🔴 The cross-check that stops it happening again
+
+Two exports naming their layers separately is how the app came to have two
+schemes. `test_layers_dxf.py` asserts that `DxfOut.LAYERS` and the PDF's
+`PDF_FOR_DXF` have the same keys, that those map onto the eight PDF groups, and
+that the order matches the drawing order. They cannot drift apart silently.
+
+### Still not built
+
+**Step 4** — user-defined layers, with a panel to add and reorder them. Array
+order is draw order and is seeded fixed, which is the shape a reorder will need.

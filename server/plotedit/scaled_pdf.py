@@ -222,9 +222,14 @@ PDF_LAYERS = [
     ("dimensions", "Dimensions"),
     ("notes",      "Notes"),
 ]
-# What the sheet's existing DXF layer names mean as PDF groups.
-PDF_FOR_DXF = {"BASE": "base", "POSITIONS": "positions", "UNITS": "units",
-               "TEXT": "labels", "DIMS": "dimensions", "NOTES": "notes"}
+# ⭐ ONE SET, TWO SPELLINGS. Since #82 step 2 the DXF writes these same eight,
+# so this is a case change and nothing more — which is the whole point. It was a
+# genuine translation table while the DXF had six names of its own.
+PDF_FOR_DXF = {"BASE": "base", "POOLS": "pools", "POSITIONS": "positions",
+               "FOCUS": "focus", "UNITS": "units", "LABELS": "labels",
+               "DIMS": "dimensions", "NOTES": "notes"}
+# The DXF spelling of each PDF group, for on_layer().
+DXF_FOR_PDF = {v: k for k, v in PDF_FOR_DXF.items()}
 # ⚠ NOT a layer. The title block, the scale bar and the one-inch check are the
 # SHEET, not the drawing — a reader who switches off every layer must still be
 # holding a drawing that says what it is and what scale it is at.
@@ -464,12 +469,21 @@ class Sheet:
         off a drawing's title, or leave the key a set of symbols with no words.
         """
         was = self._pdf_layer
+        was_dxf = self.dxf.layer if self.dxf else None
         if self.layered:
             self._pdf_layer = pdf_layer
+        # ⭐ AND THE DXF WITH IT (#82 step 2). While the DXF forced every string
+        # onto one TEXT layer this had nothing to say to it; now that text
+        # follows its subject, a position's name has to reach LABELS in CAD for
+        # the same reason it reaches Labels on paper.
+        if self.dxf and pdf_layer in DXF_FOR_PDF:
+            self.dxf.layer = DXF_FOR_PDF[pdf_layer]
         try:
             yield
         finally:
             self._pdf_layer = was
+            if self.dxf and was_dxf is not None:
+                self.dxf.layer = was_dxf
 
     def layer(self, name, pdf=None):
         """Set the DXF layer for what is drawn next (BASE, POSITIONS, UNITS, TEXT, DIMS, NOTES).
@@ -947,7 +961,14 @@ class Sheet:
         """
         from . import symbols as _sym
         from . import photometrics as _ph
-        self.layer("NOTES")
+        # 🔴 A BOOM ELEVATION IS NOT A NOTE. The whole thing — the pipe, the
+        # units, their numbers and trims — was drawn on NOTES, so hiding the key
+        # took every boom elevation with it, and the ladder view (everything off
+        # but positions and units) lost exactly the drawing an electrician
+        # hanging booms needs. It is a POSITION with UNITS on it, and it is drawn
+        # that way now, matching the screen — which already requires both layers
+        # before it draws an elevation at all.
+        self.layer("POSITIONS")
 
         # ⭐ WHERE things go is booms.elevation(); this method only puts ink on
         # paper. The /booms endpoint feeds the browser from the same call, so
@@ -972,8 +993,9 @@ class Sheet:
         for b in cuts:
             self.break_mark(x, y + b)
 
-        self.text(x, y + top + ft(0, 6), (pos.get("name") or "").upper(),
-                  size=7, bold=True, center=True)
+        with self.on_layer("labels"):
+            self.text(x, y + top + ft(0, 6), (pos.get("name") or "").upper(),
+                      size=7, bold=True, center=True)
         # 🔴 THE FOOTNOTE IS THE SAME SENTENCE ON EVERY BOOM, and it used to be
         # drawn once PER BOOM, centred on that boom's own x. Two booms standing
         # near each other therefore overprinted each other's notes — found on a
@@ -984,25 +1006,33 @@ class Sheet:
         # ⭐ The caller draws ONE note under the whole strip instead — see
         # boom_note(). `note=True` is kept so any other caller behaves as before.
         if note:
-            self.text(x, y - ft(0, 9), "NOT TO SCALE — heights are the data",
-                      size=5, center=True)
-            if cuts:
-                self.text(x, y - ft(1, 4), f"{len(cuts)} break{'s' if len(cuts) > 1 else ''} "
-                          f"— pipe compressed", size=5, center=True)
+            # ⭐ This one IS a note — it is about the drawing rather than part of
+            # it, so it stays where notes go.
+            with self.on_layer("notes"):
+                self.text(x, y - ft(0, 9), "NOT TO SCALE — heights are the data",
+                          size=5, center=True)
+                if cuts:
+                    self.text(x, y - ft(1, 4), f"{len(cuts)} break{'s' if len(cuts) > 1 else ''} "
+                              f"— pipe compressed", size=5, center=True)
 
         for u, dy in drawn:
             uy = y + dy
             self.line(x, uy, x + unit_gap * 0.55, uy, style="leader")
-            _sym.draw(self, _sym.for_type(u.get("type", "")), x + unit_gap, uy,
-                      rotate_deg=90)
-            # Ends 5" clear of the pipe, growing leftwards away from it.
-            self.text(x - ft(0, 5), uy - ft(0, 2), self.fmt_len(u["height"]),
-                      size=6, align="right")
-            self.text(x + unit_gap, uy - ft(0, 3), str(u.get("unit")),
-                      size=6, center=True, bold=True)
+            with self.on_layer("units"):
+                _sym.draw(self, _sym.for_type(u.get("type", "")), x + unit_gap, uy,
+                          rotate_deg=90)
+            with self.on_layer("labels"):
+                # Ends 5" clear of the pipe, growing leftwards away from it.
+                self.text(x - ft(0, 5), uy - ft(0, 2), self.fmt_len(u["height"]),
+                          size=6, align="right")
+                self.text(x + unit_gap, uy - ft(0, 3), str(u.get("unit")),
+                          size=6, center=True, bold=True)
         for i, u in enumerate(no_height):
-            self.text(x + unit_gap, y + top - (i + 1) * 0.5,
-                      f"{u.get('unit')}: NO HEIGHT RECORDED", size=5)
+            # ⚠ A warning about missing data, not a label — it belongs with the
+            # notes, where somebody reading the sheet for problems will look.
+            with self.on_layer("notes"):
+                self.text(x + unit_gap, y + top - (i + 1) * 0.5,
+                          f"{u.get('unit')}: NO HEIGHT RECORDED", size=5)
         # ⚠ The break count goes back to the caller so one note can speak for the
         # whole strip. Returning only `top` meant the caller had no way to know
         # which pipes were compressed without redoing the layout.
@@ -1016,13 +1046,17 @@ class Sheet:
         moment two booms stood close together.
         """
         mid = (x0 + x1) / 2.0
-        self.text(mid, y - ft(0, 9), "NOT TO SCALE — heights are the data",
-                  size=5, center=True)
-        if compressed:
-            what = (f"{compressed} of {total} pipes compressed" if total > 1
-                    else "pipe compressed")
-            self.text(mid, y - ft(1, 4), f"{what} — see the break marks",
+        # ⚠ A NOTE, and it was on whatever layer happened to be current. Found
+        # in the ladder view: the footnote was the only text left on a sheet with
+        # Notes switched off, while the elevation it describes had gone.
+        with self.on_layer("notes"):
+            self.text(mid, y - ft(0, 9), "NOT TO SCALE — heights are the data",
                       size=5, center=True)
+            if compressed:
+                what = (f"{compressed} of {total} pipes compressed" if total > 1
+                        else "pipe compressed")
+                self.text(mid, y - ft(1, 4), f"{what} — see the break marks",
+                          size=5, center=True)
 
     def unit(self, x, y, num, ch=None, kind="", color_gel=None, focus_to=None, r=None, color_tier=0,
              trim=None, focus_h=5.5, lamp=None, mode=None, lens_rotation=None,
@@ -1125,7 +1159,7 @@ class Sheet:
         # the unit number — which is exactly the mess that putting the number
         # inside the body was meant to avoid.
         if focus_to and show_focus:
-            self.layer("NOTES", pdf="focus")
+            self.layer("FOCUS")
             self.line(x, y, focus_to[0], focus_to[1], color=grey, style="leader")
             self.circle(focus_to[0], focus_to[1], ft(0, 3), color=grey, style="leader")
             self.layer("UNITS")
@@ -1201,7 +1235,7 @@ class Sheet:
                     elif sh.get("note"):
                         self.warnings.append(f"unit {num}: {sh['note']}")
                     if show_pool and sh.get("a"):
-                        self.layer("NOTES", pdf="pools")
+                        self.layer("POOLS")
                         self.ellipse(sh["cx"], sh["cy"], sh["a"], sh["b"],
                                      sh["angle"], color=grey, style="pool")
                         self.layer("UNITS")
