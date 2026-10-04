@@ -383,6 +383,31 @@ def eos_patch(plot: Dict[str, Any]) -> str:
 
 # --------------------------------------------------------------- drawings
 
+def section_pdf(plot: Dict[str, Any], pdf_path: str, **kw):
+    """The lighting SECTION, to RP-2 §3. Delegates to plot_to_section.render.
+
+    ⭐ Same shape as plot_pdf below, and for the same reason: the renderer reads
+    a .plot.json from disk because it is also a command-line tool, so the dict
+    the browser sent is written to a temp file and handed over.
+
+    ⚠ THE DEFAULTS ARE THE WHOLE DESIGN. A section needs a cut line, and the
+    plot does not carry one — so it cuts on CENTRELINE and the sheet says so in
+    its title block, per §3's "definition of where the section is cut". Nothing
+    is guessed silently. Issue #92 argued the alternatives; this is option 1.
+    """
+    import json
+    import os
+    import tempfile
+    from plot_to_section import render
+    fd, tmp = tempfile.mkstemp(suffix=".plot.json")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            json.dump(plot, fh)
+        return render(tmp, pdf_path, **kw)
+    finally:
+        os.unlink(tmp)
+
+
 def plot_pdf(plot: Dict[str, Any], pdf_path: str, dxf_path: str = None, **kw):
     """Delegates to plot_to_pdf.render, which both the PDF and the browser use."""
     import json

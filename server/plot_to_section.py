@@ -237,7 +237,26 @@ def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
                     if ang <= 0.02:
                         continue
                     end = here + d * trim / math.tan(ang)
-                    s.line(here, trim, end, 0, style="pool")
+                    # 🔴 CLIPPED TO THE DRAWN ROOM. A beam edge is projected to the
+                    # floor, and a SHALLOW one lands a very long way off: the
+                    # guard above only skips angles under 0.02 rad — 1.1° — so a
+                    # 2° edge from a 14' trim ran out to roughly 400 feet.
+                    #
+                    # ⚠ ONE such line stretched the whole drawing's extent to 93
+                    # feet for a 38-foot room, which pushed `fit` down a scale
+                    # step and left the section using 17% of an ARCH D sheet.
+                    # Found by exporting one and looking at it (#92).
+                    #
+                    # The segment is clipped rather than dropped, because the
+                    # near part of the edge is real and worth drawing — it is
+                    # only the far tail that is off the paper and meaningless.
+                    lo, hi = -house - 1, depth + house + 1
+                    ex, ey = end, 0.0
+                    if ex < lo or ex > hi:
+                        bound = lo if ex < lo else hi
+                        t = (bound - here) / (end - here) if end != here else 0.0
+                        ex, ey = bound, trim + t * (0.0 - trim)
+                    s.line(here, trim, ex, ey, style="pool")
             s.text(target, -ft(1, 10),
                    f"{u.get('type')} · {ph.fmt_ft(a['throw'])} @ {elev:.0f}°",
                    size=5, center=True)

@@ -472,6 +472,50 @@ def export_pdf(req: ExportRequest) -> Response:
     return r
 
 
+@app.post("/export/section")
+def export_section(req: ExportRequest) -> Response:
+    """The lighting SECTION — RP-2 §3: how low can a pipe go, and does the light
+    reach the actor's face.
+
+    ⭐ It cuts ON CENTRELINE and says so in the title block. A section needs a cut
+    line and the plot does not carry one, so rather than ask before anything can
+    be drawn, it takes the obvious cut and states it — §3 requires a "definition
+    of where the section is cut" on the sheet anyway, so the default is visible
+    rather than assumed. Issue #92.
+
+    ⚠ What the drawing CANNOT prove is printed on the drawing: no audience sight
+    point means no sightline, no masking means trims are not proven to clear, no
+    scenery means nothing is checked for obstruction. That block is the most
+    valuable thing on the sheet and it survives the move into the UI.
+    """
+    with tempfile.TemporaryDirectory() as d:
+        pdf = os.path.join(d, "section.pdf")
+        try:
+            sheet, drawn = exports.section_pdf(req.plot, pdf, scale=req.scale,
+                                               page=req.page,
+                                               landscape=req.landscape)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        # 🔴 A SECTION WITH NO POSITIONS IS A PICTURE OF AN EMPTY ROOM. The plot
+        # export is still worth drawing with nothing on it; this one is not, and
+        # returning a blank sheet would read as the feature being broken.
+        if not drawn:
+            raise HTTPException(
+                status_code=422,
+                detail="No position has a unit with a trim, so there is nothing to "
+                       "draw a section of. Set a trim on at least one position.")
+        fatal = [w for w in sheet.warnings if w.startswith("CLIPPED")]
+        if fatal:
+            raise HTTPException(status_code=422, detail=fatal[0])
+        notes = [w for w in sheet.warnings if not w.startswith("CLIPPED")]
+        body = open(pdf, "rb").read()
+    r = _attach(body, "application/pdf", f"{_stem(req.plot)} — Section.pdf")
+    if notes:
+        r.headers["X-Plot-Notes"] = " | ".join(notes)[:900].encode(
+            "ascii", "replace").decode("ascii")
+    return r
+
+
 @app.post("/export/dxf")
 def export_dxf(req: ExportRequest) -> Response:
     """The plot as layered DXF in feet — for a rented Vectorworks month."""

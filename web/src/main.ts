@@ -1131,8 +1131,11 @@ async function runExport(kind: ExportKind): Promise<void> {
       // sent the plot alone and cannot be changed by a checkbox.
       await exportFile(kind, store.plot, {
         scale: $<HTMLSelectElement>("scale").value,
-        // ⚠ The sheet goes with the PDF only. A CSV has no paper.
-        ...(kind === "pdf" && $<HTMLSelectElement>("page").value
+        // ⚠ The sheet goes with the DRAWINGS only. A CSV has no paper.
+        // ⭐ The section is a drawing too, and reads trims off its scale — so it
+        // takes the sheet and the scale, and none of the layer options, which
+        // are about the plan.
+        ...((kind === "pdf" || kind === "section") && $<HTMLSelectElement>("page").value
             ? { page: $<HTMLSelectElement>("page").value } : {}),
         ...(kind === "pdf" ? {
           // ⭐ ONE SOURCE for the screen and the paper. These three were read
@@ -1281,6 +1284,16 @@ function showExportMenu(): void {
   openMenu(btn, [
     { items: [
       { label: "Plot PDF", icon: "picture_as_pdf", onSelect: () => void runExport("pdf") },
+      // ⭐ #92. The section has existed and worked since the scaffold and could
+      // only be reached by typing `python3 plot_to_section.py` at a terminal —
+      // which, for an application whose whole premise is that it needs Python
+      // and nothing else, meant almost nobody using it had ever seen one.
+      //
+      // ⚠ It cuts on CENTRELINE and the sheet says so. A section needs a cut
+      // line that the plot does not carry; asking before anything can be drawn
+      // would be worse than taking the obvious cut and stating it, which §3
+      // requires on the sheet anyway.
+      { label: "Section", icon: "height", onSelect: () => void runExport("section") },
       { label: "Plot DXF", icon: "architecture", onSelect: () => void runExport("dxf") },
     ] },
     { items: [

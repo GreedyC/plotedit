@@ -453,6 +453,35 @@ checkbox either — what you did not print cannot be switched back on by the
 reader. Hiding is a property of the drawing; the schedule and the hookup always
 report the whole rig.
 
+### The section
+
+**Export → Section.** The drawing trims are read off: the deck, the grid, head
+height, and one luminaire per position drawn to scale.
+
+⭐ **One luminaire per position, not all of them.** RP-2 §3 asks for "the luminaire
+that determines batten height" — the governing one. Drawing all sixty turns a
+section into a smear and hides the only thing it is for.
+
+⚠ **It cuts on centreline, and the title block says so.** A section needs a cut
+line and the plot does not carry one. Rather than ask before anything can be
+drawn, it takes the obvious cut and states it — §3 requires the cut to be defined
+on the sheet in any case.
+
+🔴 **It prints what it has NOT been given**, in a block on the drawing:
+
+| missing | until you have it |
+|---|---|
+| **Audience sight point** — the worst seat's row and eye height | no vertical sightline is drawn |
+| **Masking** — borders, legs, teasers | your trims are **not proven to clear**; a pipe may hang into a border |
+| **Scenery** | no obstruction is checked; a beam may be blocked |
+
+**That is a site-visit list, not a nag.** The sheet says plainly that it shows the
+room and the rig and **is not a clearance check** — because a section that quietly
+left those out would look finished and would not be.
+
+⚠ **A plot with no trims gets no section**, and says so rather than handing you a
+drawing of an empty room.
+
 ⭐ **Sheet and Scale are not independent, and sitting together is how you see it.**
 Fit means *the largest scale at which nothing runs off the chosen sheet* — so
 changing the sheet can change the scale. The readout at the right of the second
@@ -461,6 +490,7 @@ row always says where they stand.
 | | |
 |---|---|
 | **Plot PDF** | The drawing, at the sheet and scale above. |
+| **Section** | The lighting section, to RP-2 §3. See below. |
 | **Plot DXF** | For anyone who needs it in CAD. |
 | **Instrument schedule** | Position, Unit, Channel, Circuit, Dimmer, Address, Thru, Type, Wattage, Color, Gobo, Purpose, Accessory, Notes. |
 | **Channel hookup** | The same rig in channel order. |

@@ -117,7 +117,7 @@ export async function gelList(): Promise<{ gel: string; name: string }[]> {
 
 // ------------------------------------------------------------------ export
 
-export type ExportKind = "pdf" | "dxf" | "schedule" | "hookup" | "eos";
+export type ExportKind = "pdf" | "section" | "dxf" | "schedule" | "hookup" | "eos";
 
 /** Ask the server for a file and hand it to the browser as a download. */
 export interface ExportOptions {
