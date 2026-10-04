@@ -228,7 +228,10 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # scale — at 1/4" nothing on the demo plot collides, at 1/8" it does. Work
     # the tiers out once, here, where the scale is known.
     _text_h = 7.0 / s.pt_per_ft if getattr(s, "pt_per_ft", None) else 0.39
-    _tiers = L.color_tiers(plot["instruments"], _text_h)
+    # Preserve the 1/4-inch reference clearance in paper points.
+    _color_pad = (L.PAD_FT * 18.0 / s.pt_per_ft
+                  if getattr(s, "pt_per_ft", None) else L.PAD_FT)
+    _tiers = L.color_tiers(plot["instruments"], _text_h, pad=_color_pad)
 
     rows = []
     for _i, inst in enumerate(plot["instruments"]):
