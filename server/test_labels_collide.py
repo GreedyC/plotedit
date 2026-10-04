@@ -109,6 +109,15 @@ check("a different text height gives a different answer",
       [x["color_tier"] for x, i in zip(r2.json()["instruments"], demo)
        if i.get("position") == "GRID C"], [0, 0, 0, 0, 0])
 
+# Print clearance stays constant in points as scale changes. At the 1/4"
+# reference scale, 0.35 ft is 6.3 pt; at 1/8" the same paper gap is 0.7 ft.
+_two = row(2.0, "R80", n=2)
+check("quarter-scale spacing keeps its existing tier decision",
+      labels.color_tiers(_two, PDF_QUARTER, pad=labels.PAD_FT), [0, 0])
+check("eighth-scale spacing preserves the same paper clearance",
+      labels.color_tiers(_two, PDF_EIGHTH,
+                         pad=labels.PAD_FT * 18.0 / 9.0), [0, 1])
+
 print("\nthe sheet still draws")
 import tempfile
 from plotedit import exports
