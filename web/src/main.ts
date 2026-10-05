@@ -69,6 +69,26 @@ let pipeGhost: SVGLineElement | undefined;
 // that landed in the wrong place could only be lived with — #63.
 let baseXf = { x: 0, y: 0, rotate: 0 };
 let basePlan: DxfPaths | null = null;
+
+/**
+ * Forget the imported ground plan.
+ *
+ * 🔴 THE IMPORT IS NOT PART OF THE PLOT, and that is what made it follow people
+ * around. `basePlan`, `baseImage` and `baseXf` live here in the module, not in
+ * the file — so opening a different plot left the previous venue's drawing
+ * underneath it. A tester imported a DXF, opened the demo, and his plan was
+ * still there with no obvious way out. (Reported 2026.10.05.)
+ *
+ * ⚠ The object URL has to be revoked, or a session of trying plans holds every
+ * one of them in memory until the tab closes. That was already right in the off
+ * button; this exists so the open path cannot forget it.
+ */
+function clearBase(): void {
+  if (baseImage) URL.revokeObjectURL(baseImage.href);
+  baseImage = undefined;
+  basePlan = null;
+  baseXf = { x: 0, y: 0, rotate: 0 };
+}
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
 /** The whole drawing's size in FEET — room, house, boom elevations and margin. */
@@ -1052,15 +1072,8 @@ function wireBackdropBar(): void {
     status("Click two points you know the real distance between. Escape to stop.");
   });
   $("bdoff").addEventListener("click", () => {
-    if (baseImage) {
-      // ⚠ Revoke the object URL. A session of trying plans would otherwise hold
-      // every one of them in memory until the tab closed.
-      URL.revokeObjectURL(baseImage.href);
-      baseImage = undefined;
-    } else if (basePlan) {
-      basePlan = null;
-      baseXf = { x: 0, y: 0, rotate: 0 };
-    } else return;
+    if (!baseImage && !basePlan) return;
+    clearBase();
     stopCalibration(); syncBackdropBar(); draw(); status("Base plan removed.");
   });
 }
@@ -1417,6 +1430,14 @@ function mayDiscard(what: string): boolean {
  * stops re-attaching a handler and dragging silently edits the plot you closed.
  */
 async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
+  // 🔴 A DIFFERENT PLOT MEANS A DIFFERENT ROOM. The imported ground plan is not
+  // in the file, so without this it survives into whatever you open next — the
+  // bug a tester hit on 2026.10.05. Every Open, New and sample load comes
+  // through here, which is why it belongs here and not in each of them.
+  clearBase();
+  // ⚠ paint() does not touch the backdrop bar, so the controls would otherwise
+  // keep offering to move and remove a plan that is already gone.
+  syncBackdropBar();
   store = new Store(plot);
   // ⭐ WHAT REVERT GOES BACK TO. #56: "save the state before we open it."
   // Cloned, because the store mutates its plot in place and a reference would

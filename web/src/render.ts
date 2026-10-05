@@ -153,11 +153,24 @@ export function render(
   }
 
   // ---- the venue's own drawing, if one was imported.
-  // Their claim, not a measurement — drawn quietly, under everything.
+  //
+  // Their claim, not a measurement — drawn quietly, under everything. But
+  // 🔴 QUIETLY IS NOT INVISIBLY. This was #c9c9c9, which measures 1.66:1
+  // against the white the drawing sits on, when the floor for a line on a page
+  // is 3:1 — less than half. A tester imported a DXF, saw nothing, and only
+  // found his drawing by switching Chrome to forced-dark to invert the whole
+  // page. He did not find a setting; he found a workaround. (Reported
+  // 2026.10.05.)
+  //
+  // ⭐ #8c8c8c measures 3.36:1 against that white and 4.73:1 against the pipes
+  // at #222 — over the floor, and still obviously subordinate to the rig drawn
+  // on top of it, which is the whole point of drawing it quietly. Measured by
+  // basePlan.test.ts against the svg rule in index.html, so neither this colour
+  // nor that background can drift under the floor unnoticed.
   for (const path of (vis.base ? opts.basePaths ?? [] : [])) {
     const d = path.points.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
     gBase.appendChild(el("path", {
-      d, fill: "none", stroke: "#c9c9c9", "stroke-width": W.dim * 2,
+      d, fill: "none", stroke: "#8c8c8c", "stroke-width": W.dim * 2,
       "vector-effect": "non-scaling-stroke",
     }));
   }
