@@ -436,6 +436,28 @@
     /* ⚠ Except the hit line, which is invisible and must stay that way. */
     svg g.position.selected line[stroke="transparent"] { stroke:transparent; }
     svg g.position { cursor:pointer; }
+    /* ---- #88: a position card rolls up to one line -------------------
+       The head spans the card's grid and is a button, so it reaches the
+       keyboard and announces its own state. */
+    .card-head { grid-column:1/-1; display:flex; align-items:center; gap:6px;
+                 border:none; background:none; padding:0; width:100%;
+                 text-align:left; cursor:pointer; color:var(--on-surface);
+                 font:inherit; }
+    /* ⚠ button() gives the head M3's pill radius and green `--primary`. A head
+       is a row, not a pill, so the layout rules here flatten it back — the
+       EMPHASIS stays text, which is what the variant was for. */
+    .card-head { border-radius:var(--shape-s); color:var(--on-surface);
+                 justify-content:flex-start; height:auto; letter-spacing:normal;
+                 font-weight:500; }
+    .card-head .muted { margin-left:auto; font-size:12px; }
+    .card-head .material-symbols-outlined { font-size:18px;
+                 color:var(--on-surface-variant); }
+    /* A shut card is a row, not a box: no padding to speak of and no border
+       radius fighting the one above it. */
+    .card.shut { padding:6px 12px; margin-bottom:4px; }
+    /* \u26a0 A warning that survives the roll-up is not muted. The whole point is
+       that it is still read when the card is closed. */
+    .card-note.shut-warning { color:var(--error); margin:2px 0 0; }
     .card-field { display:flex; flex-direction:column; gap:2px; }
     .card-field.wide { grid-column:1/-1; }
     /* A sub-heading inside a card, for the groups in Show & Venue. M3 label-small. */

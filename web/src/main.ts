@@ -37,7 +37,7 @@ import { parseFeet } from "./feet.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
-import { renderPositions } from "./positions.js";
+import { renderPositions, resetPositionCards } from "./positions.js";
 import { renderDetails } from "./details.js";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -1435,6 +1435,8 @@ async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
   // bug a tester hit on 2026.10.05. Every Open, New and sample load comes
   // through here, which is why it belongs here and not in each of them.
   clearBase();
+  // ⚠ The rolled-up cards belong to the show you were working on.
+  resetPositionCards();
   // ⚠ paint() does not touch the backdrop bar, so the controls would otherwise
   // keep offering to move and remove a plan that is already gone.
   syncBackdropBar();
