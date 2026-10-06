@@ -1,0 +1,42 @@
+name: Maintenance preflight
+on:
+  push:
+    branches: [codex/plotedit-maintenance-preflight-20261006]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r server/requirements.txt pylint
+      - name: All Python suites
+        working-directory: server
+        run: |
+          python - <<'PY'
+          import pathlib, subprocess, sys
+          for suite in sorted(pathlib.Path('.').glob('test_*.py')):
+              result = subprocess.run([sys.executable, str(suite)], capture_output=True, text=True)
+              print(f'{suite}: rc={result.returncode}', flush=True)
+              if result.returncode:
+                  print(result.stdout)
+                  print(result.stderr)
+                  sys.exit(result.returncode)
+          PY
+      - run: python verify_suites.py && python validate_fixtures.py
+        working-directory: server
+      - run: pylint --errors-only --disable=E1136 $(git ls-files '*.py')
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+        working-directory: web
+      - run: npm run build && npm run test:all
+        working-directory: web
