@@ -139,6 +139,116 @@ function field(
   return wrap;
 }
 
+
+/**
+ * Everything a position card has to SAY about itself, in reading order.
+ *
+ * ⭐ Extracted so the shut card and the open card cannot disagree. #88 rolls a
+ * card up to one line, and a warning that only appears once you open the card is
+ * a warning nobody reads — a pipe hung through the ceiling would go quiet
+ * exactly when the panel got easier to work in. `redOnly()` picks the ones that
+ * must survive the roll-up.
+ *
+ * Pure: it reads the plot and returns strings. No DOM, which is what lets
+ * positions.test.ts check it at all.
+ */
+/**
+ * Which cards are rolled up, by position NAME. #88: "it makes it annoying to
+ * work" — eleven open cards is a panel you scroll rather than read.
+ *
+ * 🔴 SESSION ONLY, DELIBERATELY NOT IN THE PLOT FILE. Rolling a card up is a
+ * thing you do to your screen, not a change to the drawing, and putting it in
+ * the file would mark the plot unsaved for tidying the panel — which is the one
+ * complaint the layers release already earned. Nothing here survives a reload,
+ * and that is the right trade.
+ *
+ * ⚠ Keyed by name rather than index, because an index moves when a position is
+ * deleted and the wrong cards would shut. A rename resets that card to open,
+ * which is harmless; two positions sharing a name share a state, which is
+ * consistent with their being one position everywhere else.
+ */
+const shut = new Set<string>();
+const keyOf = (p: Position) => p.name.trim().toLowerCase();
+let seeded = false;
+/** The position the panel has already scrolled to, so it only scrolls on a CHANGE. */
+let lastScrolled: number | null | undefined;
+
+/** Forget it all when a different show is opened. Called from adoptPlot(). */
+export function resetPositionCards(): void {
+  shut.clear(); seeded = false; lastScrolled = undefined;
+}
+
+export function positionNotes(
+  p: Position, plot: Plot, clashes: Set<string>,
+): string[] {
+  const bits: string[] = [];
+
+    // ⭐ SHARING A NAME IS ALLOWED, and is how you say "these two segments are
+    // one position" — a V or an L. So this states the consequence rather than
+    // warning against it. Everything joins by name, so the segments are already
+    // one heading in the schedule and one run of unit numbers.
+    //
+    // ⚠ The thing that DOES go wrong is the numbering, and it is checked below.
+    const sharing = clashes.has(p.name.trim().toLowerCase());
+    if (sharing) {
+      bits.push(`shares its name with another position — they are one position `
+        + `in the schedule and number as one run`);
+    }
+
+    // 🔴 THIS is the thing that actually breaks when a name is shared. RP-2
+    // §2.3.2 numbers units per POSITION, so unit 1 on two different pipes is
+    // right — but a shared name makes those pipes one position, and then two
+    // unit 1s are two lights the paperwork cannot tell apart. The schedule, the
+    // hookup and the focus chart all address a light as "position, number".
+    //
+    // ⚠ It is not automatic. `+ unit` takes max+1 across every segment of the
+    // name, so it stays unique going forward — but MERGING two pipes that each
+    // already had units 1-5 gives 1,1,2,2,3,3,4,4,5.
+    //
+    // 🔴 AND THE NOTE DOES NOT SEND THE READER TO RENUMBER, which is what it
+    // used to do. Jerry, 2026.09.30: "you can't just renumber the units […] you
+    // can allow the user to do it, but doing automatically is bad." A unit
+    // number is not a label the file owns. It is spiked on the pipe, written in
+    // the hookup the electrician is holding, and called out in the dark. Renumber
+    // rewrites all of them in the file and none of them in the room. Changing
+    // ONE number by hand is the small fix; renumbering the run is a decision
+    // about a document that may already have gone out.
+    const dupUnits = duplicateUnits(plot.instruments, p.name);
+    if (dupUnits.length) {
+      bits.push(`🔴 ${dupUnits.length > 1 ? "UNITS" : "UNIT"} `
+        + `${dupUnits.join(", ")} ${dupUnits.length > 1 ? "are" : "is"} used twice `
+        + `on this position — the paperwork cannot tell them apart. `
+        + `Give one of each pair a free number in the inspector`);
+    }
+
+    // ⭐ A trim above the ceiling cannot be hung. Nothing checked until
+    // 2026.09.24, when a pipe was raised to 18' in a room with a 15' grid and
+    // the tool drew it, computed levels from it and printed it without a word.
+    const grid = plot.room.gridHeight;
+    const foh = p.foh ?? (plot.room.plasterLine !== undefined && p.y1 < plot.room.plasterLine);
+    if (p.trim !== undefined && grid !== undefined && !foh) {
+      if (p.trim > grid) {
+        bits.push(`🔴 ABOVE THE ${grid}' CEILING — this cannot be hung`);
+      } else if (p.trim > grid - 1.5) {
+        bits.push(`under 1'-6" below the ${grid}' grid — a Source Four and its clamp need about that`);
+      }
+    }
+    if (isVertical(p)) bits.push("vertical — a POINT in plan; units differ by height");
+    if (foh) bits.push("front of house — downstage of the plaster line, over the audience");
+    if (p.circuits?.length) bits.push(`${p.circuits.length} circuits recorded`);
+    else bits.push("no circuits recorded — no load table can be built");
+  return bits;
+}
+
+/**
+ * The ones that cannot be hidden: a trim through the ceiling, two units sharing
+ * a number. ⚠ Keyed off the 🔴 the note itself carries, so a new red note
+ * reaches the shut card without anybody remembering to come back here.
+ */
+export function redOnly(bits: string[]): string[] {
+  return bits.filter(b => b.includes("\u{1F534}"));
+}
+
 export function renderPositions(
   host: HTMLElement, store: Store, deps: PositionDeps,
 ): void {
@@ -153,6 +263,15 @@ export function renderPositions(
   // questions is the kind of thing that makes a panel feel slow on a big plot.
   const clashes = duplicateNames(plot.positions);
 
+  // ⭐ A PLOT OPENS WITH EVERY CARD ROLLED UP, so the panel is a list you can
+  // read before it is a form you have to scroll. Opening all of them by default
+  // would leave the complaint in #88 exactly where it was until a designer shut
+  // eleven cards by hand, which nobody is going to do.
+  if (!seeded) {
+    for (const p of plot.positions) shut.add(keyOf(p));
+    seeded = true;
+  }
+
   plot.positions.forEach((p, i) => {
     const box = document.createElement("div");
     // ⭐ #78: "it's hard to tell when a position is selected." The card says so
@@ -165,6 +284,58 @@ export function renderPositions(
     // also makes that position current. Typing in a card you have not selected
     // is how you lose track of which pipe you are editing.
     box.addEventListener("pointerdown", () => store.selectPosition(i));
+
+    // ⭐ #88. The head is always there, open or shut, so the panel reads as a
+    // list of positions rather than a stack of forms. Name, type and trim,
+    // because trim is the number you scan a rig for.
+    const bits = positionNotes(p, plot, clashes);
+    const isShut = shut.has(keyOf(p));
+    if (isShut) box.classList.add("shut");
+
+    // ⭐ THROUGH button(), like every other control in the panel — `text`, the
+    // quietest emphasis M3 publishes, because opening a card is the most
+    // ordinary thing you can do here and must not compete with `Add unit`.
+    // store.test.ts pins this: a panel that builds a button by hand is how
+    // seven controls ended up with no hierarchy at all.
+    const head = button({
+      label: p.name || "(unnamed)",
+      variant: "text",
+      icon: isShut ? "chevron_right" : "expand_more",
+      title: isShut ? "Open this position" : "Roll this position up",
+      // ⚠ CLICK, not pointerdown. The card already selects on pointerdown, and
+      // toggling on the same event made a drag off the head shut the card you
+      // were reaching into.
+      onClick: () => {
+        if (isShut) shut.delete(keyOf(p)); else shut.add(keyOf(p));
+        deps.onChange();
+      },
+    });
+    head.classList.add("card-head");
+    head.setAttribute("aria-expanded", String(!isShut));
+    // The type and the trim sit at the far end of the row. Trim is the number
+    // you scan a rig for, so it earns its place on a one-line card.
+    const what = document.createElement("span");
+    what.className = "muted";
+    what.textContent = [p.type ?? "electric",
+                        p.trim !== undefined ? fmtFt(p.trim) : undefined]
+      .filter(Boolean).join(" \u00b7 ");
+    head.appendChild(what);
+    box.appendChild(head);
+
+    // 🔴 A SHUT CARD STILL CARRIES ITS RED WARNINGS. A trim through the ceiling
+    // and two units sharing a number are the two things that cost money in the
+    // room, and hiding them is how this feature would do damage rather than
+    // save scrolling.
+    if (isShut) {
+      for (const red of redOnly(bits)) {
+        const warn = document.createElement("p");
+        warn.className = "card-note shut-warning";
+        warn.textContent = red;
+        box.appendChild(warn);
+      }
+      host.appendChild(box);
+      return;
+    }
 
     const set = (patch: Partial<Position>) => {
       store.begin(null);
@@ -317,62 +488,6 @@ export function renderPositions(
 
     const note = document.createElement("p");
     note.className = "muted card-note";
-    const bits: string[] = [];
-
-    // ⭐ SHARING A NAME IS ALLOWED, and is how you say "these two segments are
-    // one position" — a V or an L. So this states the consequence rather than
-    // warning against it. Everything joins by name, so the segments are already
-    // one heading in the schedule and one run of unit numbers.
-    //
-    // ⚠ The thing that DOES go wrong is the numbering, and it is checked below.
-    const sharing = clashes.has(p.name.trim().toLowerCase());
-    if (sharing) {
-      bits.push(`shares its name with another position — they are one position `
-        + `in the schedule and number as one run`);
-    }
-
-    // 🔴 THIS is the thing that actually breaks when a name is shared. RP-2
-    // §2.3.2 numbers units per POSITION, so unit 1 on two different pipes is
-    // right — but a shared name makes those pipes one position, and then two
-    // unit 1s are two lights the paperwork cannot tell apart. The schedule, the
-    // hookup and the focus chart all address a light as "position, number".
-    //
-    // ⚠ It is not automatic. `+ unit` takes max+1 across every segment of the
-    // name, so it stays unique going forward — but MERGING two pipes that each
-    // already had units 1-5 gives 1,1,2,2,3,3,4,4,5.
-    //
-    // 🔴 AND THE NOTE DOES NOT SEND THE READER TO RENUMBER, which is what it
-    // used to do. Jerry, 2026.09.30: "you can't just renumber the units […] you
-    // can allow the user to do it, but doing automatically is bad." A unit
-    // number is not a label the file owns. It is spiked on the pipe, written in
-    // the hookup the electrician is holding, and called out in the dark. Renumber
-    // rewrites all of them in the file and none of them in the room. Changing
-    // ONE number by hand is the small fix; renumbering the run is a decision
-    // about a document that may already have gone out.
-    const dupUnits = duplicateUnits(plot.instruments, p.name);
-    if (dupUnits.length) {
-      bits.push(`🔴 ${dupUnits.length > 1 ? "UNITS" : "UNIT"} `
-        + `${dupUnits.join(", ")} ${dupUnits.length > 1 ? "are" : "is"} used twice `
-        + `on this position — the paperwork cannot tell them apart. `
-        + `Give one of each pair a free number in the inspector`);
-    }
-
-    // ⭐ A trim above the ceiling cannot be hung. Nothing checked until
-    // 2026.09.24, when a pipe was raised to 18' in a room with a 15' grid and
-    // the tool drew it, computed levels from it and printed it without a word.
-    const grid = plot.room.gridHeight;
-    const foh = p.foh ?? (plot.room.plasterLine !== undefined && p.y1 < plot.room.plasterLine);
-    if (p.trim !== undefined && grid !== undefined && !foh) {
-      if (p.trim > grid) {
-        bits.push(`🔴 ABOVE THE ${grid}' CEILING — this cannot be hung`);
-      } else if (p.trim > grid - 1.5) {
-        bits.push(`under 1'-6" below the ${grid}' grid — a Source Four and its clamp need about that`);
-      }
-    }
-    if (isVertical(p)) bits.push("vertical — a POINT in plan; units differ by height");
-    if (foh) bits.push("front of house — downstage of the plaster line, over the audience");
-    if (p.circuits?.length) bits.push(`${p.circuits.length} circuits recorded`);
-    else bits.push("no circuits recorded — no load table can be built");
     note.textContent = bits.join(" · ");
     box.appendChild(note);
 
@@ -595,6 +710,38 @@ export function renderPositions(
 
     host.appendChild(box);
   });
+
+  // 🔴 THE OTHER HALF OF #88, and the half that was actually broken: "when a
+  // position is selected, its card may not be visible." Selecting a pipe on the
+  // plan scrolled nothing, so on a rig with eleven positions the panel went on
+  // showing somewhere else entirely.
+  //
+  // ⚠ `block: "nearest"` scrolls the PANEL and only as far as it has to. "start"
+  // or "center" would yank a card that is already perfectly visible, and on a
+  // nested scroller it can drag the whole page with it.
+  // ⚠ ONLY WHEN THE SELECTION CHANGED. This panel re-renders on every edit, and
+  // scrolling on each one would drag the view back the moment a designer
+  // scrolled away from the card they had selected — a fix that becomes its own
+  // annoyance.
+  if (store.selectedPosition !== lastScrolled) {
+    lastScrolled = store.selectedPosition;
+    // 🔴 NEXT FRAME, AND RE-QUERY INSIDE IT. Two separate reasons, and missing
+    // either one leaves the panel exactly where it was:
+    //
+    // Deferring, because drawInspector() calls this and THEN rebuilds the
+    // inspector below it in the same scroller — that changes the panel's height
+    // and undoes any scroll made here. Measured: the card stayed at 3516px in a
+    // 768px window.
+    //
+    // Re-querying, because selecting a pipe repaints MORE THAN ONCE, and
+    // host.replaceChildren() detaches the card found a moment ago.
+    // scrollIntoView on a node that is no longer in the document is silent — it
+    // does nothing and reports nothing, which is why this took a measurement
+    // rather than a read-through to find.
+    requestAnimationFrame(() => {
+      host.querySelector(".card.selected")?.scrollIntoView({ block: "nearest" });
+    });
+  }
 
   // ⭐ FILLED: the one primary action in the Positions panel. M3 puts the most
   // important action at the top of the emphasis ladder, and until now this

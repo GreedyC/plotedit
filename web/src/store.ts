@@ -6,6 +6,7 @@
  * no proxies, nothing to debug at two in the morning during a tech.
  */
 import type { Plot, Instrument, Position, Room } from "./plot.js";
+import { LAYERS, visibilityOf, type LayerId } from "./layers.js";
 
 export type Listener = () => void;
 
@@ -272,6 +273,37 @@ export class Store {
    *  width and depth resize it, the grid height and house ceiling are what
    *  trims are checked against, and the plaster line decides which positions
    *  are front of house. The caller has to recompute, not just redraw. */
+  /**
+   * Switch a layer on or off.
+   *
+   * ⚠ THIS MARKS THE PLOT UNSAVED, and that is a real consequence of putting
+   * layers in the file rather than an oversight. Peek at the plot with the
+   * pools off and the plot is now dirty. The alternative — visibility held
+   * only in the browser — was rejected by the decision it has to follow:
+   * "the plot file needs to have the layers, because we would need to display
+   * them when we bring it into the app." A state that does not survive
+   * reopening is not in the file, and every CAD package stores it.
+   *
+   * ⭐ It is undoable like any other edit, so an accidental toggle costs one
+   * undo rather than a reload.
+   *
+   * 🔴 A LAYER THE FILE DOES NOT CARRY still has to be settable, or the
+   * first toggle on an old plot writes one layer and implies the other seven
+   * are off. So the whole set is seeded from `visibilityOf` — which applies
+   * each layer's default — before the one being changed is written.
+   */
+  setLayerVisible(id: LayerId, visible: boolean): void {
+    const now = visibilityOf(this._plot);
+    if (now[id] === visible) return;        // doing nothing is not a change
+    this.begin(null);
+    this._plot.layers = LAYERS.map(l => ({
+      id: l.id,
+      visible: l.id === id ? visible : now[l.id],
+    }));
+    this.touch();
+    this.emit();
+  }
+
   setRoom(patch: Partial<Room>): void {
     this.begin(null);
     Object.assign(this._plot.room, patch);

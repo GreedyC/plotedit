@@ -170,7 +170,24 @@ def import_into(sheet, path, layers=None, units=None, offset=(0.0, 0.0), rotate_
 
 class DxfOut:
     """Collects everything a Sheet draws, in feet, and writes a layered DXF."""
-    LAYERS = {"BASE": 8, "POSITIONS": 7, "UNITS": 7, "TEXT": 7, "DIMS": 1, "NOTES": 30}
+    # ⭐ THE MERGED EIGHT (#82 step 2), the same set the screen and the PDF use,
+    # in the same drawing order. Three changes from the six that were here:
+    #
+    #  · POOLS and FOCUS are NEW. They were drawn on NOTES because there was
+    #    nowhere else to put them, so in CAD you could not switch the pools off
+    #    without losing the key with them.
+    #  · TEXT became LABELS. "TEXT" named the ENTITY KIND rather than what the
+    #    text is — every string in the drawing landed on it, so a dimension's
+    #    number and a unit's channel shared a layer with nothing else in common.
+    #    Text follows its subject now, and LABELS holds what the screen's
+    #    `labels` chip holds: position names and §6.14 notation.
+    #  · DIMS keeps its abbreviation, which is what a CAD drawing calls it.
+    #
+    # ⚠ Colours are AutoCAD indices and echo the drawn weight: 7 for the things
+    # you read, 8 and 9 for the greys that sit under them, 1 for dimensions and
+    # 30 for the key.
+    LAYERS = {"BASE": 8, "POOLS": 9, "POSITIONS": 7, "FOCUS": 9,
+              "UNITS": 7, "LABELS": 7, "DIMS": 1, "NOTES": 30}
 
     def __init__(self):
         self.doc = ezdxf.new("R2010", setup=True)
@@ -192,7 +209,12 @@ class DxfOut:
         self.msp.add_circle((x, y), r, dxfattribs={"layer": self.layer})
 
     def text(self, x, y, s, height_ft, rotate=0, center=False):
-        t = self.msp.add_text(s, dxfattribs={"layer": "TEXT", "height": height_ft, "rotation": rotate})
+        # ⚠ THE CURRENT LAYER, not a forced "TEXT". Every string in the drawing
+        # used to land on one layer whatever it said, so the key's words were
+        # separated from the key and a dimension's number from its dimension.
+        # Text belongs with the thing it is about — which is also what the PDF
+        # does, and the point of there being one set of layers.
+        t = self.msp.add_text(s, dxfattribs={"layer": self.layer, "height": height_ft, "rotation": rotate})
         t.set_placement((x, y), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER if center
                         else ezdxf.enums.TextEntityAlignment.LEFT)
 

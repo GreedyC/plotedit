@@ -282,12 +282,22 @@ console.log("\nthe toolbar keeps its controls where they can be reached");
   const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const bars = html.split(/<div class="bar">/).slice(1);
   const barWith = (id: string) => bars.findIndex(b => b.includes(`id="${id}"`));
-  check("the rulers toggle is in the markup", /id="rulers"/.test(html), true);
-  check("...in the same bar as the display toggles",
-        barWith("rulers") === barWith("labels") && barWith("labels") >= 0, true);
+  // ⭐ RULERS IS NOW THE `dimensions` LAYER and has no checkbox of its own, so
+  // the original assertion cannot be made at all. What it was really guarding is
+  // that the control is REACHABLE, and that still has to hold — it now lives in
+  // the export menu, built in main.ts, so it is asserted there rather than here.
+  check("the rulers checkbox is gone, because it is a layer",
+        /id="rulers"/.test(html), false);
+  check("the layer chips are in the markup",
+        barWith("layer-labels") >= 0, true);
   check("...and NOT in the bar with Export and the scale menu",
-        barWith("rulers") === barWith("export"), false);
-  check("it says it only affects the print", /rulers\s*<span class="print-only"/.test(html), true);
+        barWith("layer-labels") === barWith("export"), false);
+  const mainSrc = fs.readFileSync(new URL("./main.ts", import.meta.url), "utf8");
+  check("the export menu still offers Rulers",
+        /label: "Rulers"/.test(mainSrc), true);
+  check("...and it reads and writes the dimensions layer",
+        /checked: visibilityOf\(store\.plot\)\.dimensions/.test(mainSrc)
+        && /setLayerVisible\(\s*\n?\s*"dimensions"/.test(mainSrc), true);
 }
 
 console.log("\nunits are never hand-formatted outside the formatters");
@@ -697,7 +707,7 @@ check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
   // "somebody added a control and forgot the tooltip", not proof of coverage;
   // the real count was taken in the running browser.
   const lines = htmlB.split("\n");
-  const needTip = ["base", "pools", "focus", "labels", "poolplane",
+  const needTip = ["layer-base", "layer-pools", "layer-focus", "layer-labels", "layer-positions", "layer-units", "poolplane",
                    "bdx", "bdy", "bdw", "bdr", "bdo", "zoom"];
   const untipped = needTip.filter(id => {
     const i = lines.findIndex(l => l.includes(`id="${id}"`));
@@ -706,7 +716,7 @@ check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
   });
   check("every control that had no tooltip now has one", untipped, []);
 
-  // ⭐ The four layer toggles are one connected group, not four loose boxes.
+  // ⭐ The six layer chips are one connected group, not six loose boxes.
   check("the layer toggles are grouped", /class="toggles"/.test(htmlB), true);
   check("...and announced as a group", /role="group" aria-label="Layers/.test(htmlB), true);
   check("the zoom slider and its buttons are grouped",
@@ -781,12 +791,12 @@ check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
   const bars = htmlB.slice(htmlB.indexOf('<div class="bar">'), htmlB.indexOf('id="export-settings"'));
   check("...so Sheet is no longer a toolbar control", /id="page"/.test(bars), false);
   check("...nor Scale", /id="scale"/.test(bars), false);
-  check("...nor rulers", /id="rulers"/.test(bars), false);
+  // rulers left this div entirely — it is a layer in the plot now.
   // ⚠ But they must still EXIST — they are the state the menu reads and writes,
   // and `fillPageMenu`/`fillScaleMenu` still fill them.
   check("Sheet still exists as state", /id="page"/.test(htmlB), true);
   check("Scale still exists as state", /id="scale"/.test(htmlB), true);
-  check("rulers still exists as state", /id="rulers"/.test(htmlB), true);
+  check("rulers is no longer browser-only state", /id="rulers"/.test(htmlB), false);
 
   // ⭐ Jerry, 2026-10-01: "where is the scale" — asked right after Sheet and
   // Scale moved into Export, which is the question answering itself. Moving the
@@ -809,7 +819,7 @@ check("the renumber button survives", /label: "Renumber"/.test(_srcRaw), true);
   // lose the semantics and every `.checked` read in main.ts.
   const togglesBlock = /class="toggles"[\s\S]*?<\/span>/.exec(htmlB)?.[0] ?? "";
   check("the toggles are still checkboxes",
-        (togglesBlock.match(/type="checkbox"/g) || []).length, 4);
+        (togglesBlock.match(/type="checkbox"/g) || []).length, 6);
 
   // And the helper itself cannot be called without an emphasis.
   const bsrc = fsB.readFileSync(pathB.join(dirB, "button.ts"), "utf8");

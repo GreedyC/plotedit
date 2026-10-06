@@ -23,6 +23,7 @@ import { isPlot, symbolKey, plotFileName, newPlot, type Plot, type Position,
 import { startSeq, seqClick, clickLine, seqReport, runIndices,
          type Seq } from "./sequence.js";
 import { openMenu, type MenuGroup, type MenuItem } from "./menu.js";
+import { visibilityOf, SCREEN_LAYERS } from "./layers.js";
 import { confirmRevert } from "./confirm.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
@@ -36,7 +37,7 @@ import { parseFeet } from "./feet.js";
 import { Store } from "./store.js";
 import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
-import { renderPositions } from "./positions.js";
+import { renderPositions, resetPositionCards } from "./positions.js";
 import { renderDetails } from "./details.js";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -68,6 +69,26 @@ let pipeGhost: SVGLineElement | undefined;
 // that landed in the wrong place could only be lived with — #63.
 let baseXf = { x: 0, y: 0, rotate: 0 };
 let basePlan: DxfPaths | null = null;
+
+/**
+ * Forget the imported ground plan.
+ *
+ * 🔴 THE IMPORT IS NOT PART OF THE PLOT, and that is what made it follow people
+ * around. `basePlan`, `baseImage` and `baseXf` live here in the module, not in
+ * the file — so opening a different plot left the previous venue's drawing
+ * underneath it. A tester imported a DXF, opened the demo, and his plan was
+ * still there with no obvious way out. (Reported 2026.10.05.)
+ *
+ * ⚠ The object URL has to be revoked, or a session of trying plans holds every
+ * one of them in memory until the tab closes. That was already right in the off
+ * button; this exists so the open path cannot forget it.
+ */
+function clearBase(): void {
+  if (baseImage) URL.revokeObjectURL(baseImage.href);
+  baseImage = undefined;
+  basePlan = null;
+  baseXf = { x: 0, y: 0, rotate: 0 };
+}
 let symbolCache: Record<string, SymbolPrim[]> = {};
 
 /** The whole drawing's size in FEET — room, house, boom elevations and margin. */
@@ -110,15 +131,18 @@ function poolPlane(): number | undefined {
 
 function opts(): RenderOptions {
   return {
-    showPools: $<HTMLInputElement>("pools").checked,
-    showFocus: $<HTMLInputElement>("focus").checked,
-    showLabels: $<HTMLInputElement>("labels").checked,
+    // 🔴 FROM THE PLOT, NOT FROM THE CHECKBOXES. The chips are an input to
+    // the plot's layer state, not the place it lives — so undo, Revert and
+    // opening a file all change what is drawn without anything having to
+    // remember to tick a box. The chips are synced FROM here, in syncLayers().
+    layers: visibilityOf(store.plot),
     selected: store.selected,
     selectedPosition: store.selectedPosition,
-    basePaths: $<HTMLInputElement>("base").checked ? placedBasePaths() : undefined,
-    // ⚠ The same checkbox governs both kinds of base. A designer who turns
-    // the plan off means the imported one, whether it is lines or a picture.
-    baseImage: $<HTMLInputElement>("base").checked && baseImage
+    // ⚠ Both kinds of base are passed unconditionally now and the renderer
+    // decides. The same layer governs lines and a picture alike: a designer who
+    // turns the plan off means the imported one, whichever it is.
+    basePaths: placedBasePaths(),
+    baseImage: baseImage
       ? { href: baseImage.href, x: baseImage.x, y: baseImage.y,
           wide: baseImage.wide, tall: baseImage.wide * baseImage.aspect,
           rotate: baseImage.rotate, opacity: baseImage.opacity }
@@ -324,6 +348,7 @@ function drawInspector() {
 
 /** Redraw everything from current state. Cheap — no network. */
 function paint() {
+  syncLayers();
   draw();
   fillTable();
   drawInspector();
@@ -561,6 +586,27 @@ function wireZoomButtons(): void {
     setZoom(px);
   });
   $("zoom-100").addEventListener("click", () => setZoom(ZOOM_DEFAULT));
+}
+
+/**
+ * Put the chips where the PLOT says they are.
+ *
+ * 🔴 THE CHIPS ARE A VIEW OF THE FILE, not the state itself. Layer
+ * visibility lives in the plot (Jerry: "the plot file needs to have the
+ * layers"), so undo, Revert, Open and New all change it — and a checkbox that
+ * only changed when clicked would show the old answer after any of them. This
+ * runs on every paint, which is every one of those paths.
+ *
+ * ⚠ `dimensions` and `notes` have no chip. They are carried in the file and
+ * read by the export; there is nothing on screen for a chip to change, and a
+ * control that does nothing is worse than a missing one.
+ */
+function syncLayers(): void {
+  const vis = visibilityOf(store.plot);
+  for (const l of SCREEN_LAYERS) {
+    const box = document.getElementById(`layer-${l.id}`) as HTMLInputElement | null;
+    if (box && box.checked !== vis[l.id]) box.checked = vis[l.id];
+  }
 }
 
 /** The header's own copy of the show and venue, so editing them in the panel
@@ -845,7 +891,7 @@ function placedBasePaths(): { layer: string; points: [number, number][] }[] | un
 
 /** What the exporter needs to draw the same base the screen is showing. */
 async function baseForExport(): Promise<Record<string, unknown> | undefined> {
-  if (!$<HTMLInputElement>("base").checked) return undefined;
+  if (!visibilityOf(store.plot).base) return undefined;
   const out: Record<string, unknown> = {};
   const paths = placedBasePaths();
   if (paths?.length) out.paths = paths;
@@ -1026,15 +1072,8 @@ function wireBackdropBar(): void {
     status("Click two points you know the real distance between. Escape to stop.");
   });
   $("bdoff").addEventListener("click", () => {
-    if (baseImage) {
-      // ⚠ Revoke the object URL. A session of trying plans would otherwise hold
-      // every one of them in memory until the tab closed.
-      URL.revokeObjectURL(baseImage.href);
-      baseImage = undefined;
-    } else if (basePlan) {
-      basePlan = null;
-      baseXf = { x: 0, y: 0, rotate: 0 };
-    } else return;
+    if (!baseImage && !basePlan) return;
+    clearBase();
     stopCalibration(); syncBackdropBar(); draw(); status("Base plan removed.");
   });
 }
@@ -1098,21 +1137,33 @@ async function runExport(kind: ExportKind): Promise<void> {
       // ⚠ Encoded ONCE — the image goes through base64 and a big plan is
       // megabytes of string.
       const exportBase = kind === "pdf" ? await baseForExport() : undefined;
+      const vis = visibilityOf(store.plot);
       // ⭐ The PDF is a drawing and honours what the checkboxes are showing:
       // a designer who hides the pools to read the plan expects the print to
       // match. The CSV and patch exports have no drawing in them, so they are
       // sent the plot alone and cannot be changed by a checkbox.
       await exportFile(kind, store.plot, {
         scale: $<HTMLSelectElement>("scale").value,
-        // ⚠ The sheet goes with the PDF only. A CSV has no paper.
-        ...(kind === "pdf" && $<HTMLSelectElement>("page").value
+        // ⚠ The sheet goes with the DRAWINGS only. A CSV has no paper.
+        // ⭐ The section is a drawing too, and reads trims off its scale — so it
+        // takes the sheet and the scale, and none of the layer options, which
+        // are about the plan.
+        ...((kind === "pdf" || kind === "section") && $<HTMLSelectElement>("page").value
             ? { page: $<HTMLSelectElement>("page").value } : {}),
         ...(kind === "pdf" ? {
-          showPools: $<HTMLInputElement>("pools").checked,
-          showFocus: $<HTMLInputElement>("focus").checked,
-          showLabels: $<HTMLInputElement>("labels").checked,
+          // ⭐ ONE SOURCE for the screen and the paper. These three were read
+          // off the checkboxes while the screen was about to be read off the
+          // plot — which is how a PDF comes out showing something the screen
+          // was not. The server's field names are unchanged; only where the
+          // answer comes from has moved.
+          showPools: vis.pools,
+          showFocus: vis.focus,
+          showLabels: vis.labels,
           ...(poolPlane() === undefined ? {} : { poolPlane: poolPlane() }),
-          rulers: $<HTMLInputElement>("rulers").checked,
+          // ⭐ `rulers` IS the dimensions layer now, which is what retires the
+          // special case: it used to be the one display toggle that lived
+          // outside the group and printed without drawing.
+          rulers: vis.dimensions,
           // 🔴 Until now the import went on the SCREEN and never on the
           // paper. exports.plot_pdf has taken a base plan the whole time and
           // nothing ever handed it one, so an imported venue drawing looked
@@ -1240,13 +1291,22 @@ function showExportMenu(): void {
   const btn = $("export") as HTMLButtonElement;
   const sheet = $<HTMLSelectElement>("page");
   const scale = $<HTMLSelectElement>("scale");
-  const rulers = $<HTMLInputElement>("rulers");
   const chosen = (sel: HTMLSelectElement) =>
     Array.from(sel.options).find(o => o.value === sel.value)?.textContent ?? "";
 
   openMenu(btn, [
     { items: [
       { label: "Plot PDF", icon: "picture_as_pdf", onSelect: () => void runExport("pdf") },
+      // ⭐ #92. The section has existed and worked since the scaffold and could
+      // only be reached by typing `python3 plot_to_section.py` at a terminal —
+      // which, for an application whose whole premise is that it needs Python
+      // and nothing else, meant almost nobody using it had ever seen one.
+      //
+      // ⚠ It cuts on CENTRELINE and the sheet says so. A section needs a cut
+      // line that the plot does not carry; asking before anything can be drawn
+      // would be worse than taking the obvious cut and stating it, which §3
+      // requires on the sheet anyway.
+      { label: "Section", icon: "height", onSelect: () => void runExport("section") },
       { label: "Plot DXF", icon: "architecture", onSelect: () => void runExport("dxf") },
     ] },
     { items: [
@@ -1268,9 +1328,19 @@ function showExportMenu(): void {
         // both here, one under the other, is the first time that has been
         // visible — in the toolbar they looked like independent menus.
         submenu: optionsSubmenu("scale") },
+      // ⭐ RULERS IS A LAYER NOW — `dimensions`, one of the eight. It was the
+      // last display toggle with its own private checkbox, print-only and
+      // outside the group, and docs/LAYERS.md called that out: "rulers stops
+      // being a special case. It is print-only because the screen has no
+      // Dimensions layer; once it does, it is just a layer that defaults off."
+      //
+      // ⭐ And it is now SAVED WITH THE PLOT, which it never was. Tick the
+      // rulers, reload, and they stayed on your last export only by accident of
+      // the page not having been refreshed.
       { label: "Rulers", icon: "straighten", selection: "check",
-        checked: rulers.checked,
-        onSelect: () => { rulers.checked = !rulers.checked; } },
+        checked: visibilityOf(store.plot).dimensions,
+        onSelect: () => store.setLayerVisible(
+          "dimensions", !visibilityOf(store.plot).dimensions) },
     ] },
   ]);
 }
@@ -1337,7 +1407,7 @@ async function importPdf(file: File): Promise<void> {
     status(`${got.paths.length} paths at ${scale}" = 1'-0" — `
            + `${(x1 - x0).toFixed(1)}' x ${(y1 - y0).toFixed(1)}' including the sheet border. `
            + `Check that against something you measured.`);
-    ($("base") as HTMLInputElement).checked = true;
+    store.setLayerVisible("base", true);
     syncBackdropBar(); draw();
   } catch (err) {
     status(err instanceof Error ? err.message : String(err), true);
@@ -1360,6 +1430,16 @@ function mayDiscard(what: string): boolean {
  * stops re-attaching a handler and dragging silently edits the plot you closed.
  */
 async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
+  // 🔴 A DIFFERENT PLOT MEANS A DIFFERENT ROOM. The imported ground plan is not
+  // in the file, so without this it survives into whatever you open next — the
+  // bug a tester hit on 2026.10.05. Every Open, New and sample load comes
+  // through here, which is why it belongs here and not in each of them.
+  clearBase();
+  // ⚠ The rolled-up cards belong to the show you were working on.
+  resetPositionCards();
+  // ⚠ paint() does not touch the backdrop bar, so the controls would otherwise
+  // keep offering to move and remove a plan that is already gone.
+  syncBackdropBar();
   store = new Store(plot);
   // ⭐ WHAT REVERT GOES BACK TO. #56: "save the state before we open it."
   // Cloned, because the store mutates its plot in place and a reference would
@@ -1524,8 +1604,21 @@ async function boot() {
     // ⚠ `rulers` is not here either, for the opposite reason: it changes the
     // PRINT and nothing on screen. Wiring it to draw would redraw the canvas
     // to no visible effect and suggest the toggle had failed.
-    for (const id of ["pools", "focus", "labels", "base", "zoom"])
+    for (const id of ["zoom"])
       $(id).addEventListener("input", draw);
+
+    // ⭐ A CHIP IS AN EDIT NOW, so it goes through the store: it is undoable,
+    // it marks the plot unsaved, and it is saved with the file. That last part
+    // is the point — reopen the plot and the layers are as you left them.
+    //
+    // ⚠ No `draw()` here. The store emits, paint() runs, and paint() both
+    // syncs the chips and redraws. Calling draw() as well would draw twice and,
+    // worse, would make the chip look as though it worked even if the store had
+    // refused the change.
+    for (const l of SCREEN_LAYERS)
+      $(`layer-${l.id}`).addEventListener("input", (e) => {
+        store.setLayerVisible(l.id, (e.target as HTMLInputElement).checked);
+      });
     $("poolplane").addEventListener("change", () => { void recompute(); });
 
     // ⭐ `at …` belongs to `pools`, not to the row. When pools is off it has
@@ -1534,11 +1627,13 @@ async function boot() {
     // hidden": a control that vanishes takes its explanation with it, and the
     // reader is left wondering where the height went.
     const syncPoolPlane = () => {
-      const on = $<HTMLInputElement>("pools").checked;
+      const on = visibilityOf(store.plot).pools;
       $("poolplane-label").classList.toggle("inert", !on);
       ($("poolplane") as HTMLSelectElement).disabled = !on;
     };
-    $("pools").addEventListener("input", syncPoolPlane);
+    // ⚠ Subscribed rather than hung off the checkbox: pools can now be turned
+    // off by an undo, and the height picker has to go inert for that too.
+    store.subscribe(syncPoolPlane);
     syncPoolPlane();
 
     // ---- export
@@ -1594,7 +1689,7 @@ async function boot() {
         // a dimension that is actually known.
         status(`imported ${basePlan.paths.length} paths, ` +
                `${(x1 - x0).toFixed(1)}' x ${(y1 - y0).toFixed(1)}' — check that against something you measured`);
-        $<HTMLInputElement>("base").checked = true;
+        store.setLayerVisible("base", true);
         syncBackdropBar(); draw();
       } catch (err) {
         status(err instanceof Error ? err.message : String(err), true);
