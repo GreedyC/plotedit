@@ -10,7 +10,8 @@
  * wrong — it would switch the pools layer off whenever the symbols were off,
  * which is a documented, deliberate way to read a rig.
  */
-import { selectionOverride } from "./render.js";
+import { selectionOverride, mountAngle, type RenderOptions } from "./render.js";
+import type { Plot, Instrument } from "./plot.js";
 import { LAYERS, type LayerId } from "./layers.js";
 import type { Visibility } from "./layers.js";
 
@@ -70,6 +71,48 @@ console.log("\n⚠ a selected POSITION does not do this — Jerry, 2026.10.12");
 // predicate takes an instrument index and knows nothing about positions, which
 // is how that decision is enforced rather than remembered.
 check("it takes no position argument", selectionOverride.length, 3);
+
+
+// ---------------------------------------------------------------- #113
+// A strip is hung at two points and does not turn. Pure, so it is tested by
+// BEHAVIOUR here; test_two_point.py checks the Python agrees, because the screen
+// and the paper disagreeing about which way a unit points is a bug this project
+// has already shipped once.
+console.log("\n🔴 #113 — a two-point fixture lies along its pipe");
+{
+  const across = { name: "CYC ELECTRIC", type: "electric" as const,
+                   x1: -14, y1: 18, x2: 14, y2: 18, trim: 14 };
+  const upDown = { name: "UP-DOWN", type: "electric" as const,
+                   x1: 0, y1: 0, x2: 0, y2: 20, trim: 14 };
+  const plot = { formatVersion: 1, show: "T", room: { width: 34, depth: 24 },
+                 positions: [across, upDown], instruments: [] } as unknown as Plot;
+  const strip = (pos: string, aim?: [number, number]) => ({
+    unit: 1, position: pos, type: "Chroma-Q Color Force II Plus 72",
+    x: 0, y: 18, trim: 14,
+    ...(aim ? { focusX: aim[0], focusY: aim[1] } : {}),
+  }) as unknown as Instrument;
+  const o = (keys: string[]): RenderOptions =>
+    ({ layers: vis(), twoPoint: new Set(keys) });
+  const TWO = ["Chroma-Q Color Force II Plus 72"];
+
+  check("a unit that can pan is left alone",
+        mountAngle({ unit: 1, position: "CYC ELECTRIC", type: "S4 26",
+                     x: 0, y: 18 } as unknown as Instrument, plot, o(TWO)), undefined);
+  check("a strip on a cross-stage pipe lies across stage",
+        mountAngle(strip("CYC ELECTRIC"), plot, o(TWO)), 0);
+  check("a strip on an up-and-downstage pipe lies up and down",
+        mountAngle(strip("UP-DOWN"), plot, o(TWO)), 90);
+  // 🔴 The bug itself: these differ only in where they are aimed.
+  for (const aim of [[14, 17], [-14, 17], [0, 30]] as [number, number][])
+    check(`aimed at ${aim} — still across stage`,
+          mountAngle(strip("CYC ELECTRIC", aim), plot, o(TWO)), 0);
+  // ⚠ A ground row has no pipe to read. Across stage is where they go — a
+  // documented limitation, not a measurement.
+  check("no position at all", mountAngle(strip(""), plot, o(TWO)), 0);
+  check("a position that is not in the plot", mountAngle(strip("GONE"), plot, o(TWO)), 0);
+  // ⚠ And nothing is forced when the server did not say it was two-point.
+  check("not flagged — nothing forced", mountAngle(strip("CYC ELECTRIC"), plot, o([])), undefined);
+}
 
 console.log();
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

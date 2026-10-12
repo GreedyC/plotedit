@@ -90,6 +90,8 @@ function clearBase(): void {
   baseXf = { x: 0, y: 0, rotate: 0 };
 }
 let symbolCache: Record<string, SymbolPrim[]> = {};
+/** Symbol keys that cannot pan — see RenderOptions.twoPoint. #113. */
+let twoPointCache = new Set<string>();
 
 /** The whole drawing's size in FEET — room, house, boom elevations and margin. */
 function drawingFeet(): { w: number; h: number; house: number } {
@@ -148,6 +150,7 @@ function opts(): RenderOptions {
           rotate: baseImage.rotate, opacity: baseImage.opacity }
       : undefined,
     symbols: symbolCache,
+    twoPoint: twoPointCache,
     booms: boomLayout,
     labels: labelLayout,
   };
@@ -303,7 +306,7 @@ function drawInspector() {
     onGeometry: () => { paintChrome(); draw(); recompute(); },
     // The SHAPES changed: every outline held is the old one. Booms too —
     // recompute fetches both afresh.
-    onSymbols: () => { symbolCache = {}; draw(); recompute(); },
+    onSymbols: () => { symbolCache = {}; twoPointCache = new Set(); draw(); recompute(); },
   });
   renderPositions($("positions"), store, {
     onChange: () => { draw(); recompute(); },
@@ -629,7 +632,9 @@ async function ensureSymbols() {
     .filter(t => t && !(t in symbolCache));
   if (!want.length) return;
   try {
-    Object.assign(symbolCache, await symbols(want, undefined, !!store.plot.angleInBarrel));
+    const reply = await symbols(want, undefined, !!store.plot.angleInBarrel);
+    Object.assign(symbolCache, reply.prims);
+    for (const k of reply.twoPoint) twoPointCache.add(k);
   } catch (e) {
     // Drawing the wrong shape is worse than drawing a plain ring, which is
     // what render() falls back to when a type is missing from the cache.
@@ -1457,7 +1462,7 @@ async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
   store.subscribe(paint);
   attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute() });
   attachKeyboard(store, { view, onChange: draw, onSettled: () => recompute() });
-  symbolCache = {};
+  symbolCache = {}; twoPointCache = new Set();
   await recompute(0);
 }
 
@@ -1662,7 +1667,7 @@ async function boot() {
       // ⚠ The same four things every other plot-level change does. A revert that
       // restored the data and left the drawing, the levels and the chrome stale
       // would look like it had half worked.
-      symbolCache = {};
+      symbolCache = {}; twoPointCache = new Set();
       draw(); recompute(); paintChrome();
       status(savedAs ? `${savedAs} reloaded from disk.`
                      : "Back to the plot as you opened it.");

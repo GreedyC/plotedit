@@ -826,6 +826,26 @@ def _black():
 
 # ------------------------------------------------------ §6.14 luminaire notation
 
+def is_two_point(k: str) -> bool:
+    """Is this fixture hung at TWO points, so it cannot pan?
+
+    🔴 Jerry, 2026.10.12: "A strip light is mounted in two places and can only
+    be focused in one plane." A Source Four hangs on one yoke and swings about
+    it, which is why every symbol is drawn rotated to face its focus point. A
+    strip is bolted along the pipe at both ends. It tilts on knobs at the
+    mounting and it does not turn, so a focus point off to one side describes an
+    aim it physically cannot take. (#113.)
+
+    ⭐ Matched by NAME, the same way `for_type` picks the shape, so there is no
+    second list to keep in step. A fixture that draws as a strip is a strip.
+    """
+    low = (k or "").lower()
+    return ("strip" in low
+            or "color force" in low or "colorforce" in low
+            or "batten" in low
+            or "cyc" in low)
+
+
 def for_type(kind, lens_rotation=None, lamp=None, angle_in_barrel=False):
     """Pick a symbol from a fixture-table key like "S4 26" or "Lustr 26 EDLT".
 

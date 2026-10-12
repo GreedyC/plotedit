@@ -63,6 +63,9 @@ export interface RenderOptions {
    * meant two places had an opinion and one of them was always about to
    * disagree. */
   layers: Visibility;
+  /** Symbol keys hung at TWO points, which therefore cannot pan — strips,
+   *  battens, cyc units. From the server, beside the symbol itself. #113. */
+  twoPoint?: Set<string>;
   /** Index into plot.instruments, or null. */
   selected?: number | null;
   /** Which position is current, as an index into `positions`. #78 — a position
@@ -438,7 +441,8 @@ export function render(
     }
     if (!inPlan) return;
     const isSel = opts.selected === i;
-    const g = symbol(inst, c, opts.symbols?.[symbolKey(inst)], plot.symbolAngle);
+    const g = symbol(inst, c, opts.symbols?.[symbolKey(inst)], plot.symbolAngle,
+                     mountAngle(inst, plot, opts));
     g.setAttribute("data-index", String(i));
     // 🔴 A unit the server could not compute draws NO pool and NO focus, and
     // used to say nothing about why — which reads as "the tool did not bother"
@@ -490,6 +494,43 @@ export function render(
     if (vis.labels && vis.units) gText.appendChild(
       labels(inst, c, plot.symbolAngle, opts.symbols?.[symbolKey(inst)]));
   });
+}
+
+/**
+ * The angle a two-point fixture is forced to, or undefined if it can pan.
+ *
+ * 🔴 #113. A strip is bolted along its position and tilts on knobs. It has no
+ * yoke to swing about, so where it is AIMED says nothing about which way its
+ * body lies — the pipe does.
+ *
+ * ⭐ The pan convention is `atan2(aimX, -aimY)`, 0 = downstage. A strip's length
+ * runs along the pipe, so its aim is perpendicular to the pipe, which works out
+ * as `atan2(dy, dx)` over the position's own run. A pipe straight across stage
+ * gives 0, which is what a strip on an electric should be.
+ *
+ * ⚠ NO POSITION, NO PIPE. A ground row stands on the deck on trunnions and may
+ * belong to no hanging position at all, so there is nothing to read an angle
+ * from. It gets 0 — across stage, which is where ground rows go (Jerry,
+ * 2026.10.12). **That is a limitation, not a measurement**, and it is written up
+ * in the manual: a ground row running any other way cannot be drawn yet.
+ *
+ * ⚠ A VERTICAL position is left alone. Strips do go on booms and hang vertically
+ * there, but a boom's units are not drawn in plan at all — they are in the
+ * elevation, which rotates everything by a fixed 90° and never consults the
+ * focus. So this bug does not reach them, and neither does this fix.
+ */
+export function mountAngle(
+  inst: Instrument, plot: Plot, opts: RenderOptions,
+): number | undefined {
+  if (!opts.twoPoint?.has(symbolKey(inst))) return undefined;
+  const name = (inst.position ?? "").trim().toLowerCase();
+  const pos = plot.positions.find(p => p.name.trim().toLowerCase() === name);
+  // A ground row, or a unit whose position was renamed out from under it.
+  if (!pos || isVertical(pos)) return 0;
+  const dx = pos.x2 - pos.x1, dy = pos.y2 - pos.y1;
+  // A position with no run — both ends typed the same — says nothing either.
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return 0;
+  return Math.atan2(dy, dx) * 180 / Math.PI;
 }
 
 /** Paint RP-2 primitives into a group already placed and rotated.
@@ -546,7 +587,10 @@ function paintPrims(into: SVGElement, prims: SymbolPrim[] | undefined,
  */
 function symbol(inst: Instrument, c: Computed | undefined,
                 prims: SymbolPrim[] | undefined,
-                symbolAngle?: string): SVGElement {
+                symbolAngle?: string,
+                /** ⭐ #113. Set for a two-point fixture, undefined for anything on
+                 *  a single yoke — which is everything else. */
+                alongTheMount?: number): SVGElement {
   const g = el("g", { class: "instrument", "data-unit": inst.unit,
                       "data-channel": inst.channel ?? "" });
   // ⭐ RP-2 p.2 allows orienting a symbol "to either focus points or 90° axes",
@@ -557,8 +601,18 @@ function symbol(inst: Instrument, c: Computed | undefined,
   // 🔴 COSMETIC ONLY. `c.pan` remains the real aim and every number is computed
   // from it — this rotates ink, nothing else.
   const truePan = c?.pan ?? 0;
-  const pan = (symbolAngle ?? "orthogonal").startsWith("orth")
+  const snapped = (symbolAngle ?? "orthogonal").startsWith("orth")
     ? Math.round(truePan / 90) * 90 : truePan;
+  // 🔴 #113. A STRIP DOES NOT TURN. It is bolted to the pipe at two points and
+  // tilts on knobs at the mounting — Jerry, 2026.10.12: "mounted in two places
+  // and can only be focused in one plane". Rotating it to face a focus point
+  // draws a six-foot body lying diagonally across the stage, where no
+  // electrician could hang it.
+  //
+  // ⭐ Its angle comes from the PIPE instead. The symbol is already built for
+  // that — led_batten's own note says "the length runs ACROSS the symbol (along
+  // the pipe)" — so this makes the drawing agree with the geometry.
+  const pan = alongTheMount ?? snapped;
   // 🔴 NOT -pan. See symbolTransform: negating the angle agrees with the paper
   // at 0 and 180 and mirrors it at ±90, so every sideways unit pointed the
   // wrong way.

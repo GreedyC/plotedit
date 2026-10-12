@@ -750,6 +750,7 @@ def symbol_geometry(types: str, lens_rotation: Optional[float] = None,
     """
     out: Dict[str, Any] = {}
     warnings: List[str] = []
+    two_point: List[str] = []
     for t in [x.strip() for x in types.split(",") if x.strip()]:
         # base | accessories | lamp. Accessories are split on "+", so they can
         # never contain a pipe and the three parts stay unambiguous.
@@ -762,7 +763,12 @@ def symbol_geometry(types: str, lens_rotation: Optional[float] = None,
             shape, unknown = sym.with_accessories(shape, acc)
             warnings += [f"{base}: {u}" for u in unknown]
         out[t] = _prims_json(shape)
-    return {"symbols": out, "warnings": warnings,
+        if sym.is_two_point(base):
+            two_point.append(t)
+    # ⭐ A SEPARATE LIST, not a field inside each entry. `symbols[t]` is an array
+    # of primitives and has been since the first release; wrapping it in an
+    # object to carry one boolean would break every reader for no gain. #113.
+    return {"symbols": out, "twoPoint": two_point, "warnings": warnings,
             "source": "USITT RP-2 (2006), plates pp.4-9"}
 
 

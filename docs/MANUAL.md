@@ -547,6 +547,17 @@ So it will tell you, rather than guess:
 scenery and rigging points are not in it, so a trim it accepts may still hang
 into a border.
 
+⚠ **A striplight lies along the pipe it is hung on, whatever its focus point
+says.** A strip is bolted at two points and tilts on knobs at the mounting — it
+cannot swing the way a unit on a yoke can, so the plot draws its body where it is
+hung rather than where it is aimed. Strips, LED battens and cyc units all behave
+this way.
+
+**The limitation:** a strip that belongs to no hanging position — a ground row
+standing on the deck on trunnions — is drawn **across stage**, because there is no
+pipe to read an angle from. That is where ground rows normally go, but a ground
+row running any other way cannot be drawn at its true angle yet.
+
 ---
 
 ## 12. When something goes wrong

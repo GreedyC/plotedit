@@ -1089,7 +1089,7 @@ class Sheet:
              accessories=None, circuit=None, dimmer=None, address=None, wattage=None,
              control="dimmer-per-circuit", symbol_angle="orthogonal",
              pool_plane=None, show_pool=True, show_focus=True, show_labels=True,
-             annotate=False, in_plan=True):
+             annotate=False, in_plan=True, mount_angle=None):
         """A lighting instrument: circle body, unit number inside, channel below,
         gel/type beside, optional focus arrow to a real-world point.
 
@@ -1151,6 +1151,16 @@ class Sheet:
         draw_deg = pan
         if (symbol_angle or "orthogonal").startswith("orth"):
             draw_deg = round(pan / 90.0) * 90.0
+        # 🔴 #113. A TWO-POINT FIXTURE DOES NOT TURN, and no snap applies to it.
+        # A strip is bolted along the pipe at both ends and tilts on knobs at the
+        # mounting; its body lies where it is HUNG, not where it is aimed. The
+        # caller works the angle out from the position — positions.mount_angle()
+        # — because this method is given a unit, not a plot.
+        #
+        # ⚠ `pan` itself is untouched, exactly as the snap leaves it. Every throw
+        # and pool is still computed from the real aim; this moves ink.
+        if mount_angle is not None:
+            draw_deg = mount_angle
 
         # ⚠ THE LAMP IS PASSED. A retrofit draws §6.16 dots at the lamp
         # housing, and leaving it out here is how the paper would have gone

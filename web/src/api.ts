@@ -237,16 +237,26 @@ export type SymbolPrim =
 /** RP-2 symbol outlines, fetched rather than reimplemented.
  *  The geometry lives once, in symbols.py, so the screen and the paper cannot
  *  drift apart the way the photometrics did before test_agreement.py existed. */
+export interface SymbolReply {
+  prims: Record<string, SymbolPrim[]>;
+  /** Keys that are hung at TWO points and therefore cannot pan — strips,
+   *  battens, cyc units. #113. The server decides, next to the dispatch that
+   *  already picks the shape, so there is no second list to keep in step. */
+  twoPoint: string[];
+}
+
 export async function symbols(
   types: string[], lensRotation?: number, angleInBarrel = false,
-): Promise<Record<string, SymbolPrim[]>> {
+): Promise<SymbolReply> {
   const want = [...new Set(types)].filter(Boolean);
-  if (!want.length) return {};
+  if (!want.length) return { prims: {}, twoPoint: [] };
   const rot = lensRotation === undefined ? "" : `&lens_rotation=${lensRotation}`;
   const barrel = angleInBarrel ? "&angle_in_barrel=true" : "";
   const r = await fetch(`/api/symbols?types=${encodeURIComponent(want.join(","))}${rot}${barrel}`);
   if (!r.ok) throw new Error(`symbols failed: ${r.status}`);
-  return (await r.json()).symbols as Record<string, SymbolPrim[]>;
+  const j = await r.json();
+  return { prims: j.symbols as Record<string, SymbolPrim[]>,
+           twoPoint: (j.twoPoint ?? []) as string[] };
 }
 
 /** Renumber the units on one position, per RP-2 §2.3.2.

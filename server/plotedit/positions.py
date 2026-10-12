@@ -31,6 +31,8 @@ minimum y. Fixed in web/src/geometry.ts and corroborated by the sample plot,
 where "Special SR" sits at x=22 and "Special SL" at x=11 in a 33-foot room.
 """
 from typing import Any, Dict, List, Optional, Tuple
+import math
+from . import symbols as _sym
 
 # The four ends a position can be numbered from.
 FROM_SR, FROM_SL, FROM_DS, FROM_US = "SR", "SL", "DS", "US"
@@ -73,6 +75,48 @@ def is_vertical(pos: Dict[str, Any]) -> bool:
         return False
     # Untyped: a position with no length is a point, so it stands up.
     return dx < 0.5 and dy < 0.5
+
+
+def mount_angle(inst: Dict[str, Any], positions: List[Dict[str, Any]]):
+    """The angle a TWO-POINT fixture is forced to, or None if it can pan.
+
+    🔴 #113. A strip is bolted to the pipe at both ends and tilts on knobs at
+    the mounting — Jerry, 2026.10.12: "mounted in two places and can only be
+    focused in one plane". Where it is AIMED says nothing about which way its
+    body lies; the pipe does. Rotating it to face a focus point draws a six-foot
+    body lying diagonally across the stage, where nobody could hang it.
+
+    ⭐ The pan convention is `atan2(aimX, -aimY)`, 0 = downstage. A strip's length
+    runs along the pipe, so its aim is perpendicular to the pipe — which works
+    out as `atan2(dy, dx)` over the position's own run. A pipe straight across
+    stage gives 0, which is what a strip on an electric should be.
+
+    ⚠ NO POSITION, NO PIPE. A ground row stands on the deck on trunnions and may
+    belong to no hanging position at all. It gets 0 — across stage, which is
+    where ground rows go (Jerry, 2026.10.12). **A limitation, not a
+    measurement**, and it is in the manual: a ground row running any other way
+    cannot be drawn yet.
+
+    ⚠ A VERTICAL position is left at 0 here and does not matter: a boom's units
+    are drawn in the ELEVATION, not in plan, and the elevation rotates everything
+    by a fixed 90° without ever consulting the focus.
+
+    🔴 MIRRORED BY `mountAngle()` IN web/src/render.ts. The screen and the paper
+    disagreeing about which way a unit points is a bug this project has already
+    shipped once — see the symbol_angle note in render.ts.
+    """
+    if not _sym.is_two_point(inst.get("type") or ""):
+        return None
+    name = (inst.get("position") or "").strip().lower()
+    pos = next((p for p in positions
+                if (p.get("name") or "").strip().lower() == name), None)
+    if pos is None or is_vertical(pos):
+        return 0.0
+    dx = float(pos.get("x2", 0)) - float(pos.get("x1", 0))
+    dy = float(pos.get("y2", 0)) - float(pos.get("y1", 0))
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return 0.0
+    return math.degrees(math.atan2(dy, dx))
 
 
 def axis(pos: Dict[str, Any]) -> str:
