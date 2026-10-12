@@ -109,6 +109,15 @@ check("a different text height gives a different answer",
       [x["color_tier"] for x, i in zip(r2.json()["instruments"], demo)
        if i.get("position") == "GRID C"], [0, 0, 0, 0, 0])
 
+# Print clearance stays constant in points as scale changes. At the 1/4"
+# reference scale, 0.35 ft is 6.3 pt; at 1/8" the same paper gap is 0.7 ft.
+_two = row(2.0, "R80", n=2)
+check("quarter-scale spacing keeps its existing tier decision",
+      labels.color_tiers(_two, PDF_QUARTER, pad=labels.PAD_FT), [0, 0])
+check("eighth-scale spacing preserves the same paper clearance",
+      labels.color_tiers(_two, PDF_EIGHTH,
+                         pad=labels.PAD_FT * 18.0 / 9.0), [0, 1])
+
 print("\nthe sheet still draws")
 import tempfile
 from plotedit import exports
@@ -405,6 +414,53 @@ with _tfd.TemporaryDirectory() as _d:
                         page="ARCH_D", landscape=False, base=_tall)
     check("a drawing too tall for any placement is still refused",
           bool([w for w in _sh2.warnings if "CLIPPED" in w]), True)
+
+print("\nscaled clearance reaches the rendered colour labels")
+from copy import deepcopy
+from unittest.mock import patch
+
+
+def rendered_pair(scale, gap):
+    plot = deepcopy(_plot)
+    plot["positions"] = [{"name": "E1", "x1": 0, "y1": 20,
+                          "x2": 33, "y2": 20, "trim": 14}]
+    plot["instruments"] = [
+        {"unit": n + 1, "position": "E1", "type": "S4 26",
+         "color": color, "x": 10 + n * gap, "y": 20, "trim": 14}
+        for n, color in enumerate(("R80", "R81"))
+    ]
+    tiers = []
+    unit = _P.Sheet.unit
+
+    def record_unit(sheet, *args, **kwargs):
+        tiers.append(kwargs["color_tier"])
+        return unit(sheet, *args, **kwargs)
+
+    with tempfile.TemporaryDirectory() as directory:
+        pdf = os.path.join(directory, "pair.pdf")
+        with patch.object(_P.Sheet, "unit", record_unit):
+            exports.plot_pdf(plot, pdf, scale=scale, lift=0.0, shift=0.0,
+                             show_pools=False, show_focus=False)
+        with _mu.open(pdf) as document:
+            spans = [span for block in document[0].get_text("dict")["blocks"]
+                     for line in block.get("lines", []) for span in line["spans"]]
+            boxes = {color: [span["bbox"] for span in spans
+                             if span["text"] == color and abs(span["size"] - 7) < 0.01]
+                     for color in ("R80", "R81")}
+    return tiers, boxes
+
+
+for _scale, _gap, _want in (("1/4", 2.0, [0, 0]),
+                            ("1/8", 2.0, [0, 1]),
+                            ("1/2", 0.6, [0, 0])):
+    _rendered_tiers, _boxes = rendered_pair(_scale, _gap)
+    check(f"{_scale} render assigns the expected tiers", _rendered_tiers, _want)
+    check(f"{_scale} PDF contains both colour labels once",
+          [len(_boxes[c]) for c in ("R80", "R81")], [1, 1])
+    if all(len(_boxes[c]) == 1 for c in ("R80", "R81")):
+        _staggered = abs(_boxes["R80"][0][1] - _boxes["R81"][0][1]) > 1.0
+        check(f"{_scale} PDF draws the expected stagger", _staggered,
+              _want[0] != _want[1])
 
 if FAILS:
 
