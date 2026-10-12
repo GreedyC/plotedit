@@ -40,3 +40,9 @@ server/plotedit/VERSION
 
 # Written at release time from the tag annotation, then checked and published.
 release-notes.md
+
+# Claude Code's own folder. It holds launch.json — which dev server to start for
+# the in-app browser — and is a local tool's config, not part of the project.
+# ⚠ This repository is PUBLIC, so anything that lands here lands in front of
+# everybody; ignoring it is the cheap way to make sure nothing does by accident.
+.claude/
