@@ -99,6 +99,32 @@ function isSelNow(opts: RenderOptions, i: number): boolean {
   return opts.selected === i;
 }
 
+/**
+ * Does the SELECTED unit get its pool and focus drawn even with those layers off?
+ *
+ * ⭐ #109. You switch pools off to read the plot, then click a unit to ask the
+ * one question the drawing is for — where does THAT one land? Having to switch a
+ * layer back on to answer it is the tool getting in the way.
+ *
+ * 🔴 GATED ON `units`, AND ONLY THE OVERRIDE IS. A unit can be selected from the
+ * Schedule panel (main.ts), which knows nothing about layers — so with the symbols
+ * off you can select something that is not on the plan at all, and without this
+ * you would get a pool and a focus ring hanging in space with nothing under them.
+ *
+ * ⚠ The LAYERS stay ungated, deliberately. `vis.pools` on with `vis.units` off is
+ * a legitimate way to read a rig and already works — see the note above where the
+ * instrument group is appended. It is the highlight that needs a symbol to belong
+ * to, because a highlight with nothing to highlight is a stray mark.
+ *
+ * ⭐ Screen only. An export has no selected instrument, so nothing here can reach
+ * a PDF or a DXF.
+ */
+export function selectionOverride(
+  vis: Visibility, selected: number | null | undefined, i: number,
+): boolean {
+  return selected === i && vis.units;
+}
+
 function el(name: string, attrs: Record<string, string | number>): SVGElement {
   const e = document.createElementNS(NS, name);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
@@ -355,7 +381,8 @@ export function render(
     // as it is wide, and the long end is the one that reaches the scenery. The
     // circle that used to be drawn here understated the far end by half and hid
     // a grazing focus entirely.
-    if (vis.pools && hasFocus && c?.pool) {
+    const selShows = selectionOverride(vis, opts.selected, i);
+    if ((vis.pools || selShows) && hasFocus && c?.pool) {
       // ⭐ Jerry, 2026.09.24: "could we highlight the pool of the selected
       // instrument?" Fifteen ellipses overlap across the middle of this plot
       // and they are all the same grey dashes — knowing WHICH one a unit throws
@@ -367,7 +394,7 @@ export function render(
         class: "pool" + (isSelNow(opts, i) ? " selected" : ""),
         fill: "none", stroke: "#bbb", "stroke-width": W.pool, "stroke-dasharray": "0.6 0.4",
       }));
-    } else if (vis.pools && hasFocus && c?.pool_note) {
+    } else if ((vis.pools || selShows) && hasFocus && c?.pool_note) {
       // ⚠ Never silently. "No far edge" is a fact about the focus, not an
       // absence of information — mark the aim point so it is visible.
       // ⚠ The "no pool here, and here is why" marker gets the same treatment.
@@ -380,7 +407,7 @@ export function render(
         "stroke-dasharray": "0.3 0.3",
       }));
     }
-    if (vis.focus && hasFocus) {
+    if ((vis.focus || selShows) && hasFocus) {
       const selNow = isSelNow(opts, i);
       // ⭐ Jerry, 2026.09.24: "if we click on a lamp, the focus point should be
       // highlighted too." A unit and where it is AIMED are one fact, and with
