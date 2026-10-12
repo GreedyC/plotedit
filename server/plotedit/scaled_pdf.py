@@ -1089,7 +1089,7 @@ class Sheet:
              accessories=None, circuit=None, dimmer=None, address=None, wattage=None,
              control="dimmer-per-circuit", symbol_angle="orthogonal",
              pool_plane=None, show_pool=True, show_focus=True, show_labels=True,
-             annotate=False, in_plan=True, mount_angle=None):
+             annotate=False, in_plan=True, position_angle=None):
         """A lighting instrument: circle body, unit number inside, channel below,
         gel/type beside, optional focus arrow to a real-world point.
 
@@ -1134,10 +1134,13 @@ class Sheet:
         # docs/SYMBOLS.md — the shape and the mark inside it carry the fixture
         # type and the beam angle, which is what an electrician reads first.
         from . import symbols as _sym
+        from . import positions as _pos
         pan = 0.0
+        elev = None
         if focus_to and trim is not None:
             from . import photometrics as _ph
-            pan = _ph.aim((x, y, trim), (focus_to[0], focus_to[1], focus_h))["pan"]
+            _a = _ph.aim((x, y, trim), (focus_to[0], focus_to[1], focus_h))
+            pan, elev = _a["pan"], _a["elevation"]
         # ⭐ RP-2 p.2, in its own words: "It is acceptable to visually orient the
         # angle of each drawn luminaire to either focus points or 90° axes."
         # Jerry, 2026.09.23: "most plots display the instruments on even 90
@@ -1148,19 +1151,22 @@ class Sheet:
         # aim, and every throw, pool and footcandle is computed from it. A unit
         # drawn at 0° while pointing at 320° is a drawing convention; a unit
         # COMPUTED at 0° would be a lie about the light.
-        draw_deg = pan
-        if (symbol_angle or "orthogonal").startswith("orth"):
-            draw_deg = round(pan / 90.0) * 90.0
-        # 🔴 #113. A TWO-POINT FIXTURE DOES NOT TURN, and no snap applies to it.
-        # A strip is bolted along the pipe at both ends and tilts on knobs at the
-        # mounting; its body lies where it is HUNG, not where it is aimed. The
-        # caller works the angle out from the position — positions.mount_angle()
-        # — because this method is given a unit, not a plot.
+        # 🔴 DRAWN ALONG THE PIPE, for either of two reasons — #113 and #116. A
+        # strip cannot turn; a unit aimed within 2° of plumb has nothing to turn
+        # toward. The caller hands in the position's angle because this method is
+        # given a unit, not a plot; positions.takes_the_pipe_angle() decides.
         #
-        # ⚠ `pan` itself is untouched, exactly as the snap leaves it. Every throw
-        # and pool is still computed from the real aim; this moves ink.
-        if mount_angle is not None:
-            draw_deg = mount_angle
+        # ⚠ CHOSEN BEFORE THE SNAP, not after. RP-2 p.2 wants luminaires on 90°
+        # axes and that applies however the angle was arrived at — overriding
+        # afterwards drew Big House's raked catwalks at their own 11° rake.
+        src = pan
+        if position_angle is not None and _pos.takes_the_pipe_angle({"type": kind}, elev):
+            src = position_angle
+        draw_deg = src
+        if (symbol_angle or "orthogonal").startswith("orth"):
+            draw_deg = round(src / 90.0) * 90.0
+        # ⚠ `pan` itself is untouched. Every throw, pool and footcandle is still
+        # computed from the real aim; this moves ink only.
 
         # ⚠ THE LAMP IS PASSED. A retrofit draws §6.16 dots at the lamp
         # housing, and leaving it out here is how the paper would have gone

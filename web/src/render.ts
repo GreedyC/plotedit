@@ -442,7 +442,8 @@ export function render(
     if (!inPlan) return;
     const isSel = opts.selected === i;
     const g = symbol(inst, c, opts.symbols?.[symbolKey(inst)], plot.symbolAngle,
-                     mountAngle(inst, plot, opts));
+                     takesThePipeAngle(inst, opts, c?.elevation)
+                       ? positionAngle(inst, plot) : undefined);
     g.setAttribute("data-index", String(i));
     // 🔴 A unit the server could not compute draws NO pool and NO focus, and
     // used to say nothing about why — which reads as "the tool did not bother"
@@ -497,40 +498,86 @@ export function render(
 }
 
 /**
- * The angle a two-point fixture is forced to, or undefined if it can pan.
+ * Within this many degrees of plumb, a unit has no meaningful plan direction.
  *
- * 🔴 #113. A strip is bolted along its position and tilts on knobs. It has no
- * yoke to swing about, so where it is AIMED says nothing about which way its
- * body lies — the pipe does.
+ * ⚠ A STARTING POINT, not a measurement. Jerry, 2026.10.12: "use 88 degrees...
+ * we can use it as a basepoint and see how it works." At a 25ft trim 88° is a
+ * ten-inch sideways move, under 8% of the pool an S4 26 throws from there — the
+ * light lands in the same place. Expect to revisit it.
  *
- * ⭐ The pan convention is `atan2(aimX, -aimY)`, 0 = downstage. A strip's length
- * runs along the pipe, so its aim is perpendicular to the pipe, which works out
- * as `atan2(dy, dx)` over the position's own run. A pipe straight across stage
- * gives 0, which is what a strip on an electric should be.
- *
- * ⚠ NO POSITION, NO PIPE. A ground row stands on the deck on trunnions and may
- * belong to no hanging position at all, so there is nothing to read an angle
- * from. It gets 0 — across stage, which is where ground rows go (Jerry,
- * 2026.10.12). **That is a limitation, not a measurement**, and it is written up
- * in the manual: a ground row running any other way cannot be drawn yet.
- *
- * ⚠ A VERTICAL position is left alone. Strips do go on booms and hang vertically
- * there, but a boom's units are not drawn in plan at all — they are in the
- * elevation, which rotates everything by a fixed 90° and never consults the
- * focus. So this bug does not reach them, and neither does this fix.
+ * 🔴 Mirrored by PLUMB_DEG in server/plotedit/positions.py.
  */
-export function mountAngle(
-  inst: Instrument, plot: Plot, opts: RenderOptions,
-): number | undefined {
-  if (!opts.twoPoint?.has(symbolKey(inst))) return undefined;
+export const PLUMB_DEG = 88.0;
+
+/**
+ * Which way an unfocused or two-point unit faces. Jerry, 2026.10.12: "upstage is
+ * right". 0 is downstage in the pan convention, so this is the half turn applied
+ * to the pipe's own run.
+ *
+ * ⭐ It is also what plotedit already drew, by accident — `atan2(0.0, -0.0)` is
+ * π. So no existing plot moves; what changes is that it can no longer be swung
+ * off by a billionth of a foot of drift.
+ *
+ * 🔴 Mirrored by UPSTAGE in server/plotedit/positions.py.
+ */
+export const UPSTAGE = 180.0;
+
+/**
+ * Which way the PIPE this unit hangs on runs, in the pan convention.
+ *
+ * ⭐ The convention is `atan2(aimX, -aimY)`, 0 = downstage. A body lying along
+ * the pipe aims perpendicular to it, which is `atan2(dy, dx)` over the run. A
+ * pipe straight across stage gives 0.
+ *
+ * ⚠ NO POSITION, NO PIPE — across stage, facing upstage, which is where ground rows go
+ * (Jerry, 2026.10.12). A limitation, not a measurement; it is in the manual.
+ *
+ * 🔴 Mirrored by positions.position_angle() in the Python.
+ */
+export function positionAngle(inst: Instrument, plot: Plot): number {
   const name = (inst.position ?? "").trim().toLowerCase();
   const pos = plot.positions.find(p => p.name.trim().toLowerCase() === name);
-  // A ground row, or a unit whose position was renamed out from under it.
-  if (!pos || isVertical(pos)) return 0;
+  if (!pos || isVertical(pos)) return UPSTAGE;
   const dx = pos.x2 - pos.x1, dy = pos.y2 - pos.y1;
-  // A position with no run — both ends typed the same — says nothing either.
-  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return 0;
-  return Math.atan2(dy, dx) * 180 / Math.PI;
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return UPSTAGE;
+  // 🔴 THE RUN IS A LINE, NOT A DIRECTION. Which end is x1 is just the order
+  // somebody typed them in: the same catwalk reads -169° or +11° either way
+  // round. So take the PERPENDICULAR and pick the one pointing upstage, which is
+  // the same answer however the position was entered.
+  let ax = dx > 0 ? -dy : dy, ay = dx > 0 ? dx : -dx;
+  if (Math.abs(dx) < 1e-9) { ax = 1; ay = 0; }  // up/downstage: neither is upstage
+  // ⚠ `+ 0` kills negative zero — the very bug this exists to fix. atan2(-0, -n)
+  // is -180 where atan2(0, -n) is +180, and the renderer drew a batten's end tab
+  // at opposite ends. Found by diffing Big House.
+  const a = Math.atan2(ax + 0, -ay) * 180 / Math.PI;
+  return a === -180 ? 180 : a;
+}
+
+/**
+ * Should this unit be DRAWN along its pipe rather than toward its focus?
+ *
+ * Two reasons, one answer.
+ *
+ * 🔴 #113 — IT CANNOT TURN. A strip is bolted to the pipe at two points and
+ * tilts on knobs at the mounting. Where it is aimed says nothing about which way
+ * its body lies.
+ *
+ * 🔴 #116 — THERE IS NOTHING TO TURN TOWARD. Within 2° of plumb there is no
+ * meaningful plan direction, and the one the arithmetic gives comes out of
+ * floating-point dust: at a 25ft trim a BILLIONTH of a foot sideways swings pan a
+ * quarter turn while the elevation moves by nothing. Jerry hit it by dragging a
+ * batten and putting it back.
+ *
+ * ⭐ And straight down is not a fault, it is the UNFOCUSED state — the normal
+ * condition of a plot between the hang and the focus call.
+ *
+ * 🔴 Mirrored by positions.takes_the_pipe_angle() in the Python.
+ */
+export function takesThePipeAngle(
+  inst: Instrument, opts: RenderOptions, elevation: number | undefined,
+): boolean {
+  if (opts.twoPoint?.has(symbolKey(inst))) return true;
+  return elevation !== undefined && elevation !== null && elevation >= PLUMB_DEG;
 }
 
 /** Paint RP-2 primitives into a group already placed and rotated.

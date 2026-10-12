@@ -34,6 +34,16 @@ from typing import Any, Dict, List, Optional, Tuple
 import math
 from . import symbols as _sym
 
+#: Within this many degrees of plumb, a unit has no meaningful plan
+#: direction. ⚠ A STARTING POINT, not a measurement — see
+#: takes_the_pipe_angle(). Mirrored by PLUMB_DEG in web/src/render.ts.
+PLUMB_DEG = 88.0
+
+#: Which way an unfocused or two-point unit faces. Jerry, 2026.10.12:
+#: "upstage is right". 0 is downstage in the pan convention, so this is the
+#: half turn applied to the pipe's own run. Mirrored in web/src/render.ts.
+UPSTAGE = 180.0
+
 # The four ends a position can be numbered from.
 FROM_SR, FROM_SL, FROM_DS, FROM_US = "SR", "SL", "DS", "US"
 # Vertical positions number by height, not by a compass direction.
@@ -77,46 +87,86 @@ def is_vertical(pos: Dict[str, Any]) -> bool:
     return dx < 0.5 and dy < 0.5
 
 
-def mount_angle(inst: Dict[str, Any], positions: List[Dict[str, Any]]):
-    """The angle a TWO-POINT fixture is forced to, or None if it can pan.
+def position_angle(inst: Dict[str, Any], positions: List[Dict[str, Any]]) -> float:
+    """Which way the PIPE this unit hangs on runs, in the pan convention.
 
-    🔴 #113. A strip is bolted to the pipe at both ends and tilts on knobs at
-    the mounting — Jerry, 2026.10.12: "mounted in two places and can only be
-    focused in one plane". Where it is AIMED says nothing about which way its
-    body lies; the pipe does. Rotating it to face a focus point draws a six-foot
-    body lying diagonally across the stage, where nobody could hang it.
+    ⭐ The pan convention is `atan2(aimX, -aimY)`, 0 = downstage. A body lying
+    along the pipe aims perpendicular to it, which works out as `atan2(dy, dx)`
+    over the position's own run. A pipe straight across stage gives 0.
 
-    ⭐ The pan convention is `atan2(aimX, -aimY)`, 0 = downstage. A strip's length
-    runs along the pipe, so its aim is perpendicular to the pipe — which works
-    out as `atan2(dy, dx)` over the position's own run. A pipe straight across
-    stage gives 0, which is what a strip on an electric should be.
+    ⭐ THE UNIT FACES UPSTAGE — Jerry, 2026.10.12. So the pipe's own run is turned
+    by a half turn to get the drawn angle: a cross-stage electric gives 180, not 0.
 
-    ⚠ NO POSITION, NO PIPE. A ground row stands on the deck on trunnions and may
-    belong to no hanging position at all. It gets 0 — across stage, which is
-    where ground rows go (Jerry, 2026.10.12). **A limitation, not a
-    measurement**, and it is in the manual: a ground row running any other way
-    cannot be drawn yet.
+    ⭐ WHICH IS WHAT PLOTEDIT ALREADY DREW, so no existing plot moves. It got
+    there by accident — `atan2(0.0, -0.0)` is π, so a unit aimed exactly at the
+    deck beneath itself inherited a signed-zero artefact that happened to be
+    right. 🔴 **What this fixes is the INSTABILITY, not the resting value**:
+    before, a billionth of a foot of drift swung the same unit to ±90°.
 
-    ⚠ A VERTICAL position is left at 0 here and does not matter: a boom's units
-    are drawn in the ELEVATION, not in plan, and the elevation rotates everything
-    by a fixed 90° without ever consulting the focus.
+    ⚠ NO POSITION, NO PIPE — across stage, facing upstage. A ground row stands on the
+    deck on trunnions and may belong to no hanging position at all; across stage
+    is where ground rows go (Jerry, 2026.10.12). A limitation, not a measurement,
+    and it is in the manual.
 
-    🔴 MIRRORED BY `mountAngle()` IN web/src/render.ts. The screen and the paper
-    disagreeing about which way a unit points is a bug this project has already
-    shipped once — see the symbol_angle note in render.ts.
+    🔴 MIRRORED BY `positionAngle()` IN web/src/render.ts.
     """
-    if not _sym.is_two_point(inst.get("type") or ""):
-        return None
     name = (inst.get("position") or "").strip().lower()
     pos = next((p for p in positions
                 if (p.get("name") or "").strip().lower() == name), None)
     if pos is None or is_vertical(pos):
-        return 0.0
+        return UPSTAGE
     dx = float(pos.get("x2", 0)) - float(pos.get("x1", 0))
     dy = float(pos.get("y2", 0)) - float(pos.get("y1", 0))
     if abs(dx) < 1e-9 and abs(dy) < 1e-9:
-        return 0.0
-    return math.degrees(math.atan2(dy, dx))
+        return UPSTAGE
+    # 🔴 THE RUN IS A LINE, NOT A DIRECTION. Which end is x1 and which is x2 is
+    # just the order somebody typed them: the same catwalk reads -169° or +11°
+    # depending on which end came first. Taking the facing from the run therefore
+    # flipped Big House's catwalks downstage while leaving its electrics upstage.
+    #
+    # ⭐ So take the PERPENDICULAR, and pick the one that points upstage. That is
+    # the same answer whichever way round the position was entered.
+    ax, ay = (-dy, dx) if dx > 0 else (dy, -dx)
+    if abs(dx) < 1e-9:                      # a pipe running up and downstage:
+        ax, ay = (1.0, 0.0)                 # neither perpendicular is upstage
+    # ⚠ `+ 0.0` KILLS NEGATIVE ZERO, which is the very bug this function exists
+    # to fix. `-dy` on a dead level pipe is -0.0, and atan2(-0.0, -n) is -180
+    # where atan2(0.0, -n) is +180 — the same rotation, but the renderer drew the
+    # batten's end tab at opposite ends. Found by diffing Big House, where it was
+    # the last ten pixels still moving.
+    a = math.degrees(math.atan2(ax + 0.0, -ay))
+    return 180.0 if a == -180.0 else a
+
+
+def takes_the_pipe_angle(inst: Dict[str, Any], elevation) -> bool:
+    """Should this unit be DRAWN along its pipe rather than toward its focus?
+
+    Two reasons, one answer.
+
+    🔴 #113 — IT CANNOT TURN. A strip is bolted to the pipe at two points and
+    tilts on knobs at the mounting. Where it is aimed says nothing about which way
+    its body lies.
+
+    🔴 #116 — THERE IS NOTHING TO TURN TOWARD. A unit aimed within 2° of plumb
+    has no meaningful plan direction, and the one the arithmetic produces comes
+    out of floating-point dust: at 25ft trim a BILLIONTH of a foot sideways swings
+    `pan` a quarter turn, and the orthogonal snap rounds that noise to a hard 90°.
+    Jerry hit it by dragging a batten and putting it back.
+
+    ⭐ And straight down is not an error — it is the UNFOCUSED state. Jerry,
+    2026.10.12: "when an instrument is hung, it is usually hung straight down and
+    then focused to where it goes... I can usually tell when a show is focused by
+    seeing if all the instruments are pointed down or not." So this is the normal
+    condition of a plot between the hang and the focus call, not a fault.
+
+    ⚠ PLUMB_DEG IS A STARTING POINT, not a measured figure. Jerry, 2026.10.12:
+    "use 88 degrees... we can use it as a basepoint and see how it works." At a
+    25ft trim 88° is a 10-inch sideways move, under 8% of the pool an S4 26
+    throws from there — the light lands in the same place. Expect to revisit it.
+    """
+    if _sym.is_two_point(inst.get("type") or ""):
+        return True
+    return elevation is not None and elevation >= PLUMB_DEG
 
 
 def axis(pos: Dict[str, Any]) -> str:

@@ -253,8 +253,9 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                    circuit=inst.get("circuit"), dimmer=inst.get("dimmer"),
                    address=inst.get("address"),
                    control=plot.get("control", "dimmer-per-circuit"),
-                   # ⭐ #113. None for anything on a single yoke.
-                   mount_angle=_P.mount_angle(inst, plot.get("positions") or []),
+                   # ⭐ #113 and #116. The pipe's own angle; Sheet.unit decides
+                   # whether this unit is drawn along it.
+                   position_angle=_P.position_angle(inst, plot.get("positions") or []),
                    wattage=inst.get("wattage"),
                    symbol_angle=plot.get("symbolAngle", "orthogonal"),
                    pool_plane=pool_plane if pool_plane is not None
