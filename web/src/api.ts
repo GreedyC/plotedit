@@ -142,6 +142,10 @@ export interface ExportOptions {
   showLabels?: boolean;
   /** The height the pools are cut at, in feet. */
   poolPlane?: number;
+  /** Purposes switched OFF, so the print matches the screen — #108. The
+   *  OFF-list, so an ordinary export sends nothing. PDF only: the schedule and
+   *  the hookup always report the whole rig. */
+  hidePurposes?: string[];
   /** Print a dimension scale along the plan's edges. PDF only — the browser
    *  does not draw them. */
   rulers?: boolean;
@@ -171,6 +175,10 @@ export async function exportFile(
       ...(opts.showLabels === undefined ? {} : { showLabels: opts.showLabels }),
       ...(opts.poolPlane === undefined ? {} : { poolPlane: opts.poolPlane }),
       ...(opts.rulers ? { rulers: true } : {}),
+      // ⚠ Only when something IS hidden. An empty list would be a new field on
+      // every export, and a field that is always there is a field somebody will
+      // eventually read as meaningful.
+      ...(opts.hidePurposes?.length ? { hidePurposes: opts.hidePurposes } : {}),
       ...(opts.base ? { base: opts.base } : {}),
     }),
   });

@@ -15,8 +15,10 @@
  */
 import * as fs from "node:fs";
 import { LAYERS, SCREEN_LAYERS, defaultLayers, visibilityOf, allVisible,
+         purposeLayers, hiddenPurposes, hiddenByPurpose, UNASSIGNED,
          type LayerId } from "./layers.js";
 import { newPlot, type Plot } from "./plot.js";
+import type { PlotLayer } from "./layers.js";
 import { Store } from "./store.js";
 
 let fails = 0;
@@ -174,6 +176,104 @@ check("the old booleans are gone from the options",
       /showPools:|showFocus:|showLabels:/.test(
         render.slice(render.indexOf("export interface RenderOptions"),
                      render.indexOf("function isSelNow"))), false);
+
+console.log("\n⭐ purpose layers — derived, never stored on the instrument (#108)");
+// `purpose` is ALREADY a field and already the paperwork's word for "back
+// light". A backlight LAYER beside purpose:"back light" would be one fact in
+// two places, and two copies of one fact drift — the bug the eight layers were
+// created to fix. So the panel reads what is there.
+const P = (purposes: (string | undefined)[], layers?: PlotLayer[]) => ({
+  formatVersion: 1, show: "T", room: { width: 40, depth: 40 },
+  positions: [], layers,
+  instruments: purposes.map((purpose, n) =>
+    ({ unit: n + 1, type: "S4 26", x: n, y: 20, purpose })),
+} as unknown as Plot);
+
+const names = (p: Plot) => purposeLayers(p).map(l => `${l.purpose}:${l.count}`);
+check("one layer per distinct purpose, with its count",
+      names(P(["back light", "front wash", "back light"])),
+      ["back light:2", "front wash:1"]);
+// ⚠ Bucketed as magic_sheet_rows buckets: blank AND missing are "unassigned".
+// If these parted company, switching a group off on the drawing would remove a
+// DIFFERENT group from the page read during tech.
+check("blank and missing share the 'unassigned' bucket",
+      names(P(["back light", undefined, "", "   "])),
+      ["back light:1", "unassigned:3"]);
+check("...and it sorts last, however it falls alphabetically",
+      names(P(["zebra", undefined, "apple"])),
+      ["apple:1", "zebra:1", "unassigned:1"]);
+// ⭐ NOT case-folded, because exports.magic_sheet_rows is not. Folding would
+// show one layer for two groups — and showing both is the only thing that ever
+// surfaces the typo.
+check("case is not folded", names(P(["Area 1", "area 1"])).sort(),
+      ["Area 1:1", "area 1:1"]);
+// ⭐ And "Area 10" sorts after "Area 9", not between 1 and 2 — these are the
+// purposes a plot actually carries.
+check("areas sort numerically",
+      names(P(["Area 10", "Area 2", "Area 1"])),
+      ["Area 1:1", "Area 2:1", "Area 10:1"]);
+check("a plot with no instruments has no purpose layers", names(P([])), []);
+
+console.log("\nvisible by default, and only the OFF state is ever written");
+check("a plot that mentions none draws them all",
+      purposeLayers(P(["a", "b"])).every(l => l.visible), true);
+check("nothing is hidden", hiddenPurposes(P(["a", "b"])), []);
+const off = P(["a", "b"], [{ id: "purpose:a", visible: false, name: "a" }]);
+check("one switched off is read back off", hiddenPurposes(off), ["a"]);
+check("...and the other is still on",
+      purposeLayers(off).find(l => l.purpose === "b")!.visible, true);
+// 🔴 THE MIGRATION AGAIN, for the new kind: a plot written before #108 mentions
+// no purpose layer, and must draw every unit. Read the absence as "hidden" and
+// the plot opens empty — the same one-character mistake as above.
+check("an absent entry means VISIBLE, never hidden",
+      hiddenPurposes(P(["a", "b", "c"])), []);
+
+console.log("\nand the renderer asks the right question");
+check("hiddenByPurpose matches on the bucket",
+      hiddenByPurpose({ purpose: "a" }, new Set(["a"])), true);
+check("...and the blank bucket by its name",
+      hiddenByPurpose({}, new Set([UNASSIGNED])), true);
+check("...and lets everything else through",
+      hiddenByPurpose({ purpose: "b" }, new Set(["a"])), false);
+// ⚠ The ids are namespaced because a plot may legitimately have a purpose
+// called "units" — unprefixed, that would land on the built-in units layer and
+// switch the whole rig off.
+check("ids are namespaced", purposeLayers(P(["units"]))[0]!.id, "purpose:units");
+
+console.log("\n🔴 the renderer draws nothing at all for a hidden unit");
+// A pool with no light over it is the drawing claiming coverage from a unit the
+// reader cannot see, so the gate is at the top of the loop, not per element.
+check("render.ts gates the instrument loop",
+      /hiddenByPurpose\(inst, hidden\)/.test(render), true);
+check("...and takes the set from its options",
+      /hiddenPurposes\?: ReadonlySet<string>/.test(render), true);
+
+console.log("\n⚠ and the store keeps what it does not own");
+// 🔴 setLayerVisible rebuilt plot.layers from LAYERS alone, which threw away
+// every entry that was not one of the eight — the purpose layers, and also the
+// ninth layer of a file written by a LATER version that visibilityOf is careful
+// to carry and this then dropped on the first chip click.
+const store = new Store(P(["a"], [
+  { id: "purpose:a", visible: false, name: "a" },
+  { id: "ninth", visible: false },
+]));
+store.setLayerVisible("pools", false);
+const ids = (store.plot.layers ?? []).map(l => l.id);
+check("a purpose layer survives a chip click", ids.includes("purpose:a"), true);
+check("...and so does a layer this version has never heard of",
+      ids.includes("ninth"), true);
+check("...and the chip still did its job", visibilityOf(store.plot).pools, false);
+check("...and the purpose is still off", hiddenPurposes(store.plot), ["a"]);
+
+console.log("\nsetPurposeVisible, both ways");
+const s2 = new Store(P(["a", "b"]));
+s2.setPurposeVisible("a", false);
+check("off is written", hiddenPurposes(s2.plot), ["a"]);
+check("...carrying its name, because nothing in the code knows it",
+      (s2.plot.layers ?? []).find(l => l.id === "purpose:a")?.name, "a");
+s2.setPurposeVisible("a", true);
+check("...and on again", hiddenPurposes(s2.plot), []);
+check("the eight are untouched by it", visibilityOf(s2.plot).units, true);
 
 console.log();
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

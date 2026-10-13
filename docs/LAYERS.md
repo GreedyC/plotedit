@@ -546,3 +546,67 @@ that the order matches the drawing order. They cannot drift apart silently.
 
 **Step 4** — user-defined layers, with a panel to add and reorder them. Array
 order is draw order and is seeded fixed, which is the shape a reorder will need.
+
+
+---
+
+## ✅ Step 4a — purpose layers, 2026-10-13
+
+#108, and only the half that cost nothing. **The distinct values of the
+`purpose` field are presented as layers you can switch on and off.**
+
+⭐ **Nothing is stored on the instrument.** `purpose` is already a field on
+every unit and already the paperwork's word for "back light" or "front wash", so
+a `backlight` LAYER beside `purpose: "back light"` would be one fact in two
+places — and two copies of one fact drift, which is the fault §0 of this
+document was written about. The panel reads what is there.
+
+So the expensive half of #108 is not here: **no change to the instrument record,
+no migration, and nothing a plot in somebody else's hands has to understand.**
+
+### What it is
+
+| | |
+|---|---|
+| derived from | `purpose`, bucketed exactly as `exports.magic_sheet_rows` buckets it — blank or missing is **`unassigned`** |
+| stored | only the OFF state, in `plot.layers`, under `purpose:<name>` |
+| default | **visible**, so a plot that mentions none draws everything |
+| ordering | `localeCompare` with `numeric`, so "Area 10" sorts after "Area 9"; `unassigned` last |
+
+⚠ **Not case-folded**, because `magic_sheet_rows` is not. "Area 1" and "area 1"
+are two groups on the tech page, so they are two chips here — and that is the
+only thing that ever surfaces the typo.
+
+### 🔴 It reaches the plot PDF, and nothing else
+
+A designer who hides something to read the plan expects the print to match, so
+`/export/pdf` takes a `hidePurposes` off-list. **The schedule, the hookup, the
+magic sheet and the patch do not**, and `test_purpose_layers.py` asserts both
+halves — a load computed without the units somebody switched off is the failure
+that trips a breaker on a Thursday. The section is a drawing too but not the
+plan; it draws one governing luminaire per position and is deliberately not
+wired to this.
+
+### ⚠ Two things found while building it
+
+- **`setLayerVisible` threw away every layer it did not own.** It rebuilt
+  `plot.layers` from the eight, so a purpose layer — and equally the ninth layer
+  of a file written by a LATER version, which `visibilityOf` is careful to carry
+  — was dropped on the first chip click. Fixed, and pinned.
+- **Thirteen chips overflowed the window.** The segmented control does not wrap;
+  measured at 1024px the row came out **1223px wide and ran off the right
+  edge**, with the chips nearest the edge unreachable. The demo plot alone has
+  thirteen purposes. The purpose group wraps now, the six fixed ones still do
+  not.
+
+### Still not built
+
+**The explicit half of #108** — real membership stored on the instrument, many
+layers per unit — for the cases `purpose` cannot say: **rental is ownership, not
+a purpose**, and **the act two additions is a decision, not a property**. That is
+the half that changes the plot file, and it now carries only those cases instead
+of duplicating a field that already exists.
+
+⚠ And `/rental` wants an ownership FIELD regardless (#110): the shop order has to
+distinguish what is in the house from what is hired, whether or not anybody ever
+draws a rental layer.

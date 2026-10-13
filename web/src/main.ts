@@ -23,7 +23,7 @@ import { isPlot, symbolKey, plotFileName, newPlot, type Plot, type Position,
 import { startSeq, seqClick, clickLine, seqReport, runIndices,
          type Seq } from "./sequence.js";
 import { openMenu, type MenuGroup, type MenuItem } from "./menu.js";
-import { visibilityOf, SCREEN_LAYERS } from "./layers.js";
+import { visibilityOf, hiddenPurposes, purposeLayers, SCREEN_LAYERS } from "./layers.js";
 import { confirmRevert, exportFailedMessage } from "./confirm.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
@@ -150,6 +150,7 @@ function opts(): RenderOptions {
     // opening a file all change what is drawn without anything having to
     // remember to tick a box. The chips are synced FROM here, in syncLayers().
     layers: visibilityOf(store.plot),
+    hiddenPurposes: new Set(hiddenPurposes(store.plot)),
     selected: store.selected,
     selectedPosition: store.selectedPosition,
     // ⚠ Both kinds of base are passed unconditionally now and the renderer
@@ -614,6 +615,49 @@ function syncLayers(): void {
   for (const l of SCREEN_LAYERS) {
     const box = document.getElementById(`layer-${l.id}`) as HTMLInputElement | null;
     if (box && box.checked !== vis[l.id]) box.checked = vis[l.id];
+  }
+  syncPurposeChips();
+}
+
+/** The purpose chips, rebuilt from the plot — #108.
+ *
+ * ⭐ REBUILT, NOT SYNCED, because the LIST itself changes: retype one unit's
+ * purpose and a layer appears or disappears. The six above are fixed markup and
+ * only their state moves; these are derived from the plot every paint, which is
+ * what keeps them honest when an import brings in forty purposes nobody typed.
+ *
+ * ⚠ The count is on the chip. A layer with a count is a layer you can predict
+ * the effect of before clicking it — and it is also the only place a plot ever
+ * says out loud that it has three units on "bakclight".
+ */
+function syncPurposeChips(): void {
+  const host = document.getElementById("purpose-layers");
+  if (!host) return;
+  const layers = purposeLayers(store.plot);
+  // ⚠ Rebuild only when the SET changed, so clicking a chip does not replace
+  // the element under the pointer — which loses focus and breaks keyboard use.
+  const key = layers.map(l => `${l.id}\u0000${l.count}`).join("\u0001");
+  if (host.dataset.key !== key) {
+    host.dataset.key = key;
+    host.replaceChildren();
+    for (const l of layers) {
+      const label = document.createElement("label");
+      label.title = `Draw the ${l.count} instrument${l.count === 1 ? "" : "s"} `
+                  + `whose purpose is "${l.purpose}". From the purpose field — `
+                  + `switching it off hides them on the drawing only, never in `
+                  + `the schedule or the loads`;
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.id = `layer-${l.id}`;
+      box.addEventListener("input", () =>
+        store.setPurposeVisible(l.purpose, box.checked));
+      label.append(box, ` ${l.purpose} (${l.count})`);
+      host.appendChild(label);
+    }
+  }
+  for (const l of layers) {
+    const box = document.getElementById(`layer-${l.id}`) as HTMLInputElement | null;
+    if (box && box.checked !== l.visible) box.checked = l.visible;
   }
 }
 
@@ -1174,6 +1218,10 @@ async function runExport(kind: ExportKind): Promise<void> {
           // special case: it used to be the one display toggle that lived
           // outside the group and printed without drawing.
           rulers: vis.dimensions,
+          // ⭐ #108, and the same rule as the three above: the print matches
+          // the screen. ⚠ The DRAWING only — the schedule and hookup exports
+          // below are sent the plot alone and always report the whole rig.
+          hidePurposes: hiddenPurposes(store.plot),
           // 🔴 Until now the import went on the SCREEN and never on the
           // paper. exports.plot_pdf has taken a base plan the whole time and
           // nothing ever handed it one, so an imported venue drawing looked

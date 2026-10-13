@@ -408,6 +408,33 @@ class ExportRequest(BaseModel):
     # ⭐ Rulers along the plan's edges: X across the bottom, Y up one side.
     # true for the defaults, or {"side": "right", "step": 5} to place them.
     rulers: Optional[Any] = None
+    # ⭐ PURPOSES SWITCHED OFF, so the print matches the screen — #108. Sent as
+    # the OFF-list, so a plot with nothing hidden sends nothing and an ordinary
+    # export is unchanged.
+    #
+    # 🔴 THE PLOT PDF ONLY. The schedule, the hookup, the magic sheet and the
+    # patch are separate endpoints and never see this: layer visibility is a
+    # property of the DRAWING, and a load computed without the units somebody
+    # switched off is the failure that trips a breaker on a Thursday.
+    hidePurposes: Optional[List[str]] = None
+
+
+def _hide_purposes(plot: Dict[str, Any], hide) -> Dict[str, Any]:
+    """The plot with the instruments on hidden purpose layers left out.
+
+    ⚠ A COPY. Mutating the caller's plot would hide those units from whatever
+    else the request went on to do with it.
+
+    ⚠ Bucketed exactly as `exports.magic_sheet_rows` buckets — blank or missing
+    is "unassigned" — because the panel offering these layers is showing the
+    magic sheet's own groups. Mirrors purposeOf() in web/src/layers.ts.
+    """
+    if not hide:
+        return plot
+    off = set(hide)
+    kept = [i for i in plot.get("instruments") or []
+            if (str(i.get("purpose") or "").strip() or "unassigned") not in off]
+    return {**plot, "instruments": kept}
 
 
 def _attach(body: bytes, media: str, filename: str) -> Response:
@@ -478,7 +505,8 @@ def export_pdf(req: ExportRequest) -> Response:
     with tempfile.TemporaryDirectory() as d:
         pdf = os.path.join(d, "plot.pdf")
         try:
-            sheet, _ = exports.plot_pdf(req.plot, pdf, scale=req.scale,
+            sheet, _ = exports.plot_pdf(_hide_purposes(req.plot, req.hidePurposes),
+                                        pdf, scale=req.scale,
                                         page=req.page, landscape=req.landscape,
                                         show_pools=req.showPools,
                                         show_focus=req.showFocus,

@@ -6,7 +6,7 @@
  * no proxies, nothing to debug at two in the morning during a tech.
  */
 import type { Plot, Instrument, Position, Room } from "./plot.js";
-import { LAYERS, visibilityOf, type LayerId } from "./layers.js";
+import { LAYERS, PURPOSE_PREFIX, visibilityOf, type LayerId } from "./layers.js";
 import { unitLabel } from "./plot.js";
 
 export type Listener = () => void;
@@ -297,10 +297,41 @@ export class Store {
     const now = visibilityOf(this._plot);
     if (now[id] === visible) return;        // doing nothing is not a change
     this.begin(null);
-    this._plot.layers = LAYERS.map(l => ({
-      id: l.id,
-      visible: l.id === id ? visible : now[l.id],
-    }));
+    // 🔴 ANYTHING THIS CODE DOES NOT OWN IS KEPT. The array used to be rebuilt
+    // from LAYERS alone, which threw away every entry that was not one of the
+    // eight — the purpose layers of #108, and also the ninth layer of a file
+    // written by a LATER version, which `visibilityOf` is careful to carry and
+    // this then dropped on the first chip click.
+    const mine = new Set<string>(LAYERS.map(l => l.id));
+    const others = (this._plot.layers ?? []).filter(l => !mine.has(l.id));
+    this._plot.layers = [
+      ...LAYERS.map(l => ({ id: l.id, visible: l.id === id ? visible : now[l.id] })),
+      ...others,
+    ];
+    this.touch();
+    this.emit();
+  }
+
+  /** Show or hide every instrument carrying one purpose — #108.
+   *
+   *  ⭐ Stored beside the eight, under a namespaced id, and that is the WHOLE
+   *  of the storage: a purpose layer is derived from the `purpose` field the
+   *  instrument already carries, so there is no membership to record and no
+   *  change to the instrument record.
+   *
+   *  ⚠ Visible is the default, so a purpose is written here only once it has
+   *  been switched OFF and back on. A plot nobody has touched mentions none of
+   *  them and draws everything.
+   */
+  setPurposeVisible(purpose: string, visible: boolean): void {
+    const id = PURPOSE_PREFIX + purpose;
+    const was = (this._plot.layers ?? []).find(l => l.id === id);
+    if ((was ? was.visible : true) === visible) return;
+    this.begin(null);
+    const rest = (this._plot.layers ?? []).filter(l => l.id !== id);
+    // ⚠ The NAME is carried, because nothing in the code knows it — a purpose
+    // is the designer's own word. `PlotLayer.name` exists for exactly this.
+    this._plot.layers = [...rest, { id, visible, name: purpose }];
     this.touch();
     this.emit();
   }

@@ -137,3 +137,106 @@ export function allVisible(): Visibility {
   for (const l of LAYERS) out[l.id] = true;
   return out;
 }
+
+
+// ─── purpose layers ──────────────────────────────────────────────────────────
+
+/** The prefix that keeps a purpose layer's id out of everyone else's namespace.
+ *
+ * ⚠ A plot may legitimately have a purpose called "units". Without the prefix
+ * that would land on the built-in `units` layer and switch the whole rig off. */
+export const PURPOSE_PREFIX = "purpose:";
+
+/** What a unit with no purpose is grouped under.
+ *
+ * 🔴 TAKEN FROM `magic_sheet_rows`, NOT INVENTED HERE. That function groups by
+ * `str(purpose or "unassigned")`, and it is "the one page looked at during
+ * tech". If the layers panel bucketed blanks differently, the drawing and the
+ * magic sheet would disagree about what a group IS — the same two-schemes fault
+ * that created this file. ⚠ A purpose literally spelled "unassigned" merges
+ * with the blanks, in both places, for the same reason.
+ */
+export const UNASSIGNED = "unassigned";
+
+/** A purpose, as the layers panel offers it. */
+export interface PurposeLayer {
+  /** `purpose:back light` — namespaced, and what `plot.layers` stores. */
+  id: string;
+  /** The purpose itself, exactly as the paperwork prints it. */
+  purpose: string;
+  /** How many instruments carry it. The panel shows this; a layer of 0 is a
+   *  control that does nothing, and there are never any here by construction. */
+  count: number;
+  visible: boolean;
+}
+
+/** The purpose of one instrument, bucketed the way the magic sheet buckets it. */
+export function purposeOf(inst: { purpose?: string }): string {
+  return (inst.purpose ?? "").trim() || UNASSIGNED;
+}
+
+/** Every purpose in this plot, with its count and whether it is showing.
+ *
+ * ⭐ DERIVED, NOT STORED. `purpose` is already a field on every instrument and
+ * already the paperwork's word for "back light" or "front wash". A `backlight`
+ * LAYER beside `purpose: "back light"` would be one fact in two places, and two
+ * copies of one fact drift — which is exactly the bug the eight layers were
+ * created to fix (#108). So the panel reads the purposes that are already
+ * there: one source of truth, nothing to migrate, and no change to the
+ * instrument record.
+ *
+ * ⚠ NOT CASE-FOLDED. `exports.magic_sheet_rows` groups on the exact string, so
+ * "Area 1" and "area 1" are two groups on the tech page — and if this folded
+ * them the panel would show one layer for two groups. Showing both is also the
+ * only thing that ever surfaces the typo.
+ *
+ * ⚠ Only the VISIBILITY is stored, in `plot.layers`, beside the eight. A plot
+ * that has never been touched mentions none of them and draws everything, which
+ * is what keeps every existing plot opening unchanged.
+ */
+export function purposeLayers(plot: Plot): PurposeLayer[] {
+  const counts = new Map<string, number>();
+  for (const inst of plot.instruments ?? []) {
+    const k = purposeOf(inst);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const inFile = new Map(
+    (plot.layers ?? []).map(l => [l.id, l.visible] as const));
+  return [...counts.entries()]
+    // The blanks last; everything else in the order a reader would scan.
+    .sort((a, b) => a[0] === UNASSIGNED ? 1 : b[0] === UNASSIGNED ? -1
+                  // ⭐ NUMERIC, because the purposes on a plot are "Area 1",
+                  // "Area 2" … "Area 10", and a plain string sort puts 10
+                  // between 1 and 2. Case variants still land next to each
+                  // other, which is what makes a typo visible in the panel.
+                  : a[0].localeCompare(b[0], undefined, { numeric: true }))
+    .map(([purpose, count]) => {
+      const id = PURPOSE_PREFIX + purpose;
+      const v = inFile.get(id);
+      return { id, purpose, count, visible: typeof v === "boolean" ? v : true };
+    });
+}
+
+/** The purposes that are switched OFF in this plot.
+ *
+ * ⭐ The off-list, not the on-list, and deliberately: it is what gets sent to
+ * the exporter, and a plot with nothing hidden sends nothing. A new option that
+ * is empty in the ordinary case cannot change an ordinary export.
+ */
+export function hiddenPurposes(plot: Plot): string[] {
+  return purposeLayers(plot).filter(l => !l.visible).map(l => l.purpose);
+}
+
+/** Is this instrument on a purpose layer that is switched off?
+ *
+ * 🔴 THE DRAWING ONLY. Layer visibility is a property of the DRAWING — the
+ * schedule, the hookup, the channel count and the circuit loads always report
+ * the whole rig, because a load computed without the units somebody switched
+ * off is the failure that trips a breaker on a Thursday. Same rule as
+ * `allVisible()`, and the paperwork exports never call this.
+ */
+export function hiddenByPurpose(
+  inst: { purpose?: string }, hidden: ReadonlySet<string>,
+): boolean {
+  return hidden.has(purposeOf(inst));
+}

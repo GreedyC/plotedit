@@ -215,6 +215,18 @@
     .toggles label:hover { background:var(--surface-container-high); }
     .toggles label:has(input:checked):hover { background:var(--primary-container); filter:brightness(.97); }
     .toggles label:has(input:focus-visible) { outline:2px solid var(--primary); outline-offset:-2px; }
+    /* 🔴 THE PURPOSE GROUP WRAPS, and the six fixed ones do not. The six are a
+       segmented control of known width; these are built from whatever purposes
+       the plot carries, and the demo plot alone has THIRTEEN. Measured at
+       1024px: the row came out 1223px wide and ran off the right edge of the
+       window, with the chips nearest the edge unreachable.
+       ⚠ `flex:0 1 auto` as well as the wrap — without the shrink the group
+       still refuses to give ground and the wrap never fires. */
+    #purpose-layers { flex:0 1 auto; flex-wrap:wrap; border-radius:16px; }
+    /* A wrapped row starts a new left edge, so the segment divider has to go
+       there too, or rows two and three begin with a seam that leads nowhere. */
+    #purpose-layers label { border-left:1px solid var(--outline-variant); }
+    #purpose-layers:empty { display:none; border:none; }
 
     /* `at …` belongs to `pools`, so it sits tight against the group and goes
        inert — not hidden — when pools is off. */
@@ -583,6 +595,11 @@
         <label title="Draw the instrument symbols. Switch off to read the pipes alone"><input type="checkbox" id="layer-units" checked> units</label>
         <label title="Draw unit numbers, channels, colour and type"><input type="checkbox" id="layer-labels" checked> labels</label>
       </span>
+      <!-- ⭐ PURPOSE LAYERS — #108. Built in main.ts from the purposes the plot
+           actually carries, so this one IS empty markup on purpose: unlike the
+           six above it is not a second copy of a list, because there is no list
+           to copy. A plot with no purposes on it shows nothing here. -->
+      <span class="toggles" role="group" aria-label="Purposes to draw" id="purpose-layers"></span>
       <!-- ⚠ NOT a fifth peer. It says what height the pools are cut at, so it
            belongs to `pools` — it used to sit between `pools` and `focus` and
            read as one of them. It goes INERT when pools is off rather than

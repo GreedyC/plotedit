@@ -244,6 +244,27 @@ pipe, written in the hookup the electrician is holding, and called out in the
 dark. Renumbering rewrites every one of them in the file and none of them in the
 room. **If one number is wrong, change that one by hand.**
 
+#### Switching a purpose off
+
+**The purposes on your plot are layers.** Beside the `plan / pools / positions /
+focus / units / labels` row there is a chip for each distinct **Purpose** on the
+plot, with how many units carry it — `Area 1 (4)`, `back light (12)`,
+`unassigned (3)`. Switch one off and those units leave the drawing: symbol,
+pool, focus and labels together.
+
+⭐ **Nothing to set up.** They come from the Purpose field you are already
+filling in for the schedule, so there is no second place to maintain and nothing
+to tick when you add a unit.
+
+⚠ Units with no purpose are grouped as **`unassigned`**, which is the same group
+the magic sheet puts them in.
+
+🔴 **It is the DRAWING only.** The exported plot PDF matches what you see, so a
+plan with the act one areas hidden prints that way. **The instrument schedule,
+the channel hookup, the magic sheet and the patch always report the whole rig** —
+a load worked out without the units somebody switched off is how a breaker trips
+on a Thursday.
+
 #### A unit added later: 10A
 
 **Type `10A` into the Unit box and it goes between 10 and 11** — on the plot, in

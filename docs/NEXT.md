@@ -1640,3 +1640,43 @@ and the label overruns.
 **It is not caused by this change**: rendering the old code forced to 3/4" shows
 the identical overlap. It has simply been unreachable, because nothing ever got
 to 3/4". Worth its own issue.
+
+---
+
+## Purpose layers — the free half of #108, 2026.10.13
+
+**The purposes a plot already carries are now layers you can switch off**, on
+the drawing and in the exported plot PDF.
+
+⭐ **Derived, not stored.** `purpose` is already a field on every instrument and
+already the paperwork's word for "back light". A `backlight` layer beside
+`purpose: "back light"` would be one fact in two places, and two copies of one
+fact drift — the bug the eight layers were created to fix. **No change to the
+instrument record, no migration.** Full reasoning in
+[`LAYERS.md`](LAYERS.md) §Step 4a.
+
+🔴 **The drawing only.** `/export/pdf` takes a `hidePurposes` off-list so the
+print matches the screen; the schedule, hookup, magic sheet and patch never see
+it, and `test_purpose_layers.py` asserts both halves. A load computed without
+the units somebody switched off is the failure that trips a breaker.
+
+⚠ **Bucketed as `magic_sheet_rows` buckets** — blank or missing is
+`unassigned`, and nothing is case-folded. If the panel and the tech page
+disagreed about what a group IS, switching one off on the drawing would remove a
+different one from the page read in the dark.
+
+### Two faults found on the way
+
+- 🔴 **`setLayerVisible` threw away every layer it did not own**, rebuilding
+  `plot.layers` from the eight. That would have dropped a purpose layer on the
+  first chip click — and already dropped the ninth layer of a file written by a
+  later version, which `visibilityOf` goes out of its way to carry.
+- ⚠ **Thirteen chips ran off the right edge of the window.** Measured at 1024px:
+  1223px wide, chips nearest the edge unreachable. The demo plot alone has
+  thirteen purposes. The purpose group wraps now; the six fixed ones do not.
+
+### Still open: the explicit half
+
+Real membership on the instrument, many layers per unit, for what `purpose`
+cannot say — **rental is ownership** and **the act two additions is a decision**.
+That is the half that changes the plot file, and it is untouched.
