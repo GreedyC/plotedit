@@ -1,6 +1,11 @@
 # Lamp and LED mode — an open discussion
 
-**Status: DISCUSSION. Nothing here is decided, and nothing here is built.**
+**Status: PART BUILT.** The lamp/mode exclusivity in §1 shipped as inert rows,
+and the **per-fixture lamp list in §2's option C shipped 2026.10.13** for #123 —
+see the section at the end. What is still open is listed there and in §Open
+questions: the type-change orphan in §1, and the other Shakespeare lamps, which
+need a datasheet nobody has.
+
 Opened 2026.09.29 at Jerry's request, after looking at the inspector panel:
 
 > an HPL 575 can't have an LED mode. Also I believe an HPL by definition is
@@ -186,3 +191,73 @@ That is what makes it safe to build on.
    be its own thing? It is a lamp when you order it and an LED when you use it —
    though §3 argues the Lamp row is exactly right, because ordering is the part
    that differs and the rental order is what gets it wrong.
+
+
+---
+
+## ✅ Option C, the lamp half — built 2026.10.13
+
+For #123, and because **the list being merely in step was still wrong.**
+
+`test_lamp_list.py` used to diff the browser's hand-typed array against
+`LAMP_MF` and kept the two the same length. It could not see the actual fault:
+**every lamp was offered on every fixture.** So an Altman Shakespeare offered
+`HPL 750`, and picking it **blanked the footcandles** — there is no HPL
+multiplier for an Altman barrel and never will be. 194 of the 201 units in
+Sample Big House are Shakespeares, and the dropdown's only safe entry was the
+blank one.
+
+🔴 **That is the gel bug's shape a third time**: it failed honestly, completely
+and invisibly. No wrong number, just no number, on whichever unit you touched.
+
+### What it is now
+
+`photometrics.lamps_for(kind)` → the lamps with a published multiplier for that
+fixture, **reference lamp first**. `/fixtures` publishes it per type;
+`main.ts` asks for it and keeps no copy; `inspector.ts` renders it.
+
+| fixture | offers |
+|---|---|
+| `S4 36` | HPL 750, 575, 375, 550/77, **575X**, three 4WRDs |
+| `S4 26` | the same **without 575X** — the datasheet gives one and not the other |
+| `Altman Shakespeare 30` | GLC, and only GLC |
+| `Lustr 26 EDLT` | nothing. It has modes. |
+| `S4 Zoom 15-30 @23` | nothing, and it is not an LED |
+
+⚠ **AN EMPTY LIST MEANS TWO DIFFERENT THINGS**, and the panel now says which.
+A Lustr has no lamp — *"This is an LED engine — there is no lamp in it."* An S4
+Zoom takes a lamp and nobody has published per-lamp figures for it — *"No
+per-lamp figures are published for this fixture, so its output is computed from
+its reference lamp whatever is fitted."* One is the wrong question; the other is
+an unanswered one, and they send a reader to different places.
+
+⚠ **A lamp the plot already HOLDS stays on the list**, appended, even when it
+does not belong to the fixture. Dropping it would show a blank where the file
+says `HPL 575`, which hides the very thing that needs fixing — that unit has no
+footcandles and the wrong lamp is why. A plot read in from somebody else's
+paperwork is exactly where that turns up.
+
+### ⭐ And the drift this document opened with is now structurally impossible
+
+The browser holds no lamp names at all. `test_lamp_list.py` was rewritten to
+assert that — no `lamps:` array, no lamp name anywhere in the code — plus that
+every offered lamp returns a real footcandle figure, and that no lamp in
+`LAMP_MF` is unreachable from every fixture, which is the v0.1.19 bug in its new
+form.
+
+### ⚠ What #123 still wants, and cannot have yet
+
+**The other Shakespeare lamps.** The Altman barrel takes more than the GLC, and
+a designer who fits a different one cannot record it. Adding the NAME is five
+minutes; adding it without a multiplier would offer a lamp that blanks the
+figure, **which is the bug this section just removed**. The multipliers are in
+Altman's own performance chart and nobody here has it.
+
+🔴 So the lamp list for the Shakespeare is complete with respect to what is
+PUBLISHED, and incomplete with respect to the rig. Those are different kinds of
+done and the second one needs a document.
+
+**And whether a new unit should have its lamp WRITTEN IN** rather than left
+blank is open. Blank already computes correctly — `ref_lamp` is the chart's own
+lamp — so this is the same blank-versus-stated question that `focusH` just
+answered in the samples, and it has not been asked about lamps.

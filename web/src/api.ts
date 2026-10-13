@@ -42,6 +42,13 @@ export async function compute(plot: Plot, poolPlane?: number): Promise<Computed[
 export interface FixtureRow {
   field: number | null; beam: number | null; candela: number | null;
   reference_lamp: string; family: string; modes: string[] | null; source: string;
+  /** The lamps with a published multiplier for THIS fixture, reference first.
+   *
+   *  ⚠ null means no per-lamp figures, which is NOT the same as no lamp. A
+   *  Lustr has `modes` instead; an S4 Zoom takes a lamp and nobody has
+   *  published its multipliers, so its output comes from the reference lamp
+   *  alone. `modes` is what tells the two apart. */
+  lamps: string[] | null;
 }
 
 /** One sheet a plot can be issued on. */

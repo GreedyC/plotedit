@@ -99,6 +99,19 @@ export const FIELDS: Field[] = [
   { key: "notes", label: "Notes", kind: "text" },
 ];
 
+/** The lamps to offer on this unit, reference lamp first.
+ *
+ *  ⚠ A LAMP THE PLOT ALREADY HOLDS STAYS ON THE LIST even when it does not
+ *  belong to this fixture — appended, and marked. Dropping it would make the
+ *  select show a blank where the file says `HPL 575`, which hides the very
+ *  thing that needs fixing: that unit has no footcandles and this is why.
+ */
+export function lampsFor(inst: Instrument, deps: InspectorDeps): string[] {
+  const ok = deps.lampsFor?.(inst.type) ?? [];
+  const held = inst.lamp;
+  return held && !ok.includes(held) ? [...ok, held] : ok;
+}
+
 /** The specific models this unit's fixture type could be. */
 function modelsFor(inst: Instrument, deps: InspectorDeps): string[] {
   const fam = deps.familyOf?.(inst.type);
@@ -140,7 +153,7 @@ function profilesFor(inst: Instrument, deps: InspectorDeps, control?: string): s
  *  ⚠ This DISABLES INPUT ONLY. It is not a filter on the data: a unit that
  *  already carries a contradictory value still shows it, greyed, because
  *  hiding it is how it survives to the load-in. */
-function inertBecause(
+export function inertBecause(
   f: Field, inst: Instrument, deps: InspectorDeps, control?: string,
 ): string | null {
   if (f.key === "dimmer" && inst.profile === "Dimmer") {
@@ -161,6 +174,14 @@ function inertBecause(
   if (f.key === "lamp" && modesApply(inst, deps)) {
     return "This is an LED engine — there is no lamp in it. Its output is set "
          + "by the mode below.";
+  }
+  // ⚠ A LAMP-TAKING FIXTURE WITH NO PUBLISHED MULTIPLIERS — an S4 Zoom, a
+  // PARNel, an S4 5. It is not an LED and the row above does not apply, but
+  // there is nothing to choose between either, and "no lamp" and "no published
+  // figures for any lamp" are different facts about the rig.
+  if (f.key === "lamp" && !modesApply(inst, deps) && lampsFor(inst, deps).length === 0) {
+    return "No per-lamp figures are published for this fixture, so its output "
+         + "is computed from its reference lamp whatever is fitted.";
   }
   // ⚠ An empty dropdown looks like missing DATA. It is usually missing
   // KNOWLEDGE, and the two send you to different places: one to the plot, one
@@ -210,9 +231,16 @@ export interface InspectorDeps {
    *  empty list means it is not an LED engine, which is what greys the mode
    *  row out — see docs/MUTUALLY-EXCLUSIVE-FIELDS.md. */
   modesFor?: (type: string) => string[];
+  /** The lamps with a published multiplier for THIS fixture type, reference
+   *  first — the server's own answer, from LAMP_MF.
+   *
+   *  🔴 Why it is per-type and not one list: a Shakespeare used to be offered
+   *  HPL 750 along with every other lamp in the table, and picking it blanked
+   *  the footcandles, because there is no HPL multiplier for an Altman barrel
+   *  and never will be. The dropdown promised light nobody has measured. */
+  lampsFor?: (type: string) => string[];
   /** Say why an entry was refused. Optional so other callers still compile. */
   onStatus?: (msg: string, bad?: boolean) => void;
-  lamps: string[];
   modes: string[];
   onPhotometricChange: () => void;
   onPaperworkChange: () => void;
@@ -288,7 +316,7 @@ export function renderInspector(
     if (f.kind === "select") {
       input = document.createElement("select");
       const opts = f.key === "type" ? deps.fixtures
-        : f.key === "lamp" ? deps.lamps
+        : f.key === "lamp" ? lampsFor(inst, deps)
         : f.key === "mode" ? deps.modes
         : f.key === "model" ? modelsFor(inst, deps)
         : f.key === "profile" ? profilesFor(inst, deps, control)

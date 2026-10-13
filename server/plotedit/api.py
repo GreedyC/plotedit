@@ -172,6 +172,14 @@ def fixtures() -> Dict[str, Any]:
             "reference_lamp": f["ref_lamp"],
             "family": f["family"],
             "modes": list(f.get("modes", {})) or None,
+            # ⭐ WHICH LAMPS THIS BARREL CAN ACTUALLY BE COMPUTED WITH, so the
+            # inspector stops offering one global list on every fixture. A
+            # Shakespeare offered HPL 750, and picking it blanked the
+            # footcandles — there is no HPL multiplier for an Altman barrel.
+            # ⚠ null means NO PUBLISHED PER-LAMP FIGURES, which is not the same
+            # as "no lamp": a Lustr has modes instead, an S4 Zoom takes a lamp
+            # and nobody has published its multipliers. `modes` tells them apart.
+            "lamps": ph.lamps_for(k) or None,
             "source": f["source"],
         }
     return {"count": len(out), "fixtures": out}

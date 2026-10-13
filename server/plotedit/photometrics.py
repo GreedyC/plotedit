@@ -538,6 +538,37 @@ def lamp_watts(lamp):
 FIELD_ANGLES_S4 = [5, 10, 14, 19, 26, 36, 50, 70, 90]   # the barrel family, nominal
 
 
+def lamps_for(kind):
+    """The lamps with a published multiplier for this fixture, reference first.
+
+    ⭐ THE LIST OF LAMPS LIVES IN PYTHON, AND THIS IS THE ANSWER TO ASKING FOR
+    IT. The browser has carried a second, hand-typed copy of LAMP_MF's keys —
+    one global list of every lamp, offered on every fixture. So a Shakespeare
+    offered HPL 750, and picking it blanked the footcandles: there is no HPL
+    multiplier for an Altman barrel and never will be. See docs/LAMP-AND-MODE.md
+    and the stopgap test_lamp_list.py, which says this is the real fix.
+
+    ⚠ AN EMPTY LIST MEANS TWO DIFFERENT THINGS and the caller must tell them
+    apart. A Lustr has no lamp at all — it has modes. An S4 Zoom takes a lamp
+    and simply has no per-lamp figures published, so its output comes from the
+    reference lamp alone. One is "wrong question", the other is "nobody has
+    published it", and they send a reader to different places.
+
+    ⚠ The asymmetries are real, not gaps in the loop: S4 36 has an HPL 575X
+    multiplier and S4 26 does not, because the datasheet gives one and not the
+    other. Offering 575X on a 26 would promise light nobody has measured.
+    """
+    key, row, _ = lookup(kind)
+    if row is None:
+        return []
+    have = [lamp for lamp, table in LAMP_MF.items() if key in table]
+    ref = row.get("ref_lamp")
+    if ref in have:
+        have.remove(ref)
+        have.insert(0, ref)
+    return have
+
+
 def lookup(kind):
     """FIXTURES row for a name that may have come from paperwork.
 

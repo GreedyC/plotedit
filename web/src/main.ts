@@ -337,28 +337,16 @@ function drawInspector() {
     // argument of docs/LAMP-AND-MODE.md, applied to the one field that
     // could already be answered without new data.
     modesFor: (t: string) => fixtureTable[t]?.modes ?? [],
-    // ⚠ STILL HARDCODED. The lamps live in LAMP_MF in Python and this is a
-    // second copy of them kept by hand, so it drifts — it drifted for a whole
-    // release. Keep the two in step until docs/LAMP-AND-MODE.md is acted on
-    // and the server answers this the way it already answers `fixtures`.
+    // ⭐ ASKED FOR, NOT KEPT. `lamps` is the server's own answer for THIS
+    // fixture — docs/LAMP-AND-MODE.md, acted on. The old list was one global
+    // copy of LAMP_MF's keys offered on every barrel, so a Shakespeare offered
+    // HPL 750 and picking it blanked the footcandles: there is no HPL
+    // multiplier for an Altman barrel and never will be.
     //
-    // ⭐ HPL 550/77 is the DIMMER DOUBLING lamp (Jerry, 2026.09.29) — 550W
-    // at 77 volts, and the low voltage is the point. Nothing on the plot
-    // yet says which circuits are doubled, so choosing it here is a
-    // statement about the lamp only. HPL 375 next to it is an ordinary
-    // 115V lamp you fit to halve the load; the two are not the same trick.
-    //
-    // ⭐ THE LAST THREE ARE NOT LAMPS IN THE USUAL SENSE (Jerry, 2026.09.29).
-    // Pull the HPL out of a Source Four, drop a 4WRD in, and the barrel is an
-    // LED — same tube, same angles, 150W instead of 575. They belong on this
-    // list because that is how you ORDER them and how the rig is built, and
-    // because the photometrics key off the lamp. The three are separate part
-    // numbers, not modes of one product, which is why there are three.
-    lamps: ["HPL 750", "HPL 575", "HPL 575X", "HPL 375", "HPL 550/77",
-            "Source 4WRD II", "Source 4WRD II Gallery",
-            "Source 4WRD II Daylight Gallery",
-            // Altman Shakespeare: the G9.5 lamp its chart was measured with.
-            "GLC"],
+    // ⚠ A lamp the plot ALREADY holds stays on the list even when it does not
+    // belong there — see lampsFor() in inspector.ts. Dropping it would hide the
+    // very thing that needs fixing.
+    lampsFor: (t: string) => fixtureTable[t]?.lamps ?? [],
     modes: ["Boost Full", "Regulated Full", "Regulated 3200K", "Regulated 5600K"],
     onStatus: (msg, bad) => status(msg, bad),
     onPhotometricChange: () => { paint(); recompute(); },

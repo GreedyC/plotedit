@@ -1459,3 +1459,42 @@ failed the gate, the gate would have to come out.
 ⚠ `test_qc.py` asserts the exit CODE, not just `qc.check()`. Those are two
 different things and only one of them is wired to CI — a clean plot exits 0, an
 error exits 1, a warning exits 0, and one bad file among good ones still exits 1.
+
+---
+
+## The lamp list is the server's answer, per fixture — 2026.10.13
+
+#123, in part. Jerry: *"the lamp does decide the output of the instrument"* —
+which is why offering the wrong one is not a cosmetic fault.
+
+🔴 **A Shakespeare was offered `HPL 750`, and picking it blanked the
+footcandles.** There is no HPL multiplier for an Altman barrel and never will be.
+194 of the 201 units in Sample Big House are Shakespeares, so the dropdown's only
+safe entry was the blank one — and nothing said so.
+
+⚠ **`test_lamp_list.py` was watching and could not see it.** It diffed the
+browser's hand-typed array against `LAMP_MF` and kept the two in step. The fault
+was never that the list was out of date; it was that **one list was offered on
+every fixture.** A test that checks the thing next to the bug is how a bug lives
+for a month.
+
+`photometrics.lamps_for(kind)` now answers it — multipliers for *that* fixture,
+reference lamp first — published by `/fixtures`, read by the inspector, and the
+browser keeps no lamp names at all. Full reasoning in
+[`LAMP-AND-MODE.md`](LAMP-AND-MODE.md), whose option C this is.
+
+⚠ **An empty list means two different things** and the panel now says which: a
+Lustr has no lamp (it has modes), while an S4 Zoom takes one and nobody has
+published per-lamp figures for it. And **a lamp the plot already holds stays on
+the list** — dropping it would show a blank where the file says `HPL 575`, which
+hides the unit that has no footcandles.
+
+### ⚠ Still open on #123
+
+- **The other Shakespeare lamps.** The barrel takes more than the GLC. Adding a
+  name is five minutes; adding one without a multiplier re-creates the bug above.
+  The figures are in Altman's own performance chart, which nobody here has.
+- **Whether a new unit should have its lamp written in** rather than left blank.
+  Blank computes correctly today, because `ref_lamp` is the chart's own lamp. It
+  is the same blank-versus-stated question `focusH` just answered for the
+  samples, and nobody has asked it about lamps.
