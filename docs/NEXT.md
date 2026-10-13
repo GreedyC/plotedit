@@ -1229,3 +1229,174 @@ path — should learn to walk a bent run, or whether a shared name should simply
 send the reader to click instead. Today it warns: the dialog says the order came
 from the first leg and may alternate, and leaves the choice there. ⚠ That warning
 is the thing to revisit, not the interleave itself, which is now avoidable.
+
+---
+
+## A QC pass over a plot, and what it found in our own samples — 2026.10.13
+
+For #125. `plotedit/qc.py`, `test_qc.py`.
+
+    cd server && python3 -m plotedit.qc ../samples/*.plot.json
+
+**⭐ WHY A CHECKER AT ALL.** Every defect found in the sample plots so far was
+found by LOOKING at a drawing — the raked catwalk units, the batten dragged and
+put back, the gel punctuation that silently removed every footcandle in the show.
+None of them showed up in a diff, because a plot is two hundred near-identical
+records and the eye slides off it. These are the checks that do not need eyes.
+
+### The line between an error and a warning is the whole design
+
+Not severity — **whether the finding is a fact about the file or a judgement
+about the design.**
+
+| | |
+|---|---|
+| **error** | the file contradicts itself, or says something impossible. Two units in one slot on a pipe. A position name with no position behind it. |
+| **warning** | something a designer might mean, and might not. No channel yet. A focus height nobody usually aims at. |
+
+🔴 **Half a plot is warnings on the day you start drawing it, and that is
+correct.** So the CLI exits 1 on an error and 0 on warnings. A gate that goes red
+for an unfinished plot is a gate that gets switched off in a week.
+
+Eleven checks: `duplicate-unit`, `unknown-position`, `off-the-run`,
+`unknown-type` (errors); `focus-at-the-deck`, `focus-height-unusual`,
+`unfocused`, `unit-out-of-range`, `no-channel`, `shared-address`, `not-a-gel`,
+`trim-mismatch` (warnings).
+
+⚠ **Every check is tested twice** — once on a plot with the defect, once on one
+without. The quiet half is the half that matters: a checker that flags good data
+gets switched off. `demo.plot.json` is the live version of that test and comes
+back **completely clean**, which it has to, because it is what a stranger opens.
+
+### What it found in Sample Big House: 3 errors, 6 warnings
+
+**🔴 Three duplicate units.** `#3 ELECTRIC` and `#4 ELECTRIC` each carry two unit
+9s; `Balcony Rail` carries two unit 300s.
+
+**🔴 `focusH: 0` on all 201 instruments, and this is the serious one.** Blank
+means head height — `focusH ?? 5.5` in the web app. **Zero is a number, so it
+travels**, and the plot computes every pool and every footcandle at the FLOOR. On
+a 30' electric that is a 30' throw where the truth is 24'-6". The sample looks
+entirely finished and is wrong by that much on every sheet.
+
+Also: unit 200 on `#4 Catwalk UPPER`, two unit 300s on `Balcony Rail`, 64 units
+with no channel, 8 units coloured `NC/Temp` (a note to the electrician, not a
+filter), and 200 of 201 still pointing straight down — which is documented as a
+stand-in and is a warning, not a defect.
+
+### ⚠ Four data fixes, and only one of them is obvious
+
+The numbering convention in that file is **unit 1 at the highest x, counting up
+as x decreases**, consistently, on every position. Against that rule:
+
+1. **`#4 Catwalk UPPER` unit 200 → unit 4.** Certain. It sits at x=92.7, between
+   unit 5 (90.9) and unit 3 (94.8), and **4 is the one number missing from the
+   run**. The outlier and the gap are the same slot.
+2. **`#3` and `#4 ELECTRIC`'s second unit 9** sits at x=62.9, *between* units 11
+   (57.0) and 10 (65.9). There is no integer there.
+3. **`Balcony Rail`'s two unit 300s** sit past unit 1 at the stage-right end of
+   the run. Same shape: extra units, nowhere to put them.
+4. **`focusH: 0` → blank or 5.5.** ⚠ Blank and 5.5 are not the same thing to a
+   reader even though they compute the same: blank says nobody has decided, 5.5
+   says head height on purpose. **Jerry's call which the sample should say.**
+
+### ✅ The question underneath 2 and 3: should a unit number be `10A`? YES
+
+**Inserting a unit between 10 and 11 is ordinary, and in the theatre it is
+ordinarily numbered 10A** — that is how it goes on a hang sheet when a unit is
+added after the plot is drawn. The schema cannot say it: `unit: Optional[int]` in
+`api.py`, `unit?: number` in `plot.ts`.
+
+So the alternative is renumbering the whole position every time a unit is added,
+which is 19 changed records on one pipe and a hang sheet that no longer matches
+the one the electrician has in their hand.
+
+**Jerry, 2026.10.13: "yes 10A should be allowed - thats the standard".** Built —
+see the section below. It bears directly on **number by clicking** (#74) and on
+the bent-run numbering above: a click order can produce 10A; a geometry sort
+cannot.
+
+### Two things found while writing the tests, both left alone
+
+- **`ETC Source Four 26` does not resolve.** `Source 4 26` and `ETC S4 26` both
+  do. The manufacturer's own full spelling of its most common fixture misses the
+  alias table. `test_qc.py` asserts the current behaviour so the fix is visible
+  when it lands; it belongs in `fixture_names.ALIASES`, not in a QC suite.
+- **`inst.get("focusH", 5.5)` is the wrong default guard.** `plot_to_pdf.py:249`
+  and `test_agreement.py:32` use it, and `dict.get` returns its default only when
+  the key is MISSING — an explicit `null` comes back as `None`. No shipped sample
+  has an explicit null today, so nothing is broken. The web app writes this field.
+
+### ⚠ Not wired into CI, deliberately
+
+The pass is a CLI and a suite, nothing more. Gating CI on it today would go red
+immediately, because Sample Big House has three errors and fixing them needs the
+decisions above. **Where this surfaces — a CI gate on the samples, a panel in the
+app, a check before export — is undecided.**
+
+---
+
+## A unit number can be "10A" — 2026.10.13
+
+Asked by the QC pass above, answered by Jerry the same day: *"yes 10A should be
+allowed - thats the standard"*.
+
+`unit` now holds **a number or a string**: `Optional[Union[int, str]]` in
+`api.py`, `UnitNumber = number | string` in `plot.ts`. Six functions, three in
+each language and deliberately mirrored:
+
+| | |
+|---|---|
+| `unit_key` / `unitKey` | the sort key. `10 → (10, "")`, `"10A" → (10, "A")` |
+| `unit_label` / `unitLabel` | the canonical text. `"10a" → "10A"`, `10.0 → "10"` |
+| `next_unit` / `nextUnit` | one past the highest, **ignoring suffixes** |
+
+🔴 **SORTING IS THE WHOLE POINT.** If 10A sorted last, the schedule would be in a
+different order from the rig and the number may as well have been 19 on the end
+of the run. `exports._sorted_for_schedule` used `_num()`, which reads "10A" as
+unreadable and sends it to the end of the pipe — that is the line that would
+have been noticed, and `test_unit_numbers.py` pins it.
+
+⚠ **NOT a text sort**, which is the obvious wrong answer: `"10" < "9"` as text,
+so a text sort puts unit 10 before unit 9 and the hang sheet is unusable.
+
+### Where a number could become two lights, and does not
+
+**Everything that identifies a unit keys on the LABEL, not the raw value**, so
+`10` and `"10"` are one light and `"10a"` and `"10A"` are one light. The
+paperwork addresses a light as *position, number*; two spellings of one number
+is two lights to whoever is reading it. That is `duplicateUnits` in `plot.ts`,
+`duplicate_units` in `qc.py`, `seqReport`'s tally in `sequence.ts`, and the boom
+elevation's click target in `render.ts` — where one side comes from the server
+and the other from the file.
+
+⚠ And `Union[int, str]` **accepts the string `"10"` as a string**, so the API
+normalises at the door: bare digits become an int, a suffix is folded up, and
+anything else is passed through untouched. **Passed through, not refused** — the
+QC pass is what says a cell is wrong, and rejecting here would lose a whole plot
+over one bad cell.
+
+### What a suffix is NOT
+
+- **It does not take a slot.** A pipe holding 10, 10A and 11 offers **12** next.
+  A suffix shares its number with the unit it was added beside; `qc.py`'s
+  `unit-out-of-range` check reads the numeric part only, or every insertion
+  would report as an error.
+- **Renumber and number-by-clicking still write plain integers**, which replaces
+  a suffix like any other number. A geometry sort cannot know that one unit went
+  in later. That is the human fact the suffix records, and #74 is the path that
+  can express it.
+- **Digits and at most one letter.** `10AB`, `A10` and `10.5` are refused, and
+  the inspector puts back what was there rather than clearing the field —
+  silently clearing a unit number leaves a light the schedule, the hookup and
+  the focus chart cannot address.
+
+### ⚠ One thing fixed in a contributor's test, and why
+
+`interact.test.ts` (#124) asserts a record is untouched with an inline object
+literal. `assert.deepEqual` is declared `asserts actual is T`, so that literal
+**narrows `store.plot.instruments[0]` to itself for the rest of the file** — and
+once `unit` could be a string, every later assertion about a field the literal
+does not mention (`focusX`, `focusY`) stopped compiling. The expected value is
+now a named `Instrument`, with a comment saying why, so it does not get tidied
+back.

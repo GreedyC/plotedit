@@ -10,6 +10,7 @@ import { confirmDelete, describeUnit } from "./confirm.js";
 import { button } from "./button.js";
 import { parseFeet } from "./feet.js";
 import { fmtFt, fmtFc } from "./geometry.js";
+import { parseUnit, unitLabel, type UnitNumber } from "./plot.js";
 import type { Store } from "./store.js";
 import type { Computed } from "./render.js";
 import type { DmxTable } from "./api.js";
@@ -30,13 +31,17 @@ export interface Field {
   step?: number;
   hint?: string;
   /** A LENGTH. Shown as feet and inches, and typed the same way — see feet.ts.
-   *  The rest of the numbers (unit, channel, dimmer, address, lens angle) are
-   *  counts and degrees, and stay plain. */
-  kind2?: "feet";
+   *  The rest of the numbers (channel, dimmer, address, lens angle) are counts
+   *  and degrees, and stay plain.
+   *
+   *  "unit" is the third kind: digits with an optional letter, because a unit
+   *  added between 10 and 11 is numbered 10A — see plot.ts unitKey. */
+  kind2?: "feet" | "unit";
 }
 
 export const FIELDS: Field[] = [
-  { key: "unit", label: "Unit", kind: "number", step: 1 },
+  { key: "unit", label: "Unit", kind: "text", kind2: "unit",
+    hint: "The number on the pipe. A unit added between 10 and 11 is 10A" },
   { key: "channel", label: "Channel", kind: "number", step: 1 },
   // ⭐ Right under the channel (Jerry, 2026.09.29). What a light is FOR is what
   // you read next after what it answers to — not a footnote below the patch.
@@ -343,6 +348,7 @@ export function renderInspector(
         // " + " matches the schedule export and the gel notation, where + means
         // "and this as well". A comma would be ambiguous inside a CSV cell.
         ? (Array.isArray(cur) ? cur.join(" + ") : "")
+        : f.kind2 === "unit" ? unitLabel(cur as UnitNumber | undefined)
         : f.kind2 === "feet" && typeof cur === "number" ? fmtFt(cur)
         : cur === undefined || cur === null ? "" : String(cur);
     }
@@ -370,6 +376,18 @@ export function renderInspector(
         store.update(i, { [f.key]: parts.length ? parts : undefined } as Partial<Instrument>);
         (f.photometric || f.recompute) ? deps.onPhotometricChange() : deps.onPaperworkChange();
         return;
+      }
+      else if (f.kind2 === "unit") {
+        const u = parseUnit(raw);
+        if (u === null) {
+          // ⚠ Refuse LOUDLY and put back what was there, exactly as a length
+          // does. Silently clearing a unit number leaves a light that the
+          // schedule, the hookup and the focus chart cannot address.
+          deps.onStatus?.(`"${raw}" is not a unit number — try 11 or 10A`, true);
+          input.value = unitLabel(inst[f.key] as UnitNumber | undefined);
+          return;
+        }
+        value = u;
       }
       else if (f.kind2 === "feet") {
         const n = parseFeet(raw);

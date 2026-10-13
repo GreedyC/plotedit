@@ -32,6 +32,7 @@ where "Special SR" sits at x=22 and "Special SL" at x=11 in a 33-foot room.
 """
 from typing import Any, Dict, List, Optional, Tuple
 import math
+import re
 from . import symbols as _sym
 
 #: Within this many degrees of plumb, a unit has no meaningful plan
@@ -51,6 +52,57 @@ FROM_TOP, FROM_BOTTOM = "TOP", "BOTTOM"
 # §2.3.2, for FOH positions.
 FROM_PLASTER = "PLASTER"        # parallel to centerline: nearest the plaster line
 FROM_CENTER = "CENTER"          # non-parallel (box booms): nearest centerline
+
+
+#: A unit number: digits, then an optional letter suffix. "10A", "7", "12b".
+_UNIT = re.compile(r"^\s*(\d+)\s*([A-Za-z]?)\s*$")
+
+
+def unit_key(u: Any) -> Tuple[float, str]:
+    """A unit number as something sortable: 10 → (10, ""), "10A" → (10, "A").
+
+    ⭐ WHY A SUFFIX EXISTS AT ALL. Adding a unit between 10 and 11 is ordinary
+    — the plot is drawn, the rig is hung, and one more light is needed in the
+    middle of the pipe. On a hang sheet that light is **10A**, because the
+    alternative is renumbering every unit above it and handing the electrician
+    a second document that disagrees with the one taped to the pipe.
+
+    ⚠ IT SORTS BETWEEN 10 AND 11, which is the whole reason the number is
+    written that way rather than as 19 on the end of the run. Anything that
+    cannot be read as a unit number sorts LAST rather than raising: a plot with
+    a typo in one cell still prints.
+    """
+    if isinstance(u, bool) or u is None:
+        return (float("inf"), "")
+    if isinstance(u, (int, float)):
+        return (float(u), "")
+    m = _UNIT.match(str(u))
+    if not m:
+        return (float("inf"), str(u).strip().upper())
+    return (float(m.group(1)), m.group(2).upper())
+
+
+def unit_label(u: Any) -> str:
+    """The canonical text of a unit number — "10A" — or "" for none.
+
+    ⚠ Case is folded UP, so "10a" and "10A" are one unit and not two. The
+    paperwork addresses a light as "position, number"; two spellings of one
+    number is two lights to anyone reading it.
+    """
+    if u is None or (isinstance(u, str) and not u.strip()):
+        return ""
+    n, suffix = unit_key(u)
+    if n == float("inf"):
+        return str(u).strip()
+    whole = int(n)
+    return f"{whole}{suffix}" if n == whole else str(u).strip()
+
+
+def next_unit(instruments: List[Dict[str, Any]]) -> int:
+    """One past the highest number in use, ignoring suffixes. 10A counts as 10."""
+    used = [unit_key(i.get("unit"))[0] for i in instruments]
+    used = [n for n in used if n != float("inf")]
+    return int(max(used)) + 1 if used else 1
 
 
 VERTICAL_TYPES = ("boom", "box-boom", "boom-box", "ladder", "tormentor", "torm")

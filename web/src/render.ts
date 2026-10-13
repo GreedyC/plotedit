@@ -14,6 +14,7 @@ import { svgTransform, counterFlip, fmtFt, notationAnchor, symbolRadius,
 import { symbolKey, isVertical, isFoh, type Plot, type Instrument } from "./plot.js";
 import type { SymbolPrim, BoomElevation, PositionLabel } from "./api.js";
 import type { Visibility } from "./layers.js";
+import { unitLabel } from "./plot.js";
 
 const NS = "http://www.w3.org/2000/svg";
 
@@ -454,7 +455,7 @@ export function render(
     if (c && !c.computed) {
       g.classList.add("uncomputed");
       const t = document.createElementNS(NS, "title");
-      t.textContent = `Unit ${inst.unit}: ${c.note ?? "not computed"}`;
+      t.textContent = `Unit ${unitLabel(inst.unit)}: ${c.note ?? "not computed"}`;
       g.appendChild(t);
     }
     if (isSel) {
@@ -740,7 +741,7 @@ function labels(inst: Instrument, c?: Computed, symbolAngle?: string,
     : (c?.pan ?? 0);
   const OFF = 0.17;   // ft toward the back of the body, matching scaled_pdf
   const body = notationAnchor(0, 0, drawn, OFF);
-  add(body.x, body.y, String(inst.unit), TEXT * 0.7, "700");
+  add(body.x, body.y, unitLabel(inst.unit), TEXT * 0.7, "700");
   // ⭐ THE STACK GOES BEHIND THE LIGHT, THE COLOUR IN FRONT ACROSS THE LENS.
   // §6.14.2 draws circuit/dimmer/channel off the back of an instrument and the
   // colour and focus beyond its lens. Jerry, 2026.09.24: "the channel number
@@ -862,7 +863,9 @@ function elevation(b: BoomElevation, all: Instrument[],
     // ⭐ Clickable. A boom unit is no longer drawn in plan, so the elevation is
     // the ONLY place it can be selected — without this the inspector cannot
     // reach it at all, which is worse than the stacking it replaced.
-    const idx = all.findIndex(i => i.unit === u.unit
+    // ⚠ Matched by LABEL. The boom layout comes back from the server, so one
+    // side can hold 10 and the other "10" and they are the same light.
+    const idx = all.findIndex(i => unitLabel(i.unit) === unitLabel(u.unit)
       && (i.position ?? "").trim().toUpperCase() === b.name);
     const st = el("g", {
       class: "instrument" + (idx >= 0 && idx === selected ? " selected" : ""),
@@ -887,7 +890,7 @@ function elevation(b: BoomElevation, all: Instrument[],
     // Ends 5" clear of the pipe, growing leftwards away from it — anchoring the
     // END is the only thing that keeps a label off what is to its right.
     text(x - 0.42, uy - 0.17, u.label, TEXT * 0.5, "end");
-    text(x + b.unit_gap, uy - 0.25, String(u.unit), TEXT * 0.55, "middle", "700");
+    text(x + b.unit_gap, uy - 0.25, unitLabel(u.unit), TEXT * 0.55, "middle", "700");
     if (u.channel !== undefined && u.channel !== null) {
       g.appendChild(el("circle", { cx: x + b.unit_gap + 1.5, cy: uy, r: 0.55,
         fill: "#fff", stroke: "#111", "stroke-width": 0.07 }));
@@ -898,7 +901,7 @@ function elevation(b: BoomElevation, all: Instrument[],
   // drawing has to say so — a gap here reads as "there is no unit there".
   b.no_height.forEach((u, i) => {
     text(x + b.unit_gap, y + b.top - (i + 1) * 0.5,
-         `${u.unit}: NO HEIGHT RECORDED`, TEXT * 0.3, "start", "600", "#c0392b");
+         `${unitLabel(u.unit)}: NO HEIGHT RECORDED`, TEXT * 0.3, "start", "600", "#c0392b");
   });
   return g;
 }

@@ -1,7 +1,7 @@
 /** Run: cd web && npm run test:store */
 import { Store, snapToPosition } from "./store.js";
 import { plotFileName, newPlot, isPlot, resolveEnds, runOf, lengthOf, angleOf,
-         endsFromLengthAngle, duplicateNames, duplicateUnits, nextPositionName,
+         endsFromLengthAngle, duplicateNames, duplicateUnits, type UnitNumber, nextPositionName,
          type Plot } from "./plot.js";
 import { feet } from "./details.js";
 import { nextBoomHeight } from "./positions.js";
@@ -499,18 +499,33 @@ check("blank names are not a clash",
       [...duplicateNames([pos(""), pos(""), pos("GRID C")])], []);
 
 console.log("\ntwo units with the same number on one position");
-const u = (position: string, unit: number) => ({ position, unit });
+const u = (position: string, unit: UnitNumber) => ({ position, unit });
 // ⭐ RP-2 numbers units PER POSITION, so unit 1 on two pipes is correct.
 check("the same number on two different pipes is fine",
       duplicateUnits([u("GRID B", 1), u("GRID C", 1)], "GRID C"), []);
+// ⚠ LABELS, not numbers, since a unit number may be "10A" — see unitKey.
 check("...but twice on one pipe is not",
-      duplicateUnits([u("GRID C", 1), u("GRID C", 1)], "GRID C"), [1]);
+      duplicateUnits([u("GRID C", 1), u("GRID C", 1)], "GRID C"), ["1"]);
 check("reported in order", duplicateUnits(
-      [u("GRID C", 3), u("GRID C", 1), u("GRID C", 3), u("GRID C", 1)], "GRID C"), [1, 3]);
+      [u("GRID C", 3), u("GRID C", 1), u("GRID C", 3), u("GRID C", 1)], "GRID C"), ["1", "3"]);
 check("matched the way the joins match",
-      duplicateUnits([u("grid c", 2), u("GRID C ", 2)], "GRID C"), [2]);
+      duplicateUnits([u("grid c", 2), u("GRID C ", 2)], "GRID C"), ["2"]);
 check("a unit with no number is not a duplicate",
       duplicateUnits([{ position: "GRID C" }, { position: "GRID C" }], "GRID C"), []);
+// 🔴 THE REASON IT IS KEYED ON THE LABEL. 10 and "10" are one light, and so are
+// "10a" and "10A" — keyed on the raw value a pipe could hold two unit 10s that
+// the paperwork cannot address and this check called fine.
+check("10 and \"10\" are one unit",
+      duplicateUnits([u("GRID C", 10), u("GRID C", "10")], "GRID C"), ["10"]);
+check("\"10a\" and \"10A\" are one unit",
+      duplicateUnits([u("GRID C", "10a"), u("GRID C", "10A")], "GRID C"), ["10A"]);
+// ⭐ But 10 and 10A are two lights, which is the whole point of the suffix.
+check("10 and 10A are NOT duplicates",
+      duplicateUnits([u("GRID C", 10), u("GRID C", "10A")], "GRID C"), []);
+check("...and a suffix sorts between its neighbours",
+      duplicateUnits([u("GRID C", 11), u("GRID C", 11), u("GRID C", "10A"),
+                      u("GRID C", "10A"), u("GRID C", 10), u("GRID C", 10)],
+                     "GRID C"), ["10", "10A", "11"]);
 
 
 // ------------------------------------------- sharing a name is allowed, not wrong

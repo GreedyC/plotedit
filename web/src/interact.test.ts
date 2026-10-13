@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { attachPointer } from "./interact.js";
 import { Store } from "./store.js";
-import type { Plot } from "./plot.js";
+import type { Instrument, Plot } from "./plot.js";
 
 class Surface extends EventTarget {
   style = { cursor: "crosshair" };
@@ -39,7 +39,13 @@ pointer("pointermove", 125, 90);
 pointer("pointermove", 135, 105);
 assert.deepEqual(pans, [[25, -10], [35, 5]]);
 assert.equal(store.dirty, false);
-assert.deepEqual(store.plot.instruments[0], { unit: 1, type: "S4 26", x: 5, y: 20 });
+// ⚠ ANNOTATED ON PURPOSE, and it is not decoration. `assert.deepEqual` is
+// declared `asserts actual is T`, so an inline object literal here NARROWS
+// store.plot.instruments[0] to that literal for the rest of the file — and
+// every later assertion about a field the literal does not mention (focusX,
+// focusY) stops compiling. Naming the type keeps T as Instrument.
+const untouched: Instrument = { unit: 1, type: "S4 26", x: 5, y: 20 };
+assert.deepEqual(store.plot.instruments[0], untouched);
 assert.equal(changes, 0);
 pointer("pointerup", 135, 105);
 assert.equal(surface.style.cursor, "crosshair");

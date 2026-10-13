@@ -39,6 +39,7 @@ import { attachPointer, attachKeyboard } from "./interact.js";
 import { renderInspector } from "./inspector.js";
 import { renderPositions, resetPositionCards } from "./positions.js";
 import { renderDetails } from "./details.js";
+import { unitLabel } from "./plot.js";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const svg = $<HTMLElement>("plot") as unknown as SVGSVGElement;
@@ -275,7 +276,7 @@ function fillTable() {
     const patchText = c?.patch ?? fallback;
     const patchWhat = c?.patch_note ?? fallbackWhy;
     const cells: [string, boolean, string?][] = [
-      [inst.position ?? "", false], [String(inst.unit), false],
+      [inst.position ?? "", false], [unitLabel(inst.unit), false],
       [inst.channel !== undefined ? String(inst.channel) : "", false],
       [inst.type, false], [inst.color ?? "—", false],
       // ⚠ UNKNOWN, never a blank. An empty cell in a load column reads as
@@ -408,7 +409,7 @@ function paint() {
   const sel = store.selected;
   const inst = sel === null ? undefined : store.plot.instruments[sel];
   $("inst-count").textContent = inst
-    ? `Unit ${inst.unit}${inst.channel === undefined ? "" : ` · ch ${inst.channel}`}`
+    ? `Unit ${unitLabel(inst.unit)}${inst.channel === undefined ? "" : ` · ch ${inst.channel}`}`
     : "none selected";
   $("pos-count").textContent = String(store.plot.positions.length);
   $("sched-count").textContent = String(store.plot.instruments.length);

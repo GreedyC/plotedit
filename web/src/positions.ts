@@ -12,7 +12,7 @@
 import type { Plot, Position } from "./plot.js";
 import { isVertical, resolveEnds, runOf, lengthOf, angleOf,
          endsFromLengthAngle, duplicateNames, duplicateUnits,
-         nextPositionName } from "./plot.js";
+         nextPositionName, nextUnit } from "./plot.js";
 import type { Store } from "./store.js";
 import { renumber } from "./api.js";
 import { confirmDelete, confirmSharedName, sharedNameRenumberNote } from "./confirm.js";
@@ -520,7 +520,7 @@ export function renderPositions(
       // same thing six times; starting from a blank one every time would be six times
       // the typing for no gain. Falls back to the plot's most recent unit.
       const model = on[on.length - 1] ?? plot.instruments[plot.instruments.length - 1];
-      const nextUnit = on.length ? Math.max(...on.map(i => i.unit)) + 1 : 1;
+      const next = nextUnit(on);
       const nextCh = plot.instruments.length
         ? Math.max(...plot.instruments.map(i => i.channel ?? 0)) + 1 : 1;
       // ⭐ Drop it in the BIGGEST GAP on the pipe, not at the midpoint.
@@ -579,7 +579,7 @@ export function renderPositions(
       const outOfOrder = isVertical(p) && height !== undefined
         && on.some(i => i.height !== undefined && i.height < height!);
       store.add({
-        unit: nextUnit,
+        unit: next,
         channel: nextCh,
         type: model?.type ?? "S4 26",
         x: mid.x, y: mid.y,
@@ -602,7 +602,7 @@ export function renderPositions(
         // the designer decide whether the order is worth rewriting the run for;
         // on a boom that is still being built it usually is not.
         deps.onStatus?.(
-          `Unit ${nextUnit} went in above a lower one, so ${p.name} is not in `
+          `Unit ${next} went in above a lower one, so ${p.name} is not in `
           + `numerical order down the boom.`);
       }
       deps.onChange();

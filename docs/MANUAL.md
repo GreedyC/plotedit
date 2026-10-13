@@ -244,6 +244,24 @@ pipe, written in the hookup the electrician is holding, and called out in the
 dark. Renumbering rewrites every one of them in the file and none of them in the
 room. **If one number is wrong, change that one by hand.**
 
+#### A unit added later: 10A
+
+**Type `10A` into the Unit box and it goes between 10 and 11** — on the plot, in
+the schedule, in the hookup, everywhere the units are in order.
+
+⭐ **That is what the suffix is for.** The plot is drawn and the rig is hung, and
+one more light is wanted in the middle of the pipe. The alternative is
+renumbering every unit above it, which rewrites the file and not the paper the
+electrician is holding.
+
+Digits and at most one letter: `10A`, `3b` (stored as `3B`). Anything else is
+refused and the box puts back what was there. A suffix does **not** take a slot
+of its own, so a pipe holding 10, 10A and 11 offers **12** as its next unit.
+
+⚠ **Renumber and number-by-clicking both write plain numbers**, which replaces a
+suffix like any other number. A geometry sort cannot know that one unit went in
+later — that is the human fact the suffix records.
+
 ### Point them
 
 Drag the **ring** — the focus handle — to where the light lands. The dashed

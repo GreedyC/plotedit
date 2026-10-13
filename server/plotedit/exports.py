@@ -25,14 +25,20 @@ from typing import Any, Dict, List
 
 from . import photometrics as ph
 from . import dmx
+from . import positions as _positions
 
 
 # --------------------------------------------------------------- helpers
 
 def _sorted_for_schedule(instruments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """By position, then unit — the order someone hangs in."""
+    """By position, then unit — the order someone hangs in.
+
+    ⚠ NOT `_num`, which reads "10A" as unreadable and sends it to the end of the
+    pipe. A suffixed unit hangs BETWEEN 10 and 11 and has to print there, or the
+    schedule is in a different order from the rig.
+    """
     return sorted(instruments, key=lambda i: (str(i.get("position") or "~"),
-                                              _num(i.get("unit"))))
+                                              _positions.unit_key(i.get("unit"))))
 
 
 def _sorted_for_hookup(instruments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

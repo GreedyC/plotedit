@@ -23,6 +23,7 @@ export function deleteMessage(subject: string, consequence?: string): string {
   return lines.join("\n");
 }
 
+import { unitLabel, type UnitNumber } from "./plot.js";
 /** Ask. Returns true when the reader said yes. */
 export function confirmDelete(subject: string, consequence?: string): boolean {
   return window.confirm(deleteMessage(subject, consequence));
@@ -30,9 +31,9 @@ export function confirmDelete(subject: string, consequence?: string): boolean {
 
 /** How to name a unit in a question: "unit 3 on GRID C (channel 33)". */
 export function describeUnit(
-  inst: { unit?: number; channel?: number; position?: string; type?: string },
+  inst: { unit?: UnitNumber; channel?: number; position?: string; type?: string },
 ): string {
-  const bits = [`unit ${inst.unit ?? "?"}`];
+  const bits = [`unit ${unitLabel(inst.unit) || "?"}`];
   if (inst.position) bits.push(`on ${inst.position}`);
   const tail: string[] = [];
   if (inst.channel !== undefined && inst.channel !== null) tail.push(`channel ${inst.channel}`);

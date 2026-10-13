@@ -11,9 +11,16 @@
  */
 import { defaultLayers, type PlotLayer } from "./layers.js";
 
+/** A unit number. "10A" is as valid as 10 — see `unitKey`. */
+export type UnitNumber = number | string;
+
 export interface Instrument {
-  /** Unit number, unique within a position. */
-  unit: number;
+  /** Unit number, unique within a position.
+   *
+   *  ⭐ A NUMBER OR A STRING, because a unit added between 10 and 11 is
+   *  numbered "10A" on a hang sheet — see unitKey. Existing plots keep plain
+   *  numbers; only a suffixed unit is ever a string. */
+  unit: UnitNumber;
   channel?: number;
   /** The house circuit this unit is plugged into. §6.14.1 draws it in a HEXAGON.
    *
@@ -510,6 +517,69 @@ export function duplicateNames(
   return twice;
 }
 
+/** Digits, then at most one letter. */
+const UNIT_RE = /^\s*(\d+)\s*([A-Za-z]?)\s*$/;
+
+/** A unit number as something sortable: 10 → [10, ""], "10A" → [10, "A"].
+ *
+ *  ⭐ WHY A SUFFIX EXISTS AT ALL. Adding a unit between 10 and 11 is ordinary —
+ *  the plot is drawn, the rig is hung, and one more light is wanted in the
+ *  middle of the pipe. On a hang sheet that light is **10A**, because the
+ *  alternative is renumbering every unit above it and handing the electrician a
+ *  second document that disagrees with the one taped to the pipe.
+ *
+ *  ⚠ IT SORTS BETWEEN 10 AND 11, which is the whole reason the number is
+ *  written that way rather than as 19 on the end of the run. Anything that
+ *  cannot be read as a unit number sorts LAST rather than throwing: a plot with
+ *  a typo in one cell still draws.
+ *
+ *  Mirrored by `unit_key` in server/plotedit/positions.py.
+ */
+export function unitKey(u?: UnitNumber): [number, string] {
+  if (typeof u === "number") return [u, ""];
+  const m = UNIT_RE.exec(String(u ?? ""));
+  if (!m) return [Infinity, String(u ?? "").trim().toUpperCase()];
+  return [Number(m[1]), (m[2] ?? "").toUpperCase()];
+}
+
+/** Sort comparator for unit numbers: 9, 9B, 10, 10A, 11. */
+export function compareUnits(a?: UnitNumber, b?: UnitNumber): number {
+  const [an, as_] = unitKey(a), [bn, bs] = unitKey(b);
+  if (an !== bn) return an - bn;
+  return as_ < bs ? -1 : as_ > bs ? 1 : 0;
+}
+
+/** The canonical text of a unit number — "10A" — or "" for none.
+ *
+ *  ⚠ Case is folded UP, so "10a" and "10A" are one unit and not two. The
+ *  paperwork addresses a light as "position, number"; two spellings of one
+ *  number is two lights to whoever is reading it.
+ */
+export function unitLabel(u?: UnitNumber): string {
+  if (u === undefined || u === null) return "";
+  if (typeof u === "string" && !u.trim()) return "";
+  const [n, suffix] = unitKey(u);
+  return isFinite(n) ? `${n}${suffix}` : String(u).trim();
+}
+
+/** What a unit typed into the Unit box means. `null` is "that is not a unit
+ *  number", which the caller must refuse LOUDLY rather than silently clear. */
+export function parseUnit(raw: string): UnitNumber | undefined | null {
+  const t = raw.trim();
+  if (!t) return undefined;
+  const m = UNIT_RE.exec(t);
+  if (!m) return null;
+  // ⭐ A bare number stays a NUMBER. Writing "9" as a string would change the
+  // JSON of every plot that is edited, for nothing.
+  return m[2] ? `${Number(m[1])}${m[2].toUpperCase()}` : Number(m[1]);
+}
+
+/** One past the highest number in use, ignoring suffixes. 10A counts as 10. */
+export function nextUnit(on: readonly { unit?: UnitNumber }[]): number {
+  const used = on.map(i => unitKey(i.unit)[0]).filter(n => isFinite(n));
+  return used.length ? Math.max(...used) + 1 : 1;
+}
+
 /** Unit numbers used more than once ON ONE POSITION.
  *
  *  ⭐ RP-2 §2.3.2 numbers units per position, so unit 1 on GRID C and unit 1 on
@@ -519,17 +589,21 @@ export function duplicateNames(
  *  paperwork an electrician is holding.
  */
 export function duplicateUnits(
-  instruments: readonly { position?: string; unit?: number }[],
+  instruments: readonly { position?: string; unit?: UnitNumber }[],
   positionName: string,
-): number[] {
+): string[] {
   const key = (positionName ?? "").trim().toLowerCase();
-  const seen = new Set<number>(), twice = new Set<number>();
+  const seen = new Set<string>(), twice = new Set<string>();
   for (const i of instruments) {
     if ((i.position ?? "").trim().toLowerCase() !== key) continue;
-    if (i.unit === undefined) continue;
-    if (seen.has(i.unit)) twice.add(i.unit); else seen.add(i.unit);
+    // ⚠ The LABEL, not the raw value: 10 and "10" are one unit, and so are
+    // "10a" and "10A". Keying on the raw value lets a pipe hold two unit 10s
+    // that the paperwork cannot tell apart and this check calls fine.
+    const label = unitLabel(i.unit);
+    if (!label) continue;
+    if (seen.has(label)) twice.add(label); else seen.add(label);
   }
-  return [...twice].sort((a, b) => a - b);
+  return [...twice].sort(compareUnits);
 }
 
 /** A position name not already in use: Electric 8, or 9, or 10...

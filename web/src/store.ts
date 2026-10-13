@@ -7,6 +7,7 @@
  */
 import type { Plot, Instrument, Position, Room } from "./plot.js";
 import { LAYERS, visibilityOf, type LayerId } from "./layers.js";
+import { unitLabel } from "./plot.js";
 
 export type Listener = () => void;
 
@@ -220,7 +221,7 @@ export class Store {
     const name = pos.name.trim().toLowerCase();
     const orphaned = this._plot.instruments
       .filter(i => (i.position ?? "").trim().toLowerCase() === name)
-      .map(i => `unit ${i.unit}`);
+      .map(i => `unit ${unitLabel(i.unit)}`);
     this.begin(null);
     this._plot.positions.splice(index, 1);
     for (const inst of this._plot.instruments) {

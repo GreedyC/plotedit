@@ -23,7 +23,7 @@ from typing import Optional, List, Dict, Any, Union
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from . import dmx
 from . import labels as _labels
@@ -60,8 +60,29 @@ app.add_middleware(
 class Instrument(BaseModel):
     """One unit on the plot. Field names follow the Vectorworks/Lightwright
     exchange, so paperwork.py imports old shows with no translation."""
-    unit: Optional[int] = None
+    # ⭐ int OR str, because a unit added between 10 and 11 is numbered "10A"
+    # on a hang sheet — see positions.unit_key. Union keeps 9 as the number 9
+    # rather than coercing every existing plot's units to strings.
+    unit: Optional[Union[int, str]] = None
     channel: Optional[int] = None
+
+    @field_validator("unit")
+    @classmethod
+    def _plain_number_stays_a_number(cls, v):
+        """"10" is unit 10, not a second unit that looks like it.
+
+        ⚠ Union[int, str] accepts the string "10" AS a string, so a client that
+        posts its unit numbers as text gives the plot a unit "10" beside a unit
+        10 — two records the paperwork cannot tell apart, since it addresses a
+        light as "position, number". Normalising at the door is the same thing
+        parseUnit does in the browser, applied to the only other way in.
+        """
+        if not isinstance(v, str):
+            return v
+        if v.strip().isdigit():
+            return int(v)
+        # ⭐ And "10a" is "10A", so one number is one light however it is typed.
+        return P.unit_label(v) or None
     type: str = Field(..., description='A key in FIXTURES, e.g. "S4 26"')
     x: float = Field(..., description="Feet, stage coordinates")
     y: float = Field(..., description="Feet")

@@ -28,6 +28,7 @@
  * applies the number and owns undo — so the rules can be tested without a
  * browser.
  */
+import { unitLabel, compareUnits, type UnitNumber } from "./plot.js";
 
 /** A numbering pass in progress. */
 export interface Seq {
@@ -39,12 +40,12 @@ export interface Seq {
   next: number;
   readonly step: number;
   /** Instrument indices already numbered in THIS pass. */
-  readonly done: Map<number, { from?: number; to: number }>;
+  readonly done: Map<number, { from?: UnitNumber; to: number }>;
 }
 
 export interface SeqUnit {
   position?: string;
-  unit?: number;
+  unit?: UnitNumber;
 }
 
 export function startSeq(name: string, start: number, step = 1): Seq {
@@ -62,7 +63,7 @@ export function runIndices(instruments: readonly SeqUnit[], name: string): numbe
 }
 
 export type SeqClick =
-  | { ok: true; index: number; from?: number; to: number; next: number; last: boolean }
+  | { ok: true; index: number; from?: UnitNumber; to: number; next: number; last: boolean }
   | { ok: false; why: string };
 
 /** Decide what a click on `index` does. Advances the pass when it succeeds.
@@ -100,7 +101,7 @@ export function seqClick(
 /** What to show after one click. `from` is stated because a number being
  *  OVERWRITTEN is the whole risk — see the rule quoted at the top. */
 export function clickLine(r: Extract<SeqClick, { ok: true }>): string {
-  const was = r.from === undefined ? "unnumbered" : `unit ${r.from}`;
+  const was = unitLabel(r.from) ? `unit ${unitLabel(r.from)}` : "unnumbered";
   return r.last
     ? `${was} → ${r.to}. That is every unit on the run.`
     : `${was} → ${r.to}. Next: ${r.next}. Escape to stop, ⌘Z to undo one.`;
@@ -123,13 +124,16 @@ export function seqReport(seq: Seq, instruments: readonly SeqUnit[]): string {
   if (!numbered) return `${seq.name}: nothing was numbered.`;
 
   const left = all.filter(i => !seq.done.has(i));
-  const counts = new Map<number, number>();
+  // ⚠ Tallied by LABEL, so 10 and "10" are one unit and "10a" and "10A" are
+  // one unit. A pass that leaves two spellings of one number has left a
+  // duplicate, and reporting them as distinct is how it gets missed.
+  const counts = new Map<string, number>();
   for (const i of all) {
-    const u = instruments[i]?.unit;
-    if (u !== undefined) counts.set(u, (counts.get(u) ?? 0) + 1);
+    const u = unitLabel(instruments[i]?.unit);
+    if (u) counts.set(u, (counts.get(u) ?? 0) + 1);
   }
   const dups = [...counts.entries()].filter(([, n]) => n > 1)
-    .map(([u]) => u).sort((a, b) => a - b);
+    .map(([u]) => u).sort(compareUnits);
 
   const bits = [`${seq.name}: numbered ${numbered} unit${numbered > 1 ? "s" : ""}`];
   if (left.length) {
