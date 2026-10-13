@@ -100,3 +100,18 @@ store.undo();
 assert.equal(store.plot.instruments[0]!.x, 5);
 pointer("pointermove", 100, 100);
 assert.equal(store.plot.instruments[0]!.x, 5);
+
+store.select(0);
+pointer("pointerdown", 100, 100);
+pointer("pointerup", 100, 100);
+assert.equal(store.selected, null);
+const focus = { closest: () => focus, getAttribute: (name: string) => name === "data-index" ? "0" : "focus" };
+pointer("pointerdown", 50, 200, { target: focus });
+pointer("pointermove", 60, 210);
+pointer("pointerup", 60, 210);
+assert.equal(store.plot.instruments[0]!.x, 5);
+assert.equal(store.plot.instruments[0]!.y, 20);
+assert.equal(store.plot.instruments[0]!.focusX, 6);
+assert.equal(store.plot.instruments[0]!.focusY, 19);
+store.undo();
+assert.equal(store.plot.instruments[0]!.focusX, undefined);
