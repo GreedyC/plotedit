@@ -585,6 +585,26 @@ def pool(kind, throw, elevation=None):
     return out
 
 
+def gel_key(gel):
+    """A gel code reduced to what identifies it: letters and digits, uppercased.
+
+    🔴 "R-33" AND "R33" ARE THE SAME FILTER. gels.csv keys all 498 rows without
+    punctuation — R33, L142 — while plots and imported paperwork commonly write
+    the dashed form. A house rep plot read into plotedit came in as R-37, L-142,
+    R-54 and R-05, and every one of them missed the table: no transmission, so no
+    footcandle figure anywhere on the plot. It failed honestly, with a note, which
+    is why nobody noticed for a fortnight.
+
+    ⭐ NORMALISED ON BOTH SIDES — on load and on lookup — so the table cannot drift
+    from the plots either way.
+
+    ⚠ It does NOT invent a maker. A bare "33" normalises to "33" and still misses,
+    which is right: R33 and L33 are different filters and guessing a house's
+    preferred maker is how a plot promises light it will not deliver.
+    """
+    return re.sub(r"[^A-Z0-9]", "", str(gel or "").upper())
+
+
 def load_gels(path=None):
     """gels.csv beside this file: gel, name, transmission (0-1), source, added. Add rows as gels come up."""
     import csv, os
@@ -592,7 +612,7 @@ def load_gels(path=None):
     out = {}
     with open(path) as fh:
         for row in csv.DictReader(fh):
-            out[row["gel"].upper()] = dict(name=row["name"], t=float(row["transmission"]), source=row["source"])
+            out[gel_key(row["gel"])] = dict(name=row["name"], t=float(row["transmission"]), source=row["source"])
     return out
 
 GELS = load_gels()
@@ -629,7 +649,7 @@ def gel_factor(gel):
     kind, gels = parse_gel(gel)
     rows = []
     for g in gels:
-        row = GELS.get(g.upper())
+        row = GELS.get(gel_key(g))
         if row is None:
             # ⚠ SAY WHAT A BARE NUMBER IS MISSING. R119 is Light Hamburg Frost
             # at 89% and L119 is Dark Blue at 2%: the same digits, opposite
