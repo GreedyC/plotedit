@@ -116,6 +116,18 @@ check(f"...and the same {P.PLUMB_DEG}° threshold",
 check("...and the same UPSTAGE half turn",
       f"UPSTAGE = {P.UPSTAGE}" in ts, True)
 
+# 🔴 AND THE BROWSER SNAPS WHAT IT CHOSE, rather than overriding after the snap.
+# This is the assertion that was missing. The Python had the ordering right and
+# the TypeScript did not, so every suite passed while Big House's balcony rail —
+# 37° off square — drew at its own rake on screen. Checking one side of a
+# mirrored pair is not checking the pair.
+check("the browser chooses the source BEFORE the snap",
+      "const src = alongTheMount ?? (c?.pan ?? 0);" in ts, True)
+check("...and snaps whatever it chose",
+      "Math.round(src / 90) * 90" in ts, True)
+check("🔴 and never overrides AFTER the snap",
+      "alongTheMount ?? snapped" in ts, False)
+
 print("\n🔴 the paper honours it too")
 pdf = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "plotedit", "scaled_pdf.py"), encoding="utf-8").read()

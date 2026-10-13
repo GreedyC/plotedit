@@ -647,19 +647,20 @@ function symbol(inst: Instrument, c: Computed | undefined,
   //
   // 🔴 COSMETIC ONLY. `c.pan` remains the real aim and every number is computed
   // from it — this rotates ink, nothing else.
-  const truePan = c?.pan ?? 0;
-  const snapped = (symbolAngle ?? "orthogonal").startsWith("orth")
-    ? Math.round(truePan / 90) * 90 : truePan;
-  // 🔴 #113. A STRIP DOES NOT TURN. It is bolted to the pipe at two points and
-  // tilts on knobs at the mounting — Jerry, 2026.10.12: "mounted in two places
-  // and can only be focused in one plane". Rotating it to face a focus point
-  // draws a six-foot body lying diagonally across the stage, where no
-  // electrician could hang it.
+  // 🔴 THE SOURCE IS CHOSEN BEFORE THE SNAP, NOT SUBSTITUTED AFTER IT.
   //
-  // ⭐ Its angle comes from the PIPE instead. The symbol is already built for
-  // that — led_batten's own note says "the length runs ACROSS the symbol (along
-  // the pipe)" — so this makes the drawing agree with the geometry.
-  const pan = alongTheMount ?? snapped;
+  // #113 and #116 give a unit its pipe's angle — a strip because it cannot turn,
+  // an unfocused unit because it has nothing to turn toward. But RP-2 p.2 wants
+  // luminaires on 90° axes however the angle was arrived at, so the pipe's angle
+  // has to go through the same snap as a real aim.
+  //
+  // ⚠ Overriding afterwards drew Big House's raked catwalks and its balcony rail
+  // at their own rake — the rail is 37° off square — instead of square to the
+  // stage. The Python had this right and the browser did not, which is the exact
+  // shape of bug test_two_point.py exists to prevent, and did not.
+  const src = alongTheMount ?? (c?.pan ?? 0);
+  const pan = (symbolAngle ?? "orthogonal").startsWith("orth")
+    ? Math.round(src / 90) * 90 : src;
   // 🔴 NOT -pan. See symbolTransform: negating the angle agrees with the paper
   // at 0 and 180 and mirrors it at ±90, so every sideways unit pointed the
   // wrong way.
