@@ -20,6 +20,7 @@ section into a smear and hides the only thing it is for.
 """
 import json
 import math
+import os
 import sys
 
 from plotedit.scaled_pdf import Sheet, ft
@@ -59,13 +60,68 @@ def _figure(s, x, head_h):
     s.text(x + ft(0, 10), head_h, f"head height {ph.fmt_ft(head_h)}", size=5.5, color=grey)
 
 
+#: Feet of pad used by the MEASURING pass. Generous on purpose — nothing may
+#: fall off the probe, because the probe is what measures the overhang.
+PROBE_PAD = 40.0
+
+#: Feet of air left beside the drawing when it does NOT fit and cannot be
+#: centred. Only reached by a drawing the guard is about to complain about.
+AIR = 1.0
+
+
+def place_for(probe):
+    """Where to put real-world (0,0) on the sheet, from a measuring render.
+
+    ⭐ MEASURED, NOT RESERVED. The section used to set `origin(ft(9), ft(3))` —
+    nine feet of pad on the left for a drawing that uses **one**. Measured the
+    same on demo.plot.json, blackbox.plot.json and Sample Big House, at every
+    scale: ink starts 1.00 ft left of the origin and 1.83 ft below it.
+
+    🔴 AND THE PAD IS IN FEET, SO IT SCALES. At 1/4" nine feet costs 2.25 inches
+    of paper; at 3/4" it costs 6.75 — most paper eaten exactly when there is
+    least to spare. The demo plot missed 3/4" by one inch with six inches of pad
+    on it, so the section printed a scale step smaller than it had to, on the
+    one drawing whose whole purpose is reading trims off it (#94).
+
+    ⚠ The 9 was not a wrong number, it was a wrong METHOD — a constant tuned
+    against the worst plot anyone had tried, which nobody measures again. Some
+    plots genuinely need a deep left pad: a house catwalk at negative y, or a
+    sight point out in the seats. Those are measured here too, because the probe
+    draws them.
+
+    ⭐ `slack_left` and `slack_above` do the placing, so the arithmetic for
+    "centred, and never nudged into a clip" lives in one place and the section
+    now gets the centring the plot drawing got in v0.1.22.
+    """
+    x0, y0, x1, y1 = probe._bounds
+    if x1 < -1e8:                       # nothing drawn; nothing to measure
+        return PROBE_PAD, PROBE_PAD
+    ppf = probe.pt_per_ft
+    # How far the ink actually reaches outside the origin, in feet. Negative
+    # means it overhangs — the deck runs a foot left of the room, and its label
+    # hangs below the floor line.
+    over_x = (x0 - probe.ox) / ppf
+    over_y = (y0 - probe.oy) / ppf
+    # ⚠ A span that does not fit cannot be centred, and slack_* return 0 for it.
+    # Fall back to the measured overhang plus air, so the guard's message is
+    # about the real overflow rather than about the pad.
+    shift, lift = probe.slack_left(), probe.slack_above()
+    ox = PROBE_PAD + shift if shift else AIR - over_x
+    oy = PROBE_PAD + lift if lift else AIR - over_y
+    return ox, oy
+
+
 def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
-           page="ARCH_D", landscape=True, head_h=5.5):
+           page="ARCH_D", landscape=True, head_h=5.5, place=None):
     # "fit" zooms in as far as the sheet allows, on standard scales only. The
     # section is the drawing trims are read off, so a bigger scale is a more
     # useful drawing — as long as nothing falls off the edge.
     if scale in ("fit", "max", None):
         from plotedit.scaled_pdf import largest_scale as _largest
+        # ⚠ The search renders at each rung and asks the guard, so each rung has
+        # to be drawn WHERE IT WILL ACTUALLY SIT. Searching against the old
+        # fixed pad is what cost the scale step: a drawing that fits once placed
+        # was rejected because it did not fit shoved against a nine-foot margin.
         scale = _largest(lambda k, path: render(plot_path, path, cut_at=cut_at,
                                                 axis=axis, scale=k, page=page,
                                                 landscape=landscape, head_h=head_h)[0])
@@ -89,10 +145,19 @@ def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
               designer=(f"Design: {plot['designer']}" if plot.get("designer") else ""),
               studio=plot.get("studio", ""), date=plot.get("date", ""))
     s.angle_in_barrel = _barrel = bool(plot.get("angleInBarrel"))
-    # ⚠ The left margin has to absorb what is drawn LEFT of the room: the deck
-    # runs a foot past it, and the labels run further still. The guard reported
-    # 5.4' off the left edge once the sight point moved back inside the room.
-    s.origin(ft(9), ft(3))
+    # ⭐ MEASURED AND CENTRED — see place_for(). The left margin has to absorb
+    # what is drawn LEFT of the room: the deck runs a foot past it, and a house
+    # catwalk or a sight point out in the seats runs much further. That used to
+    # be a flat nine feet for every plot; it is now whatever this plot draws.
+    if place is None:
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as _d:
+            _probe, _ = render(plot_path, os.path.join(_d, "probe.pdf"),
+                               cut_at=cut_at, axis=axis, scale=scale, page=page,
+                               landscape=landscape, head_h=head_h,
+                               place=(PROBE_PAD, PROBE_PAD))
+        place = place_for(_probe)
+    s.origin(*place)
 
     s.layer("BASE")
     # §3: the deck, and WHICH zero it is. A section with an unstated reference is

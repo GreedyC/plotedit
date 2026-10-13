@@ -1580,3 +1580,63 @@ along with the HPL-socket 65Q.
 **Still not on file:** the Altman 8" Fresnel, and the other Shakespeare lamps —
 whose correction factors are in a table whose columns, unlike this one's, do not
 read cleanly.
+
+---
+
+## The section is placed by what it draws — 2026.10.13
+
+#94. `plot_to_section.render()` set `origin(ft(9), ft(3))` for every plot.
+
+**Measured on `demo.plot.json`, `blackbox.plot.json` and `Sample Big House`, at
+every scale: ink starts 1.00 ft left of the origin and 1.83 ft below it.** Eight
+of those nine feet were white paper, identically, on every section ever
+exported.
+
+🔴 **And the pad is in FEET, so it scales with the drawing.** At 1/4" nine feet
+costs 2.25 inches of paper; at 3/4" it costs 6.75 — most paper eaten exactly
+when there is least to spare. The demo plot missed 3/4" **by one inch, with six
+inches of pad on it**, so every section printed a scale step smaller than it had
+to. On the one drawing whose whole purpose is reading trims off it.
+
+| | before | after |
+|---|---|---|
+| `demo.plot.json` | 1/2" | **3/4"** |
+| `blackbox.plot.json` | 1/2" | **3/4"** |
+
+### What it does now
+
+One measuring render at a generous pad, then `place_for()` reads the real ink
+bounds and hands the origin to `slack_left` / `slack_above` — the helpers that
+already own "centred, and never nudged into a clip", and which the section had
+never used. ⭐ **So the section also gets the centring the plot drawing got in
+v0.1.22**, which is the other half of #94 and was free.
+
+⚠ **The fit search had to move too.** It renders at each rung and asks the
+guard, so each rung has to be drawn *where it will actually sit* — searching
+against the old fixed pad is precisely what cost the step: a drawing that fits
+once placed was being rejected for not fitting shoved against a nine-foot
+margin.
+
+### ⚠ The 9 was not a wrong number, it was a wrong method
+
+A constant tuned against the worst plot anyone had tried, which nobody measures
+again — the same shape as #59's 1.3" band. Some plots genuinely need a deep left
+pad, and those are measured too: a sight point 30 ft into the house now gets 30
+feet of pad, no clipping, at the smaller scale that honestly fits it.
+
+🔴 **And the issue's own reason for the 9 is out of date.** It cites
+`Sheet.foh_extent` — "a plot with a deep FOH catwalk would need much more" — but
+that function has been **deprecated and returning 0.0 since 2026.09.24**, when
+the model changed to "the room is the whole room, and an FOH position belongs
+inside it". The sight point is the only deep-left case left.
+
+### ⚠ Found while looking at the output, and NOT fixed here
+
+At 3/4" the scale bar's check-bar label — *"this bar is 1" when printed at
+100%"* — **runs into the left border of the title block.** The scale bar is
+narrower in points at a larger scale, the check bar is placed relative to it,
+and the label overruns.
+
+**It is not caused by this change**: rendering the old code forced to 3/4" shows
+the identical overlap. It has simply been unreachable, because nothing ever got
+to 3/4". Worth its own issue.

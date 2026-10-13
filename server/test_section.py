@@ -97,7 +97,56 @@ x0, _, x1, _ = sheet._bounds
 span_ft = (x1 - x0) / sheet.pt_per_ft
 check("the drawing spans the room, not hundreds of feet", span_ft < 70, True)
 # Before the clip this plot measured 93.0 feet and fit chose 1/4".
-check("so fit reaches 1/2\" on ARCH D", sheet.scale_label, "1/2\" = 1'-0\"")
+# ⭐ AND THEN 3/4", once the placement stopped reserving nine feet of pad on the
+# left for a drawing that uses one (#94). This assertion read 1/2" for a
+# fortnight: the plot fitted 3/4" the whole time and was being rejected for not
+# fitting around a constant. 3/4" is 50% more drawing on the sheet whose entire
+# purpose is reading trims off it.
+check("so fit reaches 3/4\" on ARCH D", sheet.scale_label, "3/4\" = 1'-0\"")
+# ⚠ And it is a real fit, not a bigger scale that clips — the next line checks
+# that, and it is the half that matters.
+
+print("\n🔴 the placement is measured, not reserved (#94)")
+# The section set origin(ft(9), ft(3)) for every plot. Measured on three plots
+# at every scale, the ink starts 1.00 ft left of the origin and 1.83 ft below —
+# so eight of those nine feet were white paper, and the pad is in FEET, which
+# means it scales: at 3/4" nine feet costs 6.75 inches of a 36-inch sheet.
+import plot_to_section as _PS                              # noqa: E402
+src = open(_PS.__file__, encoding="utf-8").read()
+# ⚠ The CALL, not the string. `place_for`'s docstring quotes the old line so the
+# next reader knows what this replaced, and that sentence is the reason nobody
+# puts the constant back — so the check has to be able to tell the two apart.
+check("no constant origin is called any more", "s.origin(ft(" in src, False)
+check("it is placed from a measurement", "s.origin(*place)" in src, True)
+check("...and the docstring still names what it replaced",
+      "origin(ft(9), ft(3))" in src, True)
+
+over_left = (sheet._bounds[0] - sheet.ox) / sheet.pt_per_ft
+check("ink starts about a foot left of zero, as measured",
+      round(over_left, 2), -1.0)
+# ⭐ CENTRED, which the plot drawing learned in v0.1.22 and the section never
+# did. Nothing left to take up means it is already where it should be.
+check("...and there is no slack left to take up", round(sheet.slack_left(), 1), 0.0)
+check("...in either axis", round(sheet.slack_above(), 1), 0.0)
+
+print("\n⚠ a plot that genuinely needs a deep left pad still gets one")
+# 🔴 THE REASON THE 9 WAS THERE. A sight point out in the seats is drawn at
+# negative y, well left of the room. The old pad guessed at that case with a
+# constant; this measures it. ⚠ foh_extent, which the issue also cited, has
+# been deprecated and returning 0 since 2026.09.24 — the room is the whole room
+# — so the sight point is the only deep-left case left.
+deep = json.load(open(DEMO))
+deep["room"] = dict(deep["room"]); deep["room"]["sightPoint"] = {"y": -30, "h": 3.5}
+_dp = "/tmp/_sec_deep.plot.json"
+json.dump(deep, open(_dp, "w"))
+dsheet, _ = quiet(render, _dp, "/tmp/_sec_deep.pdf", page="ARCH_D")
+deep_left = (dsheet._bounds[0] - dsheet.ox) / dsheet.pt_per_ft
+check("the pad grows to what is drawn", round(deep_left), -30)
+check("...and nothing is clipped",
+      [w for w in dsheet.warnings if "CLIPPED" in w], [])
+# ⚠ A wider drawing honestly takes a smaller scale. That is the guard working,
+# not the pad failing.
+check("...at the scale that honestly fits it", dsheet.scale_label, "1/2\" = 1'-0\"")
 check("and nothing is clipped off the sheet",
       [w for w in sheet.warnings if w.startswith("CLIPPED")], [])
 

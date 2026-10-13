@@ -1150,9 +1150,19 @@ import plot_to_section as _S
 _sec_sheet, _ = _S.render(_SAMPLE, os.path.join(_tmp, "sec.pdf"))
 check("the section fits its sheet",
       [w for w in _sec_sheet.warnings if "CLIPPED" in w], [])
-_sec_up = _S.render(_SAMPLE, os.path.join(_tmp, "sec-up.pdf"), scale="3/4")[0]
-check("...and is zoomed in as far as it goes (3/4in clips)",
-      any("CLIPPED" in w for w in _sec_up.warnings), True)
+# 🔴 THE BOUNDARY, derived rather than typed. This read `scale="3/4"` until
+# #94: the section reserved nine feet of pad on the left for a drawing that
+# uses one, so 3/4" clipped and 1/2" was as far as it went. Once the placement
+# was measured, 3/4" became the fit — and a hard-coded next-rung is exactly the
+# assertion that then proves the opposite of what it says.
+_sec_fit = _sec_sheet.scale_label.split('"')[0]
+_sec_i = _P.FIT_SCALES.index(_sec_fit)
+check("the section's fit is a standard scale", _sec_i >= 0, True)
+if _sec_i:
+    _sec_up_k = _P.FIT_SCALES[_sec_i - 1]
+    _sec_up = _S.render(_SAMPLE, os.path.join(_tmp, "sec-up.pdf"), scale=_sec_up_k)[0]
+    check(f"...and the next one up ({_sec_up_k}\") clips — so it zoomed in as far as it goes",
+          any("CLIPPED" in w for w in _sec_up.warnings), True)
 
 # ⭐ EVERY RECOMMENDATION THE GUARD MAKES, RE-RENDERED AND MEASURED.
 #
