@@ -16,17 +16,24 @@ that has the defect, once on one that does not. demo.plot.json is the second
 test — it focuses two units at 3'-6" and one at 1'-6", which are a mid and a
 shin, and a checker with an opinion about head height would call all three wrong.
 
-⚠ Big House is NOT asserted clean. It carries three duplicate-unit errors today
-and fixing them needs a decision nobody has made — see docs/NEXT.md. Asserting
-its current defect count would make this suite fail the moment the data is fixed,
-which is backwards.
+🔴 BOTH SHIPPED SAMPLES ARE NOW ASSERTED FREE OF ERRORS, and that assertion is
+the point of the file. They were not when the pass was written: Big House had
+three duplicate units and `focusH: 0` on all 201 instruments, so every pool and
+footcandle in it computed at the floor. Fixed 2026.10.13 (#125). This is what
+stops it coming back — a sample plot is the first thing a stranger opens, and the
+only thing that keeps it honest is a check that runs every time.
+
+⚠ Warnings are NOT asserted away. Big House still reports three, all of them
+true and all of them documented: the units are focused straight down as a
+stand-in, 64 are unpatched, and eight are coloured "NC/Temp", which is a note to
+the electrician rather than a filter.
 """
 import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from plotedit import qc                    # noqa: E402
+from plotedit import positions, qc         # noqa: E402
 
 FAILS = []
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -204,13 +211,93 @@ check("...and no warnings either", slugs(qc.check(demo), "warning"), [])
 
 big = json.load(open(os.path.join(HERE, "..", "samples",
                                   "Sample Big House.plot.json"), encoding="utf-8"))
-# ⚠ Not a clean bill of health — see the header. This asserts only that the pass
-# RUNS on 201 real instruments and reaches a verdict, so a crash on real data is
-# caught here rather than by a person at a console.
-check("Big House is read and judged", all(f.level in ("error", "warning")
-                                          for f in qc.check(big)), True)
-check("...and every finding names at least one unit",
-      all(f.units for f in qc.check(big)), True)
+found = qc.check(big)
+# 🔴 THE REGRESSION GUARD. Three duplicate units and 201 focus heights at the
+# deck, fixed 2026.10.13. A sample that ships is a sample that gets copied.
+check("Big House has no errors", slugs(found, "error"), [])
+check("...on all 201 instruments", len(big["instruments"]), 201)
+# ⚠ The warnings that remain are true, and naming them here means a NEW one
+# shows up as a failure rather than disappearing into a list nobody reads.
+check("...and the warnings are the known three", slugs(found, "warning"),
+      ["no-channel", "not-a-gel", "unfocused"])
+check("every finding names at least one unit", all(f.units for f in found), True)
+
+print("\n⭐ and the fixes themselves, by name")
+units = {(i.get("position"), str(i.get("unit"))): i for i in big["instruments"]}
+# A unit added between 10 and 11, which is what a suffix is for.
+check("#3 ELECTRIC has a 10A", ("#3 ELECTRIC", "10A") in units, True)
+check("#4 ELECTRIC has one too", ("#4 ELECTRIC", "10A") in units, True)
+# ⭐ It sorts where it hangs: between unit 10 at x=65.9 and unit 11 at x=57.0.
+pipe = [i for i in big["instruments"]
+        if (i.get("position") or "").strip() == "#3 ELECTRIC"]
+check("...and 10A sits between 10 and 11",
+      [i["unit"] for i in sorted(pipe, key=lambda i: positions.unit_key(i["unit"]))
+       if positions.unit_key(i["unit"])[0] in (10, 11)], [10, "10A", 11])
+# The one certain fix: 200 sat in the slot where 4 was missing.
+cat = sorted(i["unit"] for i in big["instruments"]
+             if (i.get("position") or "").strip() == "#4 Catwalk UPPER")
+check("#4 Catwalk UPPER runs 1-28 with no gap", cat, list(range(1, 29)))
+rail = sorted(i["unit"] for i in big["instruments"]
+              if (i.get("position") or "").strip() == "Balcony Rail")
+check("Balcony Rail runs 1-16", rail, list(range(1, 17)))
+
+print("\n🔴 and nothing is focused at the deck any more")
+# ⚠ THE ONE THAT WAS WORTH FINDING. Blank means head height — `focusH ?? 5.5`.
+# Zero is a number, so it travels: on a 30' electric that is a 30' throw where
+# the truth is 24'-6", and every pool on every sheet was the wrong size.
+check("no focus height is 0",
+      [i.get("focusH") for i in big["instruments"] if i.get("focusH") == 0], [])
+check("every instrument states one",
+      all(i.get("focusH") is not None for i in big["instruments"]), True)
+check("...and demo does too",
+      all(i.get("focusH") is not None for i in demo["instruments"]), True)
+# ⭐ But the side light keeps the heights it was given. A mid lands at 3'-6" and
+# a shin at 1'-6"; overwriting those with head height would be the opposite bug.
+check("demo's side light is untouched",
+      sorted({i["focusH"] for i in demo["instruments"]}), [1.5, 3.5, 5.5])
+
+print("\n🔴 the exit code, which is what the CI gate actually reads")
+# ⚠ A GATE THAT CANNOT FAIL IS NOT A GATE. The suites above test qc.check(); CI
+# runs `python -m plotedit.qc`, and what it reads is main()'s return value. Those
+# are two different things, and only one of them is wired to the gate.
+import contextlib                                       # noqa: E402
+import io                                               # noqa: E402
+import json as _json                                    # noqa: E402
+import tempfile                                         # noqa: E402
+
+
+def exits(paths):
+    """main()'s return value, with its report swallowed. ⚠ The report is 30
+    lines on a real plot, and burying the pass/fail lines of a suite in it is
+    how a failure stops being seen."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return qc.main(paths)
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    def wrote(name, plot):
+        path = os.path.join(tmp, name)
+        with open(path, "w", encoding="utf-8") as fh:
+            _json.dump(plot, fh)
+        return path
+
+    good = wrote("good.plot.json", CLEAN)
+    bad = wrote("bad.plot.json", plot([unit(9, 5), unit(9, 15), unit(10, 25)]))
+    warns = wrote("warns.plot.json", plot([unit(1, 5, channel=None)]))
+
+    check("a clean plot exits 0", exits([good]), 0)
+    check("an ERROR exits 1", exits([bad]), 1)
+    # ⭐ THE WHOLE REASON THE SPLIT EXISTS. Big House has three warnings today and
+    # the gate is green. If warnings failed it, the gate would have to come out.
+    check("a WARNING exits 0", exits([warns]), 0)
+    check("one bad file among good ones still exits 1",
+          exits([good, bad, warns]), 1)
+    check("no arguments is a usage error, not a pass", exits([]), 2)
+    # ⚠ And the files CI actually names, through the same entry point.
+    here = os.path.join(HERE, "..", "samples")
+    check("the shipped samples pass the gate itself",
+          exits([os.path.join(here, "demo.plot.json"),
+                 os.path.join(here, "Sample Big House.plot.json")]), 0)
 
 print()
 if FAILS:

@@ -1284,7 +1284,7 @@ with no channel, 8 units coloured `NC/Temp` (a note to the electrician, not a
 filter), and 200 of 201 still pointing straight down — which is documented as a
 stand-in and is a warning, not a defect.
 
-### ⚠ Four data fixes, and only one of them is obvious
+### ✅ Four data fixes, done 2026.10.13 — and only one of them was obvious
 
 The numbering convention in that file is **unit 1 at the highest x, counting up
 as x decreases**, consistently, on every position. Against that rule:
@@ -1400,3 +1400,62 @@ once `unit` could be a string, every later assertion about a field the literal
 does not mention (`focusX`, `focusY`) stopped compiling. The expected value is
 now a named `Instrument`, with a comment saying why, so it does not get tidied
 back.
+
+---
+
+## The samples are clean, and CI keeps them that way — 2026.10.13
+
+#125, closed. Both shipped plots report **0 errors**, and
+`python3 -m plotedit.qc` runs over them in the `tests` job.
+
+**⭐ Head height is now STATED rather than implied.** Jerry: *"MAke focus height
+5'6" if blank"*. Every instrument in both samples carries `focusH`, where Big
+House had `0` on all 201 and demo left 15 blank. The three heights demo was
+given — a mid at 3'-6", a shin at 1'-6" — are untouched, because overwriting
+those with head height would be the opposite bug.
+
+### The numbering, and which of it was a derivation
+
+The convention in that file is **unit 1 at the highest x, counting up as x
+decreases**, consistent on every position. Against it:
+
+| was | is | why |
+|---|---|---|
+| `#4 Catwalk UPPER` 200 | **4** | sits at x=92.7, between unit 5 (90.9) and unit 3 (94.8) — and 4 was the one number missing. The outlier and the gap are the same slot. |
+| `#3 ELECTRIC` 9 (x=62.9) | **10A** | between unit 10 (65.9) and unit 11 (57.0). There is no integer there, which is what a suffix is for. |
+| `#4 ELECTRIC` 9 (x=62.9) | **10A** | the same unit on the next pipe down. |
+| `Balcony Rail` 300, 300 | **15, 16** | the next two free numbers on the pipe. |
+
+The schedule now prints `… 9, 10, 10A, 11 …`, which is where it hangs.
+
+### ⚠ The rail was NOT renumbered, and that was deliberate
+
+The two strays sit **outboard of unit 1**, at x=94.25 and x=95.09 — and 95.09 is
+exactly the leg's own endpoint. A suffix cannot say "before unit 1", so strict
+convention would make them 1 and 2 and shift the existing fourteen. Two reasons
+not to:
+
+1. **A renumber on a multi-leg position is the open question above** — which leg
+   comes first, which end of each leg starts — and that is Jerry's call, not
+   something to settle quietly while fixing a duplicate.
+2. 🔴 **The rail's existing 13 and 14 are ALREADY out of x order.** 13 sits at
+   the third leg's far endpoint (37.35, 16.64) and 14 just inboard of it (38.13,
+   15.99). A geometry renumber would silently change that too, and nobody has
+   said it is wrong.
+
+So they took the next two free numbers, which is what you do walking up to a
+rail that already has 1-14 spiked on it. **Nothing was deleted** — a unit that
+may be real is renumbered, not removed. ⚠ If the rail should run in strict x
+order, that is one line and it is still open.
+
+### What the gate does and does not do
+
+`python -m plotedit.qc` in the `tests` job, **errors only**. Big House still
+reports three warnings, all true and all documented: the units are focused
+straight down as a stand-in, 64 are unpatched, and eight are coloured
+`NC/Temp`, which is a note to the electrician rather than a filter. If warnings
+failed the gate, the gate would have to come out.
+
+⚠ `test_qc.py` asserts the exit CODE, not just `qc.check()`. Those are two
+different things and only one of them is wired to CI — a clean plot exits 0, an
+error exits 1, a warning exits 0, and one bad file among good ones still exits 1.

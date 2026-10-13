@@ -57,6 +57,24 @@ jobs:
         working-directory: server
         run: python validate_fixtures.py
 
+      - name: The shipped samples have no errors in them
+        # ⭐ WHY THIS IS A GATE AND NOT JUST A SUITE. These two files ship inside
+        # the download and demo.plot.json is the first thing a stranger opens.
+        # Until 2026.10.13 Big House carried three duplicate unit numbers and
+        # focusH: 0 on all 201 instruments — so every pool and every footcandle
+        # in it computed at the FLOOR, a 30' throw where the truth was 24'-6".
+        # It looked entirely finished. A sample that ships is a sample that
+        # gets copied.
+        #
+        # ⚠ ERRORS ONLY, which is why this can be a gate at all. The pass exits
+        # 0 on warnings, and Big House still has three of them — the units are
+        # focused straight down as a stand-in, 64 are unpatched, eight are
+        # coloured NC/Temp. Half a plot is warnings on the day you start
+        # drawing it, and a gate that goes red for an unfinished plot is a gate
+        # everyone learns to ignore.
+        working-directory: server
+        run: python -m plotedit.qc ../samples/demo.plot.json "../samples/Sample Big House.plot.json"
+
       - name: Verify the suites actually fail when broken
         # ⚠ Twice in one day a suite printed its verdict in the MIDDLE of the
         # file, so anything appended ran without affecting the exit code — it
