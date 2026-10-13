@@ -108,6 +108,17 @@ function drawingFeet(): { w: number; h: number; house: number } {
            h: depth + house + VIEW_MARGIN * 2, house };
 }
 
+let panStart = { x: 0, y: 0 };
+function beginPanDrawing(): void {
+  const canvas = $("canvas");
+  panStart = { x: canvas.scrollLeft, y: canvas.scrollTop };
+}
+function panDrawing(dx: number, dy: number): void {
+  const canvas = $("canvas");
+  canvas.scrollLeft = panStart.x - dx;
+  canvas.scrollTop = panStart.y - dy;
+}
+
 function view(): View {
   const pxPerFoot = Number($<HTMLInputElement>("zoom").value);
   const { width, depth } = store.plot.room;
@@ -1460,7 +1471,7 @@ async function adoptPlot(plot: Plot, savedName: string | null): Promise<void> {
   onDisk = structuredClone(plot);
   savedAs = savedName;
   store.subscribe(paint);
-  attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute() });
+  attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute(), onPanStart: beginPanDrawing, onPan: panDrawing });
   attachKeyboard(store, { view, onChange: draw, onSettled: () => recompute() });
   symbolCache = {}; twoPointCache = new Set();
   await recompute(0);
@@ -1607,7 +1618,7 @@ async function boot() {
     // which is the copy that leaves the building.
 
     store.subscribe(paint);
-    attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute() });
+    attachPointer(svg, store, { view, onChange: draw, onSettled: () => recompute(), onPanStart: beginPanDrawing, onPan: panDrawing });
     attachKeyboard(store, { view, onChange: draw, onSettled: () => recompute() });
 
     // ⚠ poolplane is NOT in this list — it changes the NUMBERS, not just what is
