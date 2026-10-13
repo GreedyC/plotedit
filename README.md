@@ -221,3 +221,5 @@ stops this one going the same way in somebody else's hands.
 ⚠ **No warranty.** It computes beam angles and levels from published photometric
 data and states its sources; it does not know your room. Check the numbers
 against something you measured.
+
+Drag an empty part of the plot with the left mouse button to pan a zoomed drawing. While the button is held, the hand cursor marks navigation; instruments and positions keep their existing selection and dragging behaviour.
