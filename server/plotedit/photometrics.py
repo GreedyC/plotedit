@@ -51,6 +51,25 @@ FIXTURES = {
                    source='Altman Shakespeare 750W ellipsoidal datasheet (altmanlighting.com, shakespeare_datasheet.pdf), "Shakespeare performance chart with GLC lamp": beam 20°, field 38°, 98,100 cd'),
     "Altman Shakespeare 50": dict(field=50.0, beam=23.0, cd=46300, ref_lamp="GLC", family="Shakespeare",
                    source='Altman Shakespeare 750W ellipsoidal datasheet (altmanlighting.com, shakespeare_datasheet.pdf), "Shakespeare performance chart with GLC lamp": beam 23°, field 50°, 46,300 cd'),
+    # ⭐ ALTMAN 65Q / 165Q 6" FRESNEL — the first Fresnel in this table, though
+    # symbols.fresnel() has been able to draw one all along.
+    #
+    # ⚠ TWO ROWS FOR ONE FIXTURE, because a Fresnel is continuously variable and
+    # the sheet publishes the two ends. Same arrangement as the S4 Zoom's @15 /
+    # @23 / @30 — but named @spot and @flood rather than by angle, because a
+    # Fresnel has no markings to read a number off. (Jerry, 2026.10.13.)
+    #
+    # ⭐ The sheet checks against itself: 92,500 cd gives 925 fc at 10', 411 at
+    # 15', 231 at 20', 148 at 25' and 102 at 30', and those are the five figures
+    # printed under the spot cone. The flood's 8,800 cd does the same. The beam
+    # diameters agree with the angles too.
+    #
+    # 65Q and 165Q share one chart; they differ in the focus mechanism (thumb
+    # screw against rear screw feed) and in weight, not in light.
+    "Altman 65Q @spot":  dict(field=16.0, beam=9.0, cd=92500, ref_lamp="BTN", family="Fresnel",
+                   source='Altman 65Q/165Q 6" Fresnel datasheet (altmanlighting.com, 65Q.pdf, rev 022904), "65Q AND 165Q PHOTOMETRIC DATA WITH BTN LAMP": spot focus — beam 9°, field 16°, 92,500 cd, efficiency 14.8%'),
+    "Altman 65Q @flood": dict(field=70.0, beam=59.0, cd=8800, ref_lamp="BTN", family="Fresnel",
+                   source='Altman 65Q/165Q 6" Fresnel datasheet (altmanlighting.com, 65Q.pdf, rev 022904), "65Q AND 165Q PHOTOMETRIC DATA WITH BTN LAMP": flood focus — beam 59°, field 70°, 8,800 cd, efficiency 47.3%'),
     # Standard lens tubes the modern US datasheets do not cover — from the ETC Europe
     # "Source Four Beam Spread Table", data issued 13-11-2000 (on file). Angles only;
     # that table carries no candela. Internally consistent: every published multiplier
@@ -280,6 +299,23 @@ LAMP_MF = {
     # lamps, but its columns do not line up cleanly enough to read them safely;
     # left out until somebody checks them against a clean copy.
     "GLC": {f"Altman Shakespeare {d}": 1.00 for d in (5, 10, 20, 30, 40, 50)},
+    # ⭐ THE 6" FRESNEL'S FOUR LAMPS, and unlike the Shakespeare's this table
+    # reads cleanly: the datasheet's LAMP INFORMATION block gives an explicit
+    # "correction factor" column. The BTN is the lamp the chart was measured
+    # with, so it is 1.00, and the others are relative to it.
+    #
+    # ⚠ The factor applies to BOTH ends of the focus — it is the lamp's output,
+    # not the lens position — so each lamp carries the same number for @spot and
+    # @flood.
+    "BTN": {"Altman 65Q @spot": 1.00, "Altman 65Q @flood": 1.00},      # 750 W, 3050 K, 17,000 lm — the reference
+    "BTP": {"Altman 65Q @spot": 1.20, "Altman 65Q @flood": 1.20},      # 750 W, 3200 K, 20,000 lm, 200 hr
+    "BTM": {"Altman 65Q @spot": 0.76, "Altman 65Q @flood": 0.76},      # 500 W, 3200 K, 13,000 lm, 100 hr
+    "BTL": {"Altman 65Q @spot": 0.65, "Altman 65Q @flood": 0.65},      # 500 W, 3050 K, 11,000 lm, 500 hr
+    # 🔴 AND NOT THE HPL. The same table lists 90-HPL575 and 90-HPL750 — Altman
+    # sells HPL-socket versions of this fixture — but prints NO correction factor
+    # and no rated lumens for either. So an HPL physically fits a 65Q and there
+    # is no published figure for it, which means it must not be offered: see
+    # lamps_for(). Exactly the fault that made a Shakespeare offer an HPL 750.
     "HPL 575": {"S4 19": 0.85, "S4 26": 0.78, "S4 36": 0.67, "S4 50": 0.79,
                 # Same table, HPL 575/115 row. The factor differs per LENS —
                 # .92 to .75 — so one number for the family would be wrong for
@@ -439,6 +475,24 @@ FAMILY_WATTS["SHEHDS"] = {"_typical": 350.0,
 # when the paperwork is silent. Conflating the two would either mis-state the
 # output or mis-state the load.
 DEFAULT_LAMP = "HPL 575"
+
+#: Families where a unit with NO lamp recorded is assumed to carry DEFAULT_LAMP.
+#:
+#: 🔴 IT IS A SOURCE FOUR CONVENTION, NOT A GENERAL ONE, and it was being applied
+#: generally. ETC's charts are measured at the HPL 750 but Jerry's barrels hold
+#: 575s, so an S4 with no lamp named is read as a 575 — a deliberate, stated
+#: assumption about HIS rig.
+#:
+#: ⚠ Nothing of the kind is true of an Altman Fresnel. Before this split, a 65Q
+#: with no lamp recorded reported **575 W, "assumed — S4s are 575 unless noted"**
+#: — the wrong number, for a reason about a different maker's fixture. Its
+#: reference lamp is the BTN at 750, so the load table was 175 W light on every
+#: unit, and the note would have explained it in terms of Source Fours.
+#:
+#: Everything else falls back to the fixture's OWN ref_lamp, which is the lamp
+#: its published chart was measured with — the same rule footcandles() has always
+#: used. (Jerry, 2026.10.13: assume the reference lamp.)
+ASSUME_DEFAULT_LAMP = ("S4", "S4 Zoom", "S4 PAR", "PAR")
 _TUNGSTEN_FAMILIES = ("S4", "S4 Zoom", "S4 PAR", "PAR", "Fresnel", "Strip", "Cyc Tungsten")
 
 
@@ -454,11 +508,18 @@ def watts_for(kind, lamp=None, mode=None):
     fam = row.get("family") or ""
 
     if any(fam.startswith(f) for f in _TUNGSTEN_FAMILIES) and not str(row.get("ref_lamp", "")).startswith("LED"):
-        use = lamp or DEFAULT_LAMP
+        assumed = (DEFAULT_LAMP if any(fam.startswith(f) for f in ASSUME_DEFAULT_LAMP)
+                   else row.get("ref_lamp"))
+        use = lamp or assumed
         w = lamp_watts(use)
         if w is None:
             return None, f"{use!r} is not a lamp name, so no wattage"
-        return w, (f"at {use}" if lamp else f"at {use} (assumed — S4s are 575 unless noted)")
+        if lamp:
+            return w, f"at {use}"
+        why = ("assumed — S4s are 575 unless noted"
+               if assumed == DEFAULT_LAMP
+               else "assumed — the lamp its published chart was measured with")
+        return w, f"at {use} ({why})"
 
     # A row's OWN wattage wins over the family's. The Spectra Cyc 100 carries
     # 94.1W straight off its IES file — a real measurement, better than any
@@ -493,6 +554,17 @@ def watts_for(kind, lamp=None, mode=None):
 # is the source inside it. So it belongs here and NOT in FIXTURES, and the load
 # table is the only place it changes the answer.
 LAMP_WATTS = {
+    # ⚠ AN ANSI CODE CARRIES NO WATTAGE. "HPL 575" says 575 and lamp_watts can
+    # read it; "BTN" says nothing at all, and the number is in the datasheet like
+    # any other figure. All four from the 65Q sheet's LAMP INFORMATION table.
+    "BTN": (750.0, 'Altman 65Q/165Q 6" Fresnel datasheet (65Q.pdf, rev 022904), '
+            'LAMP INFORMATION: BTN, 750 W, Q750 T7/CL/2P, 3050 K, 17,000 lm.'),
+    "BTP": (750.0, 'As BTN: 65Q datasheet LAMP INFORMATION — BTP, 750 W, '
+            'Q750 T7/4CL/2P, 3200 K, 20,000 lm, 200 hr rated life.'),
+    "BTM": (500.0, 'As BTN: 65Q datasheet LAMP INFORMATION — BTM, 500 W, '
+            '3200 K, 13,000 lm, 100 hr rated life.'),
+    "BTL": (500.0, 'As BTN: 65Q datasheet LAMP INFORMATION — BTL, 500 W, '
+            'Q500 T6/CL/P, 3050 K, 11,000 lm.'),
     "Source 4WRD II Gallery": (150.0, "Same body and driver as the standard "
         "unit — the datasheet gives one wattage for all three variants. The "
         "90+ CRI array is dimmer, not thriftier."),

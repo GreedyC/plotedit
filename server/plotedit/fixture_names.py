@@ -123,12 +123,45 @@ CORRECTIONS = {
 
 # Real fixtures with no photometrics on file, and why. The photometric table is
 # built from ETC datasheets; nothing else has been fetched.
+# ⭐ ALTMAN 6" FRESNEL — 65Q and 165Q, which share one photometric chart and
+# differ only in the focus mechanism. Jerry's own paperwork writes it "6in Fres",
+# which sat in NO_DATA as "no datasheet fetched" until he produced the datasheet
+# on 2026.10.13.
+#
+# ⚠ A BARE NAME HAS TO PICK AN END, because a Fresnel is two rows. It picks
+# @spot, following 's4 parnel' -> 'S4 PARNel @25' — the narrow end — and resolve()
+# says which one it chose, so a reader can move it to @flood. Spot is also the
+# safer error on a drawing: it draws a smaller pool than the unit may be giving,
+# and coverage you did not know you had is a better surprise than coverage you
+# thought you had.
+FRESNEL_6 = {
+    "65q": "Altman 65Q @spot",
+    "165q": "Altman 65Q @spot",
+    "6in fres": "Altman 65Q @spot",
+    "6 fresnel": "Altman 65Q @spot",
+    "fresnel 6": "Altman 65Q @spot",
+    "65q spot": "Altman 65Q @spot",
+    "165q spot": "Altman 65Q @spot",
+    "6in fres spot": "Altman 65Q @spot",
+    "65q flood": "Altman 65Q @flood",
+    "165q flood": "Altman 65Q @flood",
+    "6in fres flood": "Altman 65Q @flood",
+}
+ALIASES.update(FRESNEL_6)
+
+
 NO_DATA = {
     "s4 jr zoom": "Source Four Jr — a different fixture; no datasheet fetched",
     "lekolite 26": "Strand LekoLite — no datasheet fetched",
     "lekolite 40": "Strand LekoLite — no datasheet fetched",
-    "6in fres": "Altman 6\" Fresnel — no datasheet fetched",
     "8in fresnel": "Altman 8\" Fresnel — no datasheet fetched",
+    # ⚠ The HPL-socket version of the 65Q, which Altman sell and the datasheet's
+    # own dimension drawing shows. Its LAMP INFORMATION table lists 90-HPL575 and
+    # 90-HPL750 with NO correction factor and no rated lumens, so the BTN chart
+    # does not transfer to it and nothing else is published. Aliasing it to the
+    # BTN rows would promise light nobody has measured.
+    "65q hpl": "Altman 65Q-HPL — the HPL-socket 6\" Fresnel; Altman publish no "
+               "correction factor for the HPL rows, so its output is not on file",
     "sky cyc 3 cell": "Altman Sky Cyc — a cyc unit; photometrics are per-cell and not on file",
     "3 cell sky cyc right": "Altman Sky Cyc — not on file",
     "3 cell sky cyc center": "Altman Sky Cyc — not on file",

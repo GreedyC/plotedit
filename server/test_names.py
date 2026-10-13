@@ -104,8 +104,16 @@ check("a level can now be computed for the Oz cycs",
       round(ph.footcandles("Altman Spectra CYC 50", 14)[0]), 24)
 
 print("\nreal fixtures with no data give a REASON, not silence")
+# ⭐ "Altman 6in Fres" used to be in this list, as "no datasheet fetched". Jerry
+# produced the 65Q datasheet on 2026.10.13 and it now resolves — see
+# test_fresnel.py. The 8" has not been found, so it takes its place here, and
+# the HPL-socket 65Q joins it: Altman publish a chart for the BTN lamp and NO
+# correction factor for the HPL rows, so that variant's output is genuinely not
+# on file. ⚠ A fixture leaving this list is the good outcome; a fixture being
+# ALIASED off it without data would be the bad one.
 for raw, fragment in [
-    ("Altman 6in Fres", "no datasheet"),
+    ("Altman 8in Fresnel", "no datasheet"),
+    ("Altman 65Q-HPL", "no correction factor"),
     ("Blizzard Lighting AtmosFEAR Tour HZ", "not a luminaire"),
     ("ETC Source4 Jr Zoom", "different fixture"),
 ]:

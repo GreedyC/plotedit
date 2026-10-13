@@ -1498,3 +1498,85 @@ hides the unit that has no footcandles.
   Blank computes correctly today, because `ref_lamp` is the chart's own lamp. It
   is the same blank-versus-stated question `focusH` just answered for the
   samples, and nobody has asked it about lamps.
+
+---
+
+## The first Fresnel, and the wattage fault it exposed — 2026.10.13
+
+Jerry produced the **Altman 65Q/165Q 6" Fresnel datasheet** (`65Q.pdf`, rev
+022904). It is the first Fresnel in `FIXTURES` — `symbols.fresnel()` has been
+able to draw one since the symbol sheet, and `'Fresnel'` has been sitting in
+`_TUNGSTEN_FAMILIES` the whole time, with no row ever using it.
+
+| | spot | flood |
+|---|---|---|
+| field | 16° | 70° |
+| beam | 9° | 59° |
+| candela | 92,500 | 8,800 |
+| efficiency | 14.8% | 47.3% |
+
+⭐ **The sheet checks against itself twenty times over.** It prints a footcandle
+and a beam diameter at five throws for each end, and every one of those twenty
+figures falls out of two candela values and two angles. `test_fresnel.py`
+asserts the sheet's own printed numbers rather than numbers this code produced —
+so a digit mistyped out of the PDF makes the arithmetic disagree with the paper.
+
+⚠ One rounding step is stated rather than fudged: 92,500 / 900 = **102.78**,
+which Altman round down to 102 and we round to 103.
+
+### Two rows, named @spot and @flood
+
+A Fresnel is continuously variable, so it takes one row per published setting —
+the same arrangement as `S4 Zoom 15-30 @23`. **Named by the end rather than by
+angle** (Jerry, 2026.10.13), because a Fresnel has no markings to read a number
+off; the Zoom's number is its own barrel marking, not the field angle it yields.
+
+A bare `65Q` resolves to **@spot**, following `s4 parnel` → `S4 PARNel @25`, and
+`resolve()` says which end it chose. Spot is also the safer error on a drawing:
+it draws a smaller pool than the unit may be giving.
+
+### ⭐ Four lamps with factors, which the Shakespeare still does not have
+
+The datasheet's LAMP INFORMATION block has an explicit **correction factor**
+column, and unlike the Shakespeare's it reads cleanly:
+
+**BTN** 750 W · 1.00 (the reference) · **BTP** 750 W · 1.20 · **BTM** 500 W ·
+0.76 · **BTL** 500 W · 0.65
+
+🔴 **And NOT the HPL, though one physically fits.** The same table lists
+`90-HPL575` and `90-HPL750` — Altman sell HPL-socket versions — with **no
+correction factor and no rated lumens**. So `lamps_for` offers four lamps and no
+HPL, and `65Q-HPL` resolves to nothing with a note saying why rather than being
+aliased onto the BTN chart. That is the fault that made a Shakespeare offer an
+HPL 750, caught by the machinery built for it the same afternoon.
+
+### 🔴 The fault it exposed: the Source Four assumption was being applied to everything
+
+`DEFAULT_LAMP = "HPL 575"` is a statement about **Jerry's rig** — ETC's charts
+are measured at the HPL 750, his barrels hold 575s — and `watts_for` applied it
+to every tungsten family there was. There had never been a non-ETC one.
+
+**A 65Q with no lamp recorded reported 575 W**, and the note explained it as
+*"assumed — S4s are 575 unless noted"*. Wrong number, by 175 W on every unit in
+a load table, justified by a sentence about a different maker's fixture.
+
+Now `ASSUME_DEFAULT_LAMP` names the families that convention belongs to — the
+S4s — and everything else falls back to **the fixture's own `ref_lamp`**, which
+is the lamp its published chart was measured with, and the rule `footcandles()`
+has always used. ⚠ Not a blanket change to `ref_lamp`: that would have inflated
+every Source Four in the app by 30%, and `test_fresnel.py` pins the S4 side
+unchanged.
+
+⚠ `lamp_watts` cannot read an ANSI code — nothing in "BTN" is a number — so all
+four went in `LAMP_WATTS` with their sources, like the 4WRD burners.
+
+### ⭐ And a gap closed that was already written down
+
+`"6in fres"` — **Jerry's own Lightwright spelling** — sat in
+`fixture_names.NO_DATA` as *"Altman 6" Fresnel — no datasheet fetched"*. It now
+resolves. `test_names.py` has been updated: the 8" takes its place on that list,
+along with the HPL-socket 65Q.
+
+**Still not on file:** the Altman 8" Fresnel, and the other Shakespeare lamps —
+whose correction factors are in a table whose columns, unlike this one's, do not
+read cleanly.
