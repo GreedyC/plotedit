@@ -846,6 +846,21 @@ def is_two_point(k: str) -> bool:
             or "cyc" in low)
 
 
+def _family_of(key):
+    """The fixture table's own word for what this is, or "" if it does not know.
+
+    ⚠ Swallows everything: the symbol sheet and the DXF export call for_type
+    without a loaded fixture table, and a symbol that cannot be drawn because a
+    lookup failed is worse than one drawn from its name.
+    """
+    try:
+        from . import photometrics as _ph
+        row = _ph.FIXTURES.get(key)
+        return (row or {}).get("family") or ""
+    except Exception:
+        return ""
+
+
 def for_type(kind, lens_rotation=None, lamp=None, angle_in_barrel=False):
     """Pick a symbol from a fixture-table key like "S4 26" or "Lustr 26 EDLT".
 
@@ -899,8 +914,18 @@ def for_type(kind, lens_rotation=None, lamp=None, angle_in_barrel=False):
         spread = next((s for s in ("VNSP", "XWFL", "WFL", "MFL", "NSP") if s in k.upper()), "MFL")
         lamp = 64 if "64" in k else (56 if "56" in k else 64)
         return par(lamp, spread)
-    if "fresnel" in low or "fres" in low:
-        size = 8 if "8" in k else 6
+    if "fresnel" in low or "fres" in low or _family_of(k) == "Fresnel":
+        # 🔴 THE FAMILY, NOT JUST THE NAME. Every branch here matches on a word
+        # in the fixture's key, which works only while somebody remembers to put
+        # the word in. "Altman 65Q" is a 6" Fresnel and says so nowhere — it
+        # landed on 2026.10.13 and drew an ELLIPSOIDAL, because the key contains
+        # neither "fresnel" nor "fres". The server already knows the family; the
+        # symbol picker was guessing from a string beside it.
+        #
+        # ⚠ Left as an OR rather than a rewrite: the name match still catches a
+        # paperwork name for a fixture that is not in the table at all, which
+        # the family lookup cannot. The two answer different questions.
+        size = 8 if '8"' in k or "8 in" in low else 6
         return fresnel(size)
     if "strip" in low:
         return striplight()

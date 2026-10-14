@@ -1680,3 +1680,117 @@ different one from the page read in the dark.
 Real membership on the instrument, many layers per unit, for what `purpose`
 cannot say — **rental is ownership** and **the act two additions is a decision**.
 That is the half that changes the plot file, and it is untouched.
+
+---
+
+## The Shakespeare's lamps, and a load table that was wrong — 2026.10.13
+
+**Closes #123.** Jerry produced a clean copy of the Altman Shakespeare datasheet
+(rev 111003). `LAMP_MF` had carried the GLC alone, with a note saying the sheet's
+other factors "do not line up cleanly enough to read them safely".
+
+**The clean copy reads perfectly — and then poses a different problem.** The
+Correction Factor column prints **1.00 against GKV**, and a **dash against the
+GLC**, which is the lamp the entire photometric chart was measured with. Two
+baselines on one page, apparently unconnected, and the factors unusable.
+
+### ⭐ The detail that resolves it
+
+Jerry, 2026.10.13: *"the GKV is probably for Europe - its 230V"*.
+
+| | GLC | GKV |
+|---|---|---|
+| | 575 W / **115 V** | 600 W / **230 V** |
+| rated lumens | 15,500 | 15,000 |
+| colour temp | 3200 K | 3200 K |
+| rated life | 400 hr | 400 hr |
+
+**GKV is the GLC's 230-volt twin.** Its 1.00 says *"on 230 V mains fit this and
+nothing changes"*; the GLC's dash says *"this is the reference"*. So the column
+**is** anchored to the chart, and the factors transfer directly — no assumption,
+no fudge factor.
+
+### What went in
+
+**GLC 1.00 · GKV 1.00 · HX604 1.14 · HX400 0.69 · HX401 0.59**
+
+⚠ **And they cannot be derived, which is why the sheet was worth waiting for.**
+HX604 has the **same 15,500 rated lumens as the GLC** and a factor of **1.14** —
+that is filament geometry, how much of the output the ellipsoidal's gate
+collects, not lumens. No arithmetic recovers it.
+
+🔴 **Four lamps the sheet dashes are NOT offered** — HX605, GLA, and *both* 750 W
+lamps, on a fixture the same page calls a "750 WATT SHAKESPEARE". Altman did not
+measure them. Offering one would promise light nobody has measured, which is the
+fault `lamps_for()` exists to prevent.
+
+### 🔴 And it exposed a load table that was wrong for every lamp but one
+
+`"Shakespeare"` was **not** in `_TUNGSTEN_FAMILIES`, so `watts_for` fell through
+to `FAMILY_WATTS` and answered **575 W whatever was fitted**.
+
+An HX754 (750 W) and an HX400 (375 W) on the same pipe both counted 575 — **175 W
+low and 200 W high, on the same circuit.** The family figure was right for the
+GLC and wrong for everything else, and nothing offered anything else until this
+afternoon, which is why it never showed.
+
+⚠ Same shape as the 65Q's fault earlier the same day: a family in
+`_TUNGSTEN_FAMILIES` with no fixture in it, and a family with fixtures that was
+not in it. Both found by adding the first real lamp list.
+
+### Also confirmed, and not changed
+
+All six fixtures' candela, beam and field match the sheet **to the digit** — the
+first independent check those figures have had since they were entered.
+
+⚠ **Efficiency is in the sheet and still not stored** — 68/60/48/54/59/55% for
+the 5° through 50°. Nothing reads it today, so nothing was added for it.
+
+---
+
+## The Fresnel drew an ellipsoidal, and defaulted to a hot spot — 2026.10.13
+
+Both found the same evening, by Jerry adding one to a plot and looking at it.
+Two faults, both mine, both from the morning's #129.
+
+### 🔴 It drew an ERS
+
+`symbols.for_type` picks a shape by matching a word in the fixture key —
+`"fresnel" in low or "fres" in low`. The key was **`Altman 65Q @spot`**, which
+contains neither. So the first Fresnel in the table drew an **ellipsoidal**, barrel
+line and all.
+
+**Two fixes, and both are kept:**
+
+1. **`for_type` asks the fixture table for the family**, not just the name. The
+   server has known this fixture is a `Fresnel` since the morning; the symbol
+   picker was guessing from a string beside it. ⚠ The name match stays as an OR
+   — it still catches a paperwork name for a fixture that is not in the table at
+   all, which the family lookup cannot.
+2. **The keys say what they are:** `Altman 65Q Fresnel @spot` / `@flood`. The
+   symbol no longer depends on it, but a designer reading the type dropdown or
+   the instrument schedule still needs telling, and "Altman 65Q" does not tell
+   them.
+
+### 🔴 And a bare name pointed at the WRONG END
+
+`65Q` resolved to **@spot**, following `s4 parnel → S4 PARNel @25` and the
+argument — written into the source that morning — that *"spot is the safer error
+on a drawing: it draws a smaller pool than the unit may be giving."*
+
+⚠ **That argument is wrong for a Fresnel.** Racked fully in it is 16°:
+
+| | field | pool at a 10 ft throw |
+|---|---|---|
+| `@spot` | 16° | **2.9 ft** — tighter than an S4 26 |
+| `@flood` | 70° | 14.6 ft |
+
+**Nobody hangs a 6" Fresnel to get a three-foot hot spot.** It is a soft wash
+unit, and defaulting it to its tightest setting makes it look broken — which is
+exactly how it looked. A bare name is **@flood** now; spot is the end you ask
+for.
+
+⭐ **Worth keeping as a lesson about the precedent, not just the number.** The
+PARNel rule was followed because it was there, and a PARNel and a Fresnel are not
+the same kind of thing. A convention copied without asking what it is for is a
+guess wearing a citation.

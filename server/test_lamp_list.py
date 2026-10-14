@@ -82,8 +82,13 @@ check("...wherever it has a multiplier of its own", wrong, [])
 print("\n🔴 the Shakespeare, which is what found this")
 shake = [k for k in ph.FIXTURES if "Shakespeare" in k]
 check("there are six of them", len(shake), 6)
-check("every one offers GLC", sorted({tuple(ph.lamps_for(k)) for k in shake}),
-      [("GLC",)])
+# ⭐ One lamp this afternoon, five by the evening — Jerry produced the datasheet
+# and #123 closed. The GLC is still first because it is the lamp the chart was
+# measured with. test_shakespeare_lamps.py has the factors and the reasoning.
+check("every barrel offers the same five",
+      sorted({tuple(ph.lamps_for(k)) for k in shake}),
+      [("GLC", "GKV", "HX604", "HX400", "HX401")])
+check("...reference lamp first", {ph.lamps_for(k)[0] for k in shake}, {"GLC"})
 # ⚠ Before the fix each of these was in the dropdown, and each blanked the figure.
 offered_hpl = [k for k in shake if any("HPL" in l for l in ph.lamps_for(k))]
 check("...and not one offers an HPL", offered_hpl, [])
@@ -126,7 +131,9 @@ from plotedit import api                   # noqa: E402  (slow import)
 rows = api.fixtures()["fixtures"]
 check("the payload has a lamps key", "lamps" in rows["S4 26"], True)
 check("...matching lamps_for", rows["S4 26"]["lamps"], ph.lamps_for("S4 26"))
-check("the Shakespeare's is GLC", rows["Altman Shakespeare 30"]["lamps"], ["GLC"])
+check("the Shakespeare's five are published",
+      rows["Altman Shakespeare 30"]["lamps"],
+      ["GLC", "GKV", "HX604", "HX400", "HX401"])
 # ⚠ null, not [] — the browser reads `?? []`, and a JSON null is what an absent
 # answer looks like everywhere else in this payload.
 check("no lamps is null", rows["Lustr 26 EDLT"]["lamps"], None)

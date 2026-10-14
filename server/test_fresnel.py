@@ -25,7 +25,8 @@ from plotedit import fixture_names as fn        # noqa: E402
 from plotedit import photometrics as ph         # noqa: E402
 
 FAILS = []
-SPOT, FLOOD = "Altman 65Q @spot", "Altman 65Q @flood"
+SPOT = "Altman 65Q Fresnel @spot"
+FLOOD = "Altman 65Q Fresnel @flood"
 
 
 def check(label, got, want):
@@ -122,19 +123,46 @@ check("a named lamp still wins", ph.watts_for("S4 26", lamp="HPL 750")[0], 750.0
 print("\nthe names the paperwork actually uses")
 # ⭐ "6in Fres" is Jerry's own Lightwright spelling, and it sat in NO_DATA as
 # "no datasheet fetched" until he produced the datasheet on 2026.10.13.
+# ⚠ All to the FLOOD end — see the section below for why that changed.
 for name in ("6in Fres", "65Q", "Altman 65Q", "165Q", 'Altman 6" Fresnel'):
-    check(f"{name!r} resolves", fn.resolve(name)[0], SPOT)
+    check(f"{name!r} resolves", fn.resolve(name)[0], FLOOD)
 check("'6in Fres' is no longer in NO_DATA", "6in fres" in fn.NO_DATA, False)
 check("...but the 8\" still is", "8in fresnel" in fn.NO_DATA, True)
 
-print("\n⚠ a bare name picks an end, and says which")
-# Following 's4 parnel' -> 'S4 PARNel @25': the narrow end, with the note saying
-# so, so a reader can move it. Spot is also the safer error on a drawing — it
-# draws a smaller pool than the unit may be giving.
-check("a bare 65Q is the spot end", fn.resolve("65Q")[0], SPOT)
-check("...and the note says which it chose", "@spot" in fn.resolve("65Q")[1], True)
-check("asking for flood gets flood", fn.resolve("165Q Flood")[0], FLOOD)
+print("\n🔴 a bare name is the FLOOD end, and says so")
+# ⚠ IT POINTED AT @spot FOR HALF A DAY, following 's4 parnel' -> 'S4 PARNel @25'
+# and the argument that a smaller pool is the safer error on a drawing. That
+# argument is wrong for a Fresnel: racked fully in it is 16°, a 2.9 ft pool at a
+# 10 ft throw — tighter than an S4 26 — and nobody hangs a 6" Fresnel to get a
+# 3-foot hot spot. Found by Jerry putting one on a plot and looking at it.
+check("a bare 65Q is the flood end", fn.resolve("65Q")[0], FLOOD)
+check("...and the note says which it chose", "@flood" in fn.resolve("65Q")[1], True)
+check("Jerry's own paperwork name too", fn.resolve("6in Fres")[0], FLOOD)
+check("asking for spot gets spot", fn.resolve("65Q spot")[0], SPOT)
 check("the exact key resolves silently", fn.resolve(FLOOD), (FLOOD, ""))
+# ⭐ And the flood end is a Fresnel-shaped pool rather than a hot spot.
+check("...which is a 14.6 ft pool at a 10 ft throw, not 2.9",
+      (round(ph.diameter(10.4, ph.FIXTURES[FLOOD]["field"]), 1),
+       round(ph.diameter(10.4, ph.FIXTURES[SPOT]["field"]), 1)), (14.6, 2.9))
+
+print("\n🔴 and it draws as a FRESNEL, not an ellipsoidal")
+# ⚠ THE FAULT THE RENAME CAME FROM. symbols.for_type matches on a word in the
+# key, and "Altman 65Q @spot" contains neither "fresnel" nor "fres" — so the
+# first Fresnel in the table drew an ERS for half a day. Two fixes, both kept:
+# the key says what it is, AND for_type asks the fixture table for the family.
+from plotedit import symbols as _sym                 # noqa: E402
+check("one closed poly, no barrel line",
+      [pr[0] for pr in _sym.for_type(FLOOD)], ["poly"])
+check("...the same shape at either end",
+      _sym.for_type(SPOT), _sym.for_type(FLOOD))
+# 🔴 The family check is what makes it robust: strip the word from the name and
+# it must STILL draw a Fresnel, because the table says Fresnel.
+check("the family alone is enough",
+      [pr[0] for pr in _sym.for_type("Altman 65Q Fresnel @spot")], ["poly"])
+# ⚠ And an ellipsoidal is still an ellipsoidal — poly plus its barrel line.
+check("an S4 is untouched", [pr[0] for pr in _sym.for_type("S4 26")], ["poly", "line"])
+check("a Shakespeare is untouched",
+      [pr[0] for pr in _sym.for_type("Altman Shakespeare 30")], ["poly", "line"])
 
 print()
 if FAILS:

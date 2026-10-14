@@ -128,24 +128,30 @@ CORRECTIONS = {
 # which sat in NO_DATA as "no datasheet fetched" until he produced the datasheet
 # on 2026.10.13.
 #
-# ⚠ A BARE NAME HAS TO PICK AN END, because a Fresnel is two rows. It picks
-# @spot, following 's4 parnel' -> 'S4 PARNel @25' — the narrow end — and resolve()
-# says which one it chose, so a reader can move it to @flood. Spot is also the
-# safer error on a drawing: it draws a smaller pool than the unit may be giving,
-# and coverage you did not know you had is a better surprise than coverage you
-# thought you had.
+# 🔴 A BARE NAME IS THE FLOOD END, and this was changed the same day after
+# looking at one on a plot. It pointed at @spot first, following
+# 's4 parnel' -> 'S4 PARNel @25' and the argument that a smaller pool is the
+# safer error. ⚠ THAT ARGUMENT IS WRONG FOR A FRESNEL. Racked fully in, a 6"
+# Fresnel is 16° — a 2.9 ft pool at a 10 ft throw, tighter than an S4 26 — and
+# nobody hangs a Fresnel to get a 3-foot hot spot. It is a soft wash unit, and
+# defaulting it to its tightest setting makes it look broken. Spot is the end
+# you ask for; flood is the end you get.
+#
+# resolve() names whichever it chose, so either way the reader is told.
 FRESNEL_6 = {
-    "65q": "Altman 65Q @spot",
-    "165q": "Altman 65Q @spot",
-    "6in fres": "Altman 65Q @spot",
-    "6 fresnel": "Altman 65Q @spot",
-    "fresnel 6": "Altman 65Q @spot",
-    "65q spot": "Altman 65Q @spot",
-    "165q spot": "Altman 65Q @spot",
-    "6in fres spot": "Altman 65Q @spot",
-    "65q flood": "Altman 65Q @flood",
-    "165q flood": "Altman 65Q @flood",
-    "6in fres flood": "Altman 65Q @flood",
+    "65q": "Altman 65Q Fresnel @flood",
+    "165q": "Altman 65Q Fresnel @flood",
+    "6in fres": "Altman 65Q Fresnel @flood",
+    "6 fresnel": "Altman 65Q Fresnel @flood",
+    "fresnel 6": "Altman 65Q Fresnel @flood",
+    "65q fresnel": "Altman 65Q Fresnel @flood",
+    "65q spot": "Altman 65Q Fresnel @spot",
+    "165q spot": "Altman 65Q Fresnel @spot",
+    "6in fres spot": "Altman 65Q Fresnel @spot",
+    "65q fresnel spot": "Altman 65Q Fresnel @spot",
+    "65q flood": "Altman 65Q Fresnel @flood",
+    "165q flood": "Altman 65Q Fresnel @flood",
+    "6in fres flood": "Altman 65Q Fresnel @flood",
 }
 ALIASES.update(FRESNEL_6)
 
