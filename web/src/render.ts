@@ -14,7 +14,7 @@ import { svgTransform, counterFlip, fmtFt, notationAnchor, symbolRadius,
 import { symbolKey, isVertical, isFoh, type Plot, type Instrument } from "./plot.js";
 import type { SymbolPrim, BoomElevation, PositionLabel } from "./api.js";
 import type { Visibility } from "./layers.js";
-import { hiddenByPurpose } from "./layers.js";
+import { hiddenByPurpose, isRented } from "./layers.js";
 import { unitLabel } from "./plot.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -75,6 +75,8 @@ export interface RenderOptions {
    *  the whole rig — a load computed without the units somebody switched off
    *  is the failure that trips a breaker on a Thursday. */
   hiddenPurposes?: ReadonlySet<string>;
+  /** Hide the hired units — #110. One flag, whoever they are from. */
+  hideRented?: boolean;
   /** Symbol keys hung at TWO points, which therefore cannot pan — strips,
    *  battens, cyc units. From the server, beside the symbol itself. #113. */
   twoPoint?: Set<string>;
@@ -385,6 +387,8 @@ export function render(
     // all — no symbol, no pool, no focus, no label. A pool with no light over
     // it is the drawing claiming coverage from a unit the reader cannot see.
     if (hiddenByPurpose(inst, hidden)) return;
+    // ⚠ #110: and the hired units, if that layer is off.
+    if (opts.hideRented && isRented(inst)) return;
     // ⚠ A unit on a boom gets NO SYMBOL and NO LABELS in plan — it is drawn in
     // the elevation instead. Three units at one x and y put three symbols and
     // three channel circles on the same spot.

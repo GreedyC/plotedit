@@ -417,9 +417,18 @@ class ExportRequest(BaseModel):
     # property of the DRAWING, and a load computed without the units somebody
     # switched off is the failure that trips a breaker on a Thursday.
     hidePurposes: Optional[List[str]] = None
+    #: ⭐ Hide the hired units — #110. One flag, whoever they are from: a plot
+    #: hires from two places at once and the drawing question is "what is
+    #: arriving in a crate", not "whose crate".
+    hideRented: Optional[bool] = None
 
 
-def _hide_purposes(plot: Dict[str, Any], hide) -> Dict[str, Any]:
+def _is_rented(inst: Dict[str, Any]) -> bool:
+    """Hired from somebody. The presence of a name is the fact — see #110."""
+    return bool(str(inst.get("rentedFrom") or "").strip())
+
+
+def _hide_purposes(plot: Dict[str, Any], hide, hide_rented=False) -> Dict[str, Any]:
     """The plot with the instruments on hidden purpose layers left out.
 
     ⚠ A COPY. Mutating the caller's plot would hide those units from whatever
@@ -429,11 +438,12 @@ def _hide_purposes(plot: Dict[str, Any], hide) -> Dict[str, Any]:
     is "unassigned" — because the panel offering these layers is showing the
     magic sheet's own groups. Mirrors purposeOf() in web/src/layers.ts.
     """
-    if not hide:
+    if not hide and not hide_rented:
         return plot
-    off = set(hide)
+    off = set(hide or ())
     kept = [i for i in plot.get("instruments") or []
-            if (str(i.get("purpose") or "").strip() or "unassigned") not in off]
+            if (str(i.get("purpose") or "").strip() or "unassigned") not in off
+            and not (hide_rented and _is_rented(i))]
     return {**plot, "instruments": kept}
 
 
@@ -505,7 +515,8 @@ def export_pdf(req: ExportRequest) -> Response:
     with tempfile.TemporaryDirectory() as d:
         pdf = os.path.join(d, "plot.pdf")
         try:
-            sheet, _ = exports.plot_pdf(_hide_purposes(req.plot, req.hidePurposes),
+            sheet, _ = exports.plot_pdf(_hide_purposes(req.plot, req.hidePurposes,
+                                                       req.hideRented),
                                         pdf, scale=req.scale,
                                         page=req.page, landscape=req.landscape,
                                         show_pools=req.showPools,

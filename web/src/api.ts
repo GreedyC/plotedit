@@ -146,6 +146,8 @@ export interface ExportOptions {
    *  OFF-list, so an ordinary export sends nothing. PDF only: the schedule and
    *  the hookup always report the whole rig. */
   hidePurposes?: string[];
+  /** Hide the hired units, so the print matches the screen — #110. */
+  hideRented?: boolean;
   /** Print a dimension scale along the plan's edges. PDF only — the browser
    *  does not draw them. */
   rulers?: boolean;
@@ -179,6 +181,7 @@ export async function exportFile(
       // every export, and a field that is always there is a field somebody will
       // eventually read as meaningful.
       ...(opts.hidePurposes?.length ? { hidePurposes: opts.hidePurposes } : {}),
+      ...(opts.hideRented ? { hideRented: true } : {}),
       ...(opts.base ? { base: opts.base } : {}),
     }),
   });

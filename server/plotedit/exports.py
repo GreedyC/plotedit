@@ -68,7 +68,28 @@ def _csv(rows: List[List[Any]]) -> str:
 # one-address fixture and blank when the footprint is unknown — never a guess.
 SCHEDULE_COLUMNS = ["Position", "Unit", "Channel", "Circuit", "Dimmer", "Address",
                     "Thru", "Type", "Wattage", "Color", "Gobo", "Purpose",
-                    "Accessory", "Notes"]
+                    "Accessory", "Rented from", "Notes"]
+
+#: ⭐ "Rented from" sits beside Accessory and before Notes — #110. It is the one
+#: column an electrician reads to know whether a unit came out of a crate or was
+#: already on the pipe, and the one a shop order is built from.
+#:
+#: ⚠ EMPTY MEANS THE HOUSE'S. The cell is blank for anything not hired, which is
+#: most of a plot, so the column reads as a short list of exceptions rather than
+#: a wall of repeated words.
+
+
+def _rented_cell(inst) -> str:
+    """Who this unit is hired from, or blank — #110.
+
+    ⚠ TRIMMED, so the cell agrees with the filter. `api._is_rented` treats a
+    whitespace-only value as NOT a hire — a cell somebody tabbed through is not
+    a rental — and printing three spaces here would have put a unit in the
+    schedule's rented column that the shop order correctly left out. Two places
+    deciding the same thing differently is the fault this project keeps paying
+    for.
+    """
+    return str(inst.get("rentedFrom") or "").strip()
 
 
 def _accessories(inst) -> str:
@@ -166,7 +187,8 @@ def schedule_csv(plot: Dict[str, Any]) -> str:
                      i.get("circuit", ""), i.get("dimmer", ""), *_patch_cells(i),
                      i.get("type", ""),
                      _watt_cell(_watts(i)[0]), i.get("color", ""), i.get("gobo", ""),
-                     i.get("purpose", ""), _accessories(i), i.get("notes", "")])
+                     i.get("purpose", ""), _accessories(i),
+                     _rented_cell(i), i.get("notes", "")])
     rows += _load_total(plot["instruments"])
     return _csv(rows)
 

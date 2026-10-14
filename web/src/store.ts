@@ -6,7 +6,7 @@
  * no proxies, nothing to debug at two in the morning during a tech.
  */
 import type { Plot, Instrument, Position, Room } from "./plot.js";
-import { LAYERS, PURPOSE_PREFIX, visibilityOf, type LayerId } from "./layers.js";
+import { LAYERS, PURPOSE_PREFIX, RENTED_ID, visibilityOf, type LayerId } from "./layers.js";
 import { unitLabel } from "./plot.js";
 
 export type Listener = () => void;
@@ -308,6 +308,18 @@ export class Store {
       ...LAYERS.map(l => ({ id: l.id, visible: l.id === id ? visible : now[l.id] })),
       ...others,
     ];
+    this.touch();
+    this.emit();
+  }
+
+  /** Show or hide the hired units — #110. One switch for all of them, whoever
+   *  they are from; see rentedLayer(). */
+  setRentedVisible(visible: boolean): void {
+    const was = (this._plot.layers ?? []).find(l => l.id === RENTED_ID);
+    if ((was ? was.visible : true) === visible) return;
+    this.begin(null);
+    const rest = (this._plot.layers ?? []).filter(l => l.id !== RENTED_ID);
+    this._plot.layers = [...rest, { id: RENTED_ID, visible, name: "rented" }];
     this.touch();
     this.emit();
   }

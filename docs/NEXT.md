@@ -1794,3 +1794,71 @@ for.
 PARNel rule was followed because it was there, and a PARNel and a Fresnel are not
 the same kind of thing. A convention copied without asking what it is for is a
 guess wearing a citation.
+
+---
+
+## Whose unit is it — `rentedFrom` — 2026.10.14
+
+**Closes #110.** A plot said what was hung and where, and never whose it was, so
+the shop order had to be re-derived every time by cross-referencing against lists
+of uncertain age — **matching by TYPE**, which cannot say *which four* of six
+S4 26s are the house's.
+
+### ⭐ The presence of a name is the fact
+
+Jerry, 2026.10.14: *"the level [is] whether or not a unit is a rental or not, but
+allow the user to enter a name in the rental field. So unit 1 may be from george
+and 20 maybe from mary."*
+
+So **one field, `rentedFrom`, holding who it is hired from.** Empty means not
+rented. **No enum**, and this is better than the `house / own / hire` I had
+proposed in the issue:
+
+- a plot routinely hires from **two places at once**, and the order groups by who
+- a name is what the order needs anyway; an enum would have needed a second field
+  beside it to carry the same thing
+- there is no "house" value to forget to set, because not-set *is* the answer
+
+### 🔴 And it inverts an asymmetry the issue argued for — deliberately
+
+#110 says in bold: *"Unset must not mean `house`. It means not proven to be in the
+building, and it belongs in the hire column."* ⚠ **That was my reasoning, not
+Jerry's** — I drafted the issue — and it is overruled.
+
+Under this model, forgetting to fill the field reads as "the house has it" and the
+unit is not ordered. **The safety lives one level up instead**, in the `/rental`
+skill, which already says: *"a unit assumed to be in the house, with no current
+list to prove it, goes in the rental column with a note."*
+
+⭐ **That is the better place for it.** The field stays truthful about WHO; the
+workflow handles "and what if you do not know". Encoding a policy in the data
+would have made the field lie about a unit whose owner is simply not yet typed in.
+
+### What it reaches
+
+| | |
+|---|---|
+| **the instrument schedule** | a **"Rented from"** column, between Accessory and Notes |
+| **the drawing** | a **`rented`** layer — ⭐ **binary**, not one chip per renter |
+| **the plot PDF** | `hideRented`, so the print matches the screen |
+| **the hookup, magic sheet, patch** | 🔴 **nothing.** Whose a unit is, is not the board's problem |
+
+The layer is one switch for everyone's units together, because the drawing
+question is *"what is arriving in a crate"*, not *"whose crate"*. `rentersIn()`
+gives the per-renter counts that the order groups by, and the chip's tooltip
+lists them — "George (4), Mary (2)".
+
+### ⚠ One fault the tests found
+
+The schedule printed a whitespace-only `rentedFrom` **verbatim**, while
+`api._is_rented` treats whitespace as *not* a hire. So a unit could appear in the
+schedule's rented column that the shop order correctly left out. The cell is
+trimmed now. **Two places deciding the same thing differently** is the fault this
+project keeps paying for.
+
+### Still open
+
+**Jerry's own kit.** `/rental` has three columns — house, Jerry's own, hire — and
+this field distinguishes two of them. A unit of his own reads as the house's
+today. Not blocking: he knows what is his, and the order's third column is the one
+that costs money.

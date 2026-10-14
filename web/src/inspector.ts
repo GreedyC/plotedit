@@ -96,6 +96,10 @@ export const FIELDS: Field[] = [
     hint: "The PHOTOMETRIC output mode — how bright. Not the DMX personality" },
   { key: "lensRotation", label: "Lens angle", kind: "number", step: 15,
     hint: "Oval-beam units (PARNel): degrees the lens is turned" },
+  { key: "rentedFrom", label: "Rented from", kind: "text", recompute: true,
+    hint: "Who this unit is hired from — a shop, or a person. Leave it blank "
+        + "for anything the house already has. It is the column the shop order "
+        + "is built from" },
   { key: "notes", label: "Notes", kind: "text" },
 ];
 

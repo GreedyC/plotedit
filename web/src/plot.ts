@@ -69,6 +69,19 @@ export interface Instrument {
   wattage?: number;
   position?: string;
   purpose?: string;
+  /** Who this unit is hired from — "George", "Mary", a shop's name. #110.
+   *
+   *  🔴 THE PRESENCE OF A NAME IS THE FACT. Empty or absent means not rented,
+   *  which is to say the house's. There is no enum: a plot routinely hires from
+   *  two places at once, and "which four of these six S4 26s" is a question only
+   *  a per-unit answer can settle. (Jerry, 2026.10.14.)
+   *
+   *  ⚠ So forgetting to fill this in reads as "the house has it" and the unit
+   *  will not be ordered. That asymmetry is handled in the `/rental` workflow,
+   *  not here — *"a unit assumed to be in the house, with no current list to
+   *  prove it, goes in the rental column with a note"*. This field stays
+   *  truthful about WHO rather than encoding a policy about what to assume. */
+  rentedFrom?: string;
   /** Barn doors, hats, gobos, irises. RP-2 puts GATE accessories (gobo, iris,
    *  rotator) inside the body and FRONT-of-lens ones (barn doors, hats) at the
    *  nose, so only the name is stored — the drawing works out where it goes.

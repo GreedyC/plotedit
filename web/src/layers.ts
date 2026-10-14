@@ -240,3 +240,55 @@ export function hiddenByPurpose(
 ): boolean {
   return hidden.has(purposeOf(inst));
 }
+
+
+// ─── the rented layer ────────────────────────────────────────────────────────
+
+/** The id of the one layer that is about ownership rather than purpose. */
+export const RENTED_ID = "rented";
+
+/** Is this unit hired from somebody? #110.
+ *
+ * ⭐ THE PRESENCE OF A NAME IS THE FACT. There is no enum and no "house" value —
+ * a plot routinely hires from two places at once, and the useful question is
+ * *from whom*, which only a name answers. Empty is the house's.
+ */
+export function isRented(inst: { rentedFrom?: string }): boolean {
+  return !!(inst.rentedFrom ?? "").trim();
+}
+
+/** The rented units as one switchable layer, or null when nothing is hired.
+ *
+ * ⭐ BINARY, NOT ONE LAYER PER RENTER (Jerry, 2026.10.14: *"the level is based on
+ * if there is a rental or not"*). George's four units and Mary's two are one set
+ * on the drawing — what you want to see is everything arriving in a crate. Who
+ * each one is from is a column on the schedule and a grouping in the order, not
+ * a chip in the toolbar.
+ *
+ * ⚠ Null when nothing is rented, so a plot that hires nothing shows no chip. A
+ * control that can only ever do nothing is worse than a missing one.
+ */
+export function rentedLayer(plot: Plot): PurposeLayer | null {
+  const count = (plot.instruments ?? []).filter(isRented).length;
+  if (!count) return null;
+  const v = (plot.layers ?? []).find(l => l.id === RENTED_ID);
+  return { id: RENTED_ID, purpose: "rented", count,
+           visible: typeof v?.visible === "boolean" ? v.visible : true };
+}
+
+/** Who the hired units come from, with counts — for the shop order.
+ *
+ * ⭐ This is what the rental order groups by, and the reason the field holds a
+ * NAME rather than a yes/no: one order per renter, not one order with a mixed
+ * list in it.
+ */
+export function rentersIn(plot: Plot): { from: string; count: number }[] {
+  const by = new Map<string, number>();
+  for (const i of plot.instruments ?? []) {
+    const who = (i.rentedFrom ?? "").trim();
+    if (who) by.set(who, (by.get(who) ?? 0) + 1);
+  }
+  return [...by.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+    .map(([from, count]) => ({ from, count }));
+}

@@ -16,6 +16,7 @@
 import * as fs from "node:fs";
 import { LAYERS, SCREEN_LAYERS, defaultLayers, visibilityOf, allVisible,
          purposeLayers, hiddenPurposes, hiddenByPurpose, UNASSIGNED,
+         isRented, rentedLayer, rentersIn, RENTED_ID,
          type LayerId } from "./layers.js";
 import { newPlot, type Plot } from "./plot.js";
 import type { PlotLayer } from "./layers.js";
@@ -274,6 +275,59 @@ check("...carrying its name, because nothing in the code knows it",
 s2.setPurposeVisible("a", true);
 check("...and on again", hiddenPurposes(s2.plot), []);
 check("the eight are untouched by it", visibilityOf(s2.plot).units, true);
+
+console.log("\n⭐ the rented layer — whose is it, not what is it for (#110)");
+// The presence of a NAME is the fact. No enum, because a plot hires from two
+// places at once and the useful question is from whom.
+const R = (rented: (string | undefined)[]) => ({
+  formatVersion: 1, show: "T", room: { width: 40, depth: 40 },
+  positions: [],
+  instruments: rented.map((rentedFrom, n) =>
+    ({ unit: n + 1, type: "S4 26", x: n, y: 20, rentedFrom })),
+} as unknown as Plot);
+
+check("a name is rented", isRented({ rentedFrom: "George" }), true);
+check("absent is not", isRented({}), false);
+check("empty is not", isRented({ rentedFrom: "" }), false);
+// ⚠ A cell somebody tabbed through is not a hire.
+check("whitespace is not", isRented({ rentedFrom: "   " }), false);
+
+check("the layer counts the hired units",
+      rentedLayer(R(["George", undefined, "Mary"]))?.count, 2);
+// ⭐ BINARY, not one layer per renter. George's four and Mary's two are one set
+// on the drawing — what you want to see is everything arriving in a crate.
+check("...as ONE layer, however many renters",
+      rentedLayer(R(["George", "Mary", "A Shop"]))?.id, RENTED_ID);
+// ⚠ No chip at all when nothing is hired. A control that can only ever do
+// nothing is worse than a missing one.
+check("no layer when nothing is rented", rentedLayer(R([undefined, ""])), null);
+check("visible by default", rentedLayer(R(["George"]))?.visible, true);
+const rentOff = R(["George"]);
+rentOff.layers = [{ id: RENTED_ID, visible: false, name: "rented" }];
+check("...and reads back off", rentedLayer(rentOff)?.visible, false);
+
+console.log("\nwho the units come from, which is what the order groups by");
+check("counted per renter",
+      rentersIn(R(["George", "Mary", "George", undefined])),
+      [{ from: "George", count: 2 }, { from: "Mary", count: 1 }]);
+check("sorted, numerically", rentersIn(R(["Shop 10", "Shop 2"])).map(r => r.from),
+      ["Shop 2", "Shop 10"]);
+check("nothing hired, nobody listed", rentersIn(R([undefined])), []);
+
+console.log("\n🔴 the renderer hides them, and the store remembers");
+check("render.ts gates on it", /opts\.hideRented && isRented\(inst\)/.test(render), true);
+const s3 = new Store(R(["George", undefined]));
+s3.setRentedVisible(false);
+check("off is written", rentedLayer(s3.plot)?.visible, false);
+check("...beside the eight, not instead of them",
+      visibilityOf(s3.plot).units, true);
+s3.setRentedVisible(true);
+check("...and on again", rentedLayer(s3.plot)?.visible, true);
+// 🔴 The same keeps-what-it-does-not-own rule as the purpose layers.
+const s4 = new Store(R(["George"]));
+s4.setRentedVisible(false);
+s4.setLayerVisible("pools", false);
+check("a chip click does not drop it", rentedLayer(s4.plot)?.visible, false);
 
 console.log();
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

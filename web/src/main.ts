@@ -23,7 +23,8 @@ import { isPlot, symbolKey, plotFileName, newPlot, type Plot, type Position,
 import { startSeq, seqClick, clickLine, seqReport, runIndices,
          type Seq } from "./sequence.js";
 import { openMenu, type MenuGroup, type MenuItem } from "./menu.js";
-import { visibilityOf, hiddenPurposes, purposeLayers, SCREEN_LAYERS } from "./layers.js";
+import { visibilityOf, hiddenPurposes, purposeLayers, rentedLayer,
+         rentersIn, RENTED_ID, SCREEN_LAYERS } from "./layers.js";
 import { confirmRevert, exportFailedMessage } from "./confirm.js";
 import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
@@ -151,6 +152,7 @@ function opts(): RenderOptions {
     // remember to tick a box. The chips are synced FROM here, in syncLayers().
     layers: visibilityOf(store.plot),
     hiddenPurposes: new Set(hiddenPurposes(store.plot)),
+    hideRented: rentedLayer(store.plot)?.visible === false,
     selected: store.selected,
     selectedPosition: store.selectedPosition,
     // ⚠ Both kinds of base are passed unconditionally now and the renderer
@@ -633,7 +635,11 @@ function syncLayers(): void {
 function syncPurposeChips(): void {
   const host = document.getElementById("purpose-layers");
   if (!host) return;
-  const layers = purposeLayers(store.plot);
+  const rented = rentedLayer(store.plot);
+  // ⭐ #110 sits FIRST, before the purposes. It answers a different question —
+  // whose is it, not what is it for — and it is the one a designer reaches for
+  // when the crate arrives.
+  const layers = [...(rented ? [rented] : []), ...purposeLayers(store.plot)];
   // ⚠ Rebuild only when the SET changed, so clicking a chip does not replace
   // the element under the pointer — which loses focus and breaks keyboard use.
   const key = layers.map(l => `${l.id}\u0000${l.count}`).join("\u0001");
@@ -642,15 +648,22 @@ function syncPurposeChips(): void {
     host.replaceChildren();
     for (const l of layers) {
       const label = document.createElement("label");
-      label.title = `Draw the ${l.count} instrument${l.count === 1 ? "" : "s"} `
-                  + `whose purpose is "${l.purpose}". From the purpose field — `
-                  + `switching it off hides them on the drawing only, never in `
-                  + `the schedule or the loads`;
+      const renters = l.id === RENTED_ID ? rentersIn(store.plot) : [];
+      label.title = l.id === RENTED_ID
+        ? `Draw the ${l.count} hired instrument${l.count === 1 ? "" : "s"} — `
+          + `${renters.map(r => `${r.from} (${r.count})`).join(", ")}. `
+          + `From the "Rented from" field. Switching it off hides them on the `
+          + `drawing only, never in the schedule or the shop order`
+        : `Draw the ${l.count} instrument${l.count === 1 ? "" : "s"} `
+          + `whose purpose is "${l.purpose}". From the purpose field — `
+          + `switching it off hides them on the drawing only, never in `
+          + `the schedule or the loads`;
       const box = document.createElement("input");
       box.type = "checkbox";
       box.id = `layer-${l.id}`;
-      box.addEventListener("input", () =>
-        store.setPurposeVisible(l.purpose, box.checked));
+      box.addEventListener("input", () => l.id === RENTED_ID
+        ? store.setRentedVisible(box.checked)
+        : store.setPurposeVisible(l.purpose, box.checked));
       label.append(box, ` ${l.purpose} (${l.count})`);
       host.appendChild(label);
     }
@@ -1222,6 +1235,7 @@ async function runExport(kind: ExportKind): Promise<void> {
           // the screen. ⚠ The DRAWING only — the schedule and hookup exports
           // below are sent the plot alone and always report the whole rig.
           hidePurposes: hiddenPurposes(store.plot),
+          hideRented: rentedLayer(store.plot)?.visible === false,
           // 🔴 Until now the import went on the SCREEN and never on the
           // paper. exports.plot_pdf has taken a base plan the whole time and
           // nothing ever handed it one, so an imported venue drawing looked
