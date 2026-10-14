@@ -71,6 +71,45 @@ Section view · magic sheet · focus charts · circuit and load tracking *(Art's
 
 ---
 
+## ⭐ Is it core? — answers, so the question stops being re-argued
+
+**Jerry, 2026.10.13.** `CLAUDE.md` says every unasked-for feature gets put to him
+with the same question — *is this a core part of the app?* — and that the answer
+is usually no. The ones below have been asked and answered, and this is where to
+look before asking again.
+
+| | | |
+|---|---|---|
+| **Layers**, user-defined | ✅ **CORE** | *"layers are core, just a matter of when"*. ⚠ **Conditional: they must not slow the drawing down.** A plot redraws on every drag; a layer system that costs frames costs the thing the app is for. The derived purpose layers shipped 2026.10.13 (#132); the explicit half is #108. |
+| **Importing a set** | 🟡 **maybe, later** | *"importing 3D sets from other sources might be nice."* See the note below on what that should actually mean. |
+| **Instrument weight** | ❌ not core | |
+| **Cabling** | ❌ not core | Art's job, like circuit and load tracking above. |
+| **Sets / scenery as objects** | ❌ not core | The set is somebody else's drawing. What the section needs from it is a profile, not a model. |
+| **Multiple views, CAD-style** | ❌ **out of scope** | Plan and section are two drawings, not two viewports. A tiled multi-view editor is the shape of the tool this one exists to avoid. |
+
+### ⚠ "Importing a set" should probably not mean 3D
+
+**DXF is a 3D format** — every point carries X, Y **and Z**, and it has true 3D
+entities (`3DFACE`, `3DSOLID`, `MESH`, 3D `POLYLINE`). ⚠ **`dxf_bridge.py` is
+strictly 2D**: it reads `LINE`, `CIRCLE`, `ARC`, `ELLIPSE`, `SPLINE`,
+`LWPOLYLINE`, `POLYLINE` and `INSERT`, and **discards Z on every one**. A set
+model dropped in today imports as nothing, or as flattened spaghetti.
+
+🔴 **And the useful question is 2D anyway.** What the section needs from a set is
+its **profile at the cut line** — enough to see whether a beam clears it. Every
+section this app prints already says so:
+
+> *"Scenery in section — ask the set designer. Until then: no obstruction is
+> checked; a beam may be blocked."*
+
+A set designer's section is a flat DXF. **The plan already underlays an imported
+ground plan; the section underlays nothing** — `plot_to_section.render()` takes
+no `base` at all. ⭐ **That is the cheap version of this feature and most of its
+value**, and it does not need a Z-aware importer, a cutting plane, or a view that
+is not a plan — all of which run straight into "multiple views, CAD-style" above.
+
+---
+
 ## The symbols question
 
 **Jerry's own convention is Field Template / SoftSymbols for ETC, with AutoPlot for cable and truss** *(found 2026.09.22 on the external drives)*. Those are `.vwx` and cannot be reused. **The editor needs its own symbol set drawn to USITT RP-2**, which `scaled_pdf.py` already has a first pass at. **Ask Jerry to mark up that draft sheet before any more are drawn.**
