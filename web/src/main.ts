@@ -26,7 +26,8 @@ import { openMenu, type MenuGroup, type MenuItem } from "./menu.js";
 import { visibilityOf, hiddenPurposes, purposeLayers, rentedLayer,
          rentersIn, RENTED_ID, SCREEN_LAYERS } from "./layers.js";
 import { confirmRevert, exportFailedMessage } from "./confirm.js";
-import { render, POS_CHAR_W, POS_TEXT, type Computed, type RenderOptions } from "./render.js";
+import { render, POS_CHAR_W, POS_TEXT, BASE_INK_DEFAULT,
+         type Computed, type RenderOptions } from "./render.js";
 import { compute, fixtures, exportFile, dxfLayers, dxfPaths, symbols, booms,
          positionLabels, savePlot, listPlots, pickPlotsFolder, loadPlot, pdfPages, pdfPaths,
          serverVersion,
@@ -71,6 +72,12 @@ let pipeGhost: SVGLineElement | undefined;
 // that landed in the wrong place could only be lived with — #63.
 let baseXf = { x: 0, y: 0, rotate: 0 };
 let basePlan: DxfPaths | null = null;
+/** How dark the imported plan is drawn. The bar's slider writes it.
+ *
+ *  ⚠ Module state like the rest of the import, NOT a field on the plot —
+ *  `basePlan` is not in the file, so a darkness that outlived it would be a
+ *  setting for a drawing that is no longer there. */
+let baseInkLevel = BASE_INK_DEFAULT;
 
 /**
  * Forget the imported ground plan.
@@ -90,6 +97,7 @@ function clearBase(): void {
   baseImage = undefined;
   basePlan = null;
   baseXf = { x: 0, y: 0, rotate: 0 };
+  baseInkLevel = BASE_INK_DEFAULT;
 }
 let symbolCache: Record<string, SymbolPrim[]> = {};
 /** Symbol keys that cannot pan — see RenderOptions.twoPoint. #113. */
@@ -159,6 +167,7 @@ function opts(): RenderOptions {
     // decides. The same layer governs lines and a picture alike: a designer who
     // turns the plan off means the imported one, whichever it is.
     basePaths: placedBasePaths(),
+    baseInk: baseInkLevel,
     baseImage: baseImage
       ? { href: baseImage.href, x: baseImage.x, y: baseImage.y,
           wide: baseImage.wide, tall: baseImage.wide * baseImage.aspect,
@@ -1088,17 +1097,28 @@ function syncBackdropBar(): void {
   const bar = $("bdbar");
   if (!baseImage && !basePlan) { bar.hidden = true; return; }
   bar.hidden = false;
-  // ⚠ A vector plan has no width to set and nothing to fade — its lines are
-  // drawn at the scenery weight. Those two boxes go away rather than sit there
-  // doing nothing, and calibrate goes with them: you scale a photograph, you
-  // do not scale a drawing that arrived with its own units.
+  // ⚠ A vector plan has no width to set — you scale a photograph, you do not
+  // scale a drawing that arrived with its own units, so `wide` and `calibrate`
+  // go away rather than sit there doing nothing.
+  //
+  // ⭐ THE SLIDER STAYS, for both. It used to be hidden here, on the reasoning
+  // that a vector plan has "nothing to fade" because its lines are drawn at a
+  // fixed weight. That fixed weight is the thing people keep reporting: too
+  // faint on 2026.10.05, too faint again on 2026.10.14. It does the same job
+  // on both kinds of base — how strongly the venue's drawing comes through —
+  // and only the word changes, because a backdrop FADES and a drawing is INKED.
   const vectorOnly = !baseImage;
   $("bdwhat").textContent = vectorOnly ? "base plan" : "backdrop";
   // ⚠ The labels WRAP their input rather than carry a for=, so hide the label.
-  for (const id of ["bdw", "bdo", "bdcal"]) {
+  for (const id of ["bdw", "bdcal"]) {
     const el = $(id);
     ((el.closest("label") as HTMLElement | null) ?? el).hidden = vectorOnly;
   }
+  $("bdoword").textContent = vectorOnly ? "ink" : "fade";
+  $("bdolab").title = vectorOnly
+    ? "How dark the imported plan is drawn. It stays under the rig at any setting."
+    : "How strongly the backdrop shows through. It is a tracing guide, never a measurement.";
+  if (vectorOnly) ($<HTMLInputElement>("bdo")).value = String(Math.round(baseInkLevel * 100));
   const b = baseImage ?? baseXf;
   ($<HTMLInputElement>("bdx")).value = fmtFt(b.x);
   ($<HTMLInputElement>("bdy")).value = fmtFt(b.y);
@@ -1130,8 +1150,12 @@ function wireBackdropBar(): void {
     (baseImage ?? baseXf).rotate = Number(($<HTMLInputElement>("bdr")).value) || 0; draw();
   });
   $("bdo").addEventListener("input", () => {
-    if (!baseImage) return;
-    baseImage.opacity = Number(($<HTMLInputElement>("bdo")).value) / 100; draw();
+    if (!baseImage && !basePlan) return;
+    const v = Number(($<HTMLInputElement>("bdo")).value) / 100;
+    // ⚠ Whichever base is loaded. The raster's is an opacity and the vector's
+    // is an ink, which is why they are two fields rather than one shared number.
+    if (baseImage) baseImage.opacity = v; else baseInkLevel = v;
+    draw();
   });
   $("bdcal").addEventListener("click", () => {
     if (!baseImage) return;

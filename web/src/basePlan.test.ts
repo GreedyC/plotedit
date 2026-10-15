@@ -19,6 +19,7 @@
  * line going missing is exactly what the bug was.
  */
 import * as fs from "node:fs";
+import { baseInk, BASE_INK_DEFAULT } from "./render.js";
 
 let fails = 0;
 function check(label: string, got: unknown, want: unknown) {
@@ -68,14 +69,23 @@ const paper = capture("index.html still gives the svg a background",
                       /svg\s*\{[^}]*background:\s*(#[0-9a-f]{3,6})/i, html);
 check("...and it is white", paper.toLowerCase(), "#fff");
 
-const ink = capture("render.ts strokes the base plan with a flat hex",
-                    /gBase\.appendChild\([\s\S]*?stroke:\s*"(#[0-9a-f]{3,6})"/i, render);
+// ⭐ MEASURED THROUGH THE FUNCTION, not scraped out of the source. The colour
+// stopped being a literal when it became a slider, and a regex looking for one
+// would now pass by finding nothing. This calls what the renderer calls.
+const ink = baseInk(BASE_INK_DEFAULT);
 const ratio = contrast(ink, paper);
-console.log(`       ${ink} on ${paper} measures ${round2(ratio)}:1`);
+console.log(`       default ${ink} on ${paper} measures ${round2(ratio)}:1`);
 // 3:1 is the WCAG 1.4.11 floor for a graphic that carries meaning. A plan you
 // cannot see carries all of it.
-check("it clears the 3:1 floor for non-text graphics", ratio >= 3, true);
+check("the DEFAULT clears the 3:1 floor for non-text graphics", ratio >= 3, true);
 check("...and #c9c9c9, which did not, is gone", ink.toLowerCase() === "#c9c9c9", false);
+// 🔴 AND IT CLEARS THE OLD CONSTANT TOO. #8c8c8c was itself the answer to the
+// 2026.10.05 report and got reported again on 2026.10.14, so a default that
+// merely reproduced it would be a setting everybody has to move before using.
+check("...and it is darker than the #8c8c8c it replaced",
+      luminance(ink) < luminance("#8c8c8c"), true);
+// Past what WCAG asks of body text, which #8c8c8c at 3.36:1 was not.
+check("...and clears 4.5:1, the text threshold", ratio >= 4.5, true);
 
 // ⚠ The other half of the bug report is the reason this is not simply black.
 // The venue's drawing is their claim, not Jerry's measurement, and it has to
@@ -85,6 +95,33 @@ check("the rig is still drawn darker than the plan under it",
       pipe === undefined || luminance(ink) > luminance(pipe), true);
 check("...and the plan is still the lighter of the two by a clear margin",
       pipe === undefined || contrast(ink, pipe) >= 2, true);
+
+console.log("\n🔴 the slider cannot be dragged into a wrong drawing");
+// ⚠ EVERY setting, not just the default. The point of a range is that someone
+// will reach its ends, and the invariant above — the venue's drawing stays
+// under the rig — has to survive being dragged all the way over.
+const darkest = baseInk(1), lightest = baseInk(0.1);
+console.log(`       ${lightest} .. ${darkest}`);
+check("the darkest setting is still lighter than the rig",
+      pipe === undefined || luminance(darkest) > luminance(pipe), true);
+check("the darkest setting is darker than the default",
+      luminance(darkest) < luminance(ink), true);
+check("the lightest setting is lighter than the default",
+      luminance(lightest) > luminance(ink), true);
+// ⚠ Out of range in either direction CLAMPS rather than producing a colour
+// outside the ramp. The slider cannot send these, but the field is exported.
+check("above 1 clamps to the darkest", baseInk(5), baseInk(1));
+check("below 0 clamps to the lightest", baseInk(-5), baseInk(0));
+check("every setting is a real hex", [0, 0.25, 0.5, 0.75, 1].every(k => /^#[0-9a-f]{6}$/.test(baseInk(k))), true);
+
+console.log("\n🔴 the control is actually in the page");
+check("index.html still has the slider", /id="bdo"[^>]*type="range"/.test(html), true);
+check("...with a label the code can relabel", /id="bdoword"/.test(html), true);
+check("main.ts no longer hides it for a vector plan",
+      /for \(const id of \["bdw", "bdcal"\]\)/.test(main), true);
+check("...and writes the vector plan's ink when there is no image",
+      /else baseInkLevel = v/.test(main), true);
+check("clearBase resets the ink too", /baseInkLevel = BASE_INK_DEFAULT/.test(main), true);
 
 console.log("\n🔴 opening a plot forgets the imported plan");
 // The three pieces of module state. All three, because resetting two of them
