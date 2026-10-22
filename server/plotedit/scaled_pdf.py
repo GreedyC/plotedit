@@ -1230,7 +1230,13 @@ class Sheet:
             _above = _clear + (color_tier or 0) * _step
             from . import dmx as _dmx
             with self.on_layer("labels"):
-                _sym.notation(self, x, y, unit=num, channel=ch, color=color_gel,
+                from . import notation_layout as _notation_layout
+                if hasattr(self, "_pending_notation"):
+                    _notation = lambda sheet, x, y, **kw: _notation_layout.queue(
+                        sheet, _sym.notation, x, y, **kw)
+                else:
+                    _notation = _sym.notation
+                _notation(self, x, y, unit=num, channel=ch, color=color_gel,
                               circuit=circuit, dimmer=dimmer,
                               address=_dmx.plot_number(address, dimmer) if address else None,
                               wattage=wattage,

@@ -239,7 +239,12 @@ def draw(sheet, plot, x, y, width=11.0, line=0.85, title="INSTRUMENT KEY"):
             elif where == "gate":
                 sheet.circle(ax, cy, 0.09, fill=None if k == "iris" else sym._black())
             sheet.text(ax + 0.55, cy - 0.06, a, size=5.5)
-            ax += max(3.0, width / max(len(acc), 1))
+            from reportlab.pdfbase.pdfmetrics import stringWidth
+            # The text stays 5.5pt while stage feet shrink. Leave two paper
+            # points after its measured width before the next symbol begins.
+            text_width = stringWidth(a, "Helvetica", 5.5) / sheet.pt_per_ft
+            ax += max(3.0, width / max(len(acc), 1),
+                      1.1 + text_width + 2.0 / sheet.pt_per_ft)
         cy -= line * 1.3
 
     return cy

@@ -1055,6 +1055,9 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
     _across = abs(_sa) > abs(_ca)            # the axis runs across the page
     _align = ("left" if _sa > 0 else "right") if _across else "center"
 
+    if hasattr(sheet, "notation_phase"):
+        sheet.notation_phase("front")
+
     d = -(above + (0.0 if _across else _h / 2))
     fx, fy = _along(d)
     # A second line stacks DOWN THE PAGE next to a sideways unit, and further
@@ -1086,6 +1089,9 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
     # The offset therefore has to follow the symbol as it rotates. In draw()'s
     # frame a point (pa, 0) lands at (x - pa·sin θ, y + pa·cos θ), so moving
     # +pa goes toward the back of the instrument whichever way it points.
+    if hasattr(sheet, "notation_phase"):
+        sheet.notation_phase("fixed")
+
     if unit is not None:
         ux, uy = _along(body_center)
         sheet.text(ux, uy - size * 0.2, str(unit), size=7, center=True, bold=True)
@@ -1095,6 +1101,9 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
     # drawn; the working convention is the shaded rear, and that is drawn
     # instead. `wattage` is kept in the signature so callers do not break, and
     # ignored on purpose.
+
+    if hasattr(sheet, "notation_phase"):
+        sheet.notation_phase("back")
 
     # ⭐ THE STACK GOES BEHIND THE LIGHT — §6.14.2 puts circuit, dimmer and
     # channel below an instrument that points up, i.e. off its back. Jerry,
@@ -1107,6 +1116,12 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
     # anything aimed downstage, where behind is +y.
     # + 0.62 size, not 0.5: the hexagon's own corner reaches 0.58 size, so a
     # container centred at the clearance still laps over the symbol.
+    # Containers and their clearance must keep pace with fixed-size paper text.
+    # At the reference quarter-inch scale these dimensions are unchanged.
+    if _tp:
+        factor = max(1.0, 18.0 / _tp)
+        size *= factor
+        gap *= factor
     d = above + size * 0.62
 
     # In a dimmer-per-circuit house the circuit and the dimmer are one number,

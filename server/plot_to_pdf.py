@@ -239,6 +239,7 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                   if getattr(s, "pt_per_ft", None) else L.PAD_FT)
     _tiers = L.color_tiers(plot["instruments"], _text_h, pad=_color_pad)
 
+    s._pending_notation = []
     rows = []
     for _i, inst in enumerate(plot["instruments"]):
         focus = ((inst["focusX"], inst["focusY"])
@@ -266,6 +267,10 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                            not in _boom_names,
                    color_tier=_tiers[_i])
         rows.append(r)
+
+    from plotedit import notation_layout as _notation_layout
+    _notation_layout.flush(s)
+    del s._pending_notation
 
     # ⭐ THE POSITION NAMES GO ON LAST, after every pool and every pipe. Their
     # knockout can only clear what is already on the canvas, so a name drawn

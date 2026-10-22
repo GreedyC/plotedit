@@ -462,6 +462,16 @@ for _scale, _gap, _want in (("1/4", 2.0, [0, 0]),
         check(f"{_scale} PDF draws the expected stagger", _staggered,
               _want[0] != _want[1])
 
+
+# Issue #58: count actual printed word boxes, including address/channel
+# containers and the accessory key. No annotation may disappear to pass this.
+print("\nsmall-scale notation and accessory text stay readable")
+for _paper, _scale in (("ARCH_C", "1/8"), ("ARCH_C", "1/4"), ("ARCH_D", "1/2")):
+    _pairs, _text = _overlaps(_paper, _scale)
+    check(f"{_paper} {_scale} has no overlapping word pairs", _pairs, [])
+    for _label in ("R52+R119", "1/15", "1/16", "46", "47", "door", "gobo"):
+        check(f"{_scale} retains {_label}", _label in _text, True)
+
 if FAILS:
 
 
