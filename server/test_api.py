@@ -65,7 +65,7 @@ r = client.post("/compute", json={"instruments": [
     {"unit": 6, "type": "S4 26", "x": 6, "y": 20,
      "focus_x": 10, "focus_y": 10},                                      # focus, no trim
 ]}).json()["instruments"]
-check("acting-area wash", r[0]["footcandles"], 169)
+check("acting-area wash", r[0]["footcandles"], 223)
 check("throw", r[0]["throw_ft"], "13'-9\"")
 check("no trim -> refuses, explains", r[1]["note"], "needs a trim height and a focus point")
 # The note names only what is missing: a trimmed unit must not be told it has no trim.

@@ -31,12 +31,12 @@ check("gels.csv found beside the module", len(ph.GELS) > 250, True)
 check("R119 transmission", ph.GELS["R119"]["t"], 0.893)
 
 print("\ngel notation — + stacks, / splits")
-check("R52+R119 stacked", round(ph.gel_factor("R52+R119")[0], 3), 0.232)
-check("R52/R119 split -> first gel only", round(ph.gel_factor("R52/R119")[0], 3), 0.26)
+check("R52+R119 stacked", round(ph.gel_factor("R52+R119")[0], 3), 0.305)
+check("R52/R119 split -> first gel only", round(ph.gel_factor("R52/R119")[0], 3), 0.342)
 # ⭐ LEE ARRIVED 2026.09.29 — 259 colour filters, so L201 is no longer unknown.
 check("a LEE number resolves", round(ph.gel_factor("L201")[0], 3), 0.350)
 check("...and mixes with a Rosco one",
-      round(ph.gel_factor("R52+L201")[0], 3), 0.091)
+      round(ph.gel_factor("R52+L201")[0], 3), 0.12)
 check("a gel nobody has entered still refuses", ph.gel_factor("R9999")[0], None)
 
 # 🔴 THE COLLISION THAT MAKES THE PREFIX MANDATORY. R119 is Light Hamburg Frost
@@ -62,8 +62,8 @@ s.origin(ft(3), ft(5))
 r = s.unit(ft(6), ft(20), 1, ch=1, kind="S4 26", color_gel="R52+R119",
            trim=14, focus_to=(ft(10), ft(10)), lamp="HPL 575")
 # Regression: a compound gel used to miss a dict lookup and silently report
-# open white — 729 fc instead of 169. The acting-area wash, 4.5x too bright.
-check("R52+R119 acting-area wash", round(r["fc"]), 169)
+# open white — 729 fc instead of 223. The acting-area wash, 3.3x too bright.
+check("R52+R119 acting-area wash", round(r["fc"]), 223)
 check("throw", ph.fmt_ft(r["throw"]), "13'-9\"")
 
 print("\nscaled_pdf -> dxf_bridge, and the printed scale")
@@ -444,11 +444,15 @@ check("an explicit 750 still computes at 750",
       round(ph.footcandles("S4 26", 14, lamp="HPL 750")[0]), 898)
 check("...without claiming it was assumed",
       "assumed" in ph.footcandles("S4 26", 14, lamp="HPL 750")[1], False)
-# ⭐ Corroboration from outside the code: how-we-light.md, built from Jerry's own
-# paperwork before any of this existed, puts a 575 S4 26 at 14ft through
-# R52+R119 at 163 fc. The default now agrees with his own business file.
-check("163 fc through R52+R119 — matches how-we-light.md",
-      round(ph.footcandles("S4 26", 14, gel="R52+R119")[0]), 163)
+# 🔴 THIS USED TO CLAIM CORROBORATION FROM how-we-light.md AND IT WAS CIRCULAR.
+# That file's 163 fc was written in the same sentence as its own arithmetic,
+# "(0.26 x 0.893)" — the same 0.26 this code was reading. One number dressed up
+# as two independent routes, asserting a confidence neither route earned.
+# What the paperwork actually supplied was the COMBINATION — R52+R119, in 112 of
+# 605 instruments — never a footcandle figure. 0.26 was Rosco's prose; the
+# measured Source A Y is 34.234, so the honest number is 214.
+check("214 fc through R52+R119, the acting-area default",
+      round(ph.footcandles("S4 26", 14, gel="R52+R119")[0]), 214)
 
 print("\nwattage: the engine's, not the lens tube's — and it varies by mode")
 check("an unstated S4 is 575W", ph.watts_for("S4 26")[0], 575.0)
