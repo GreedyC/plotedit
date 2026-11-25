@@ -22,7 +22,7 @@ from plotedit.booms import BOOM_PITCH
 
 def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=None,
            pool_plane=None, show_pools=True, show_focus=True, show_labels=True,
-           rulers=None, lift=None, shift=None, base=None):
+           rulers=None, lift=None, shift=None, base=None, *, _cad_pass=False):
     """Draw the plot.
 
     ⭐ `lift` is how far up the sheet the drawing sits, in feet, and None means
@@ -47,6 +47,17 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     # from the file rather than waiting for the Sheet, which does not exist yet.
     import json as _json
     _system = _units.system_of(_json.load(open(plot_path)))
+    if dxf is not None and not _cad_pass:
+        # DXF uses stage dimensions. Draw it at a fixed reference scale,
+        # independently of the requested PDF page and notation fitting.
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            render(plot_path, os.path.join(directory, "cad.pdf"),
+                   scale="1:50" if _system == _units.METRIC else "1/4",
+                   dxf=dxf, pool_plane=pool_plane, show_pools=show_pools,
+                   show_focus=show_focus, show_labels=show_labels, rulers=rulers,
+                   lift=0.0, shift=0.0, base=base, _cad_pass=True)
+        dxf = None
     if scale in ("fit", "max", None):
         # ⚠ The fit search has to draw the SAME picture that will be issued.
         # Pools are the widest thing on a plot by a distance, so measuring with
@@ -239,7 +250,8 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                   if getattr(s, "pt_per_ft", None) else L.PAD_FT)
     _tiers = L.color_tiers(plot["instruments"], _text_h, pad=_color_pad)
 
-    s._pending_notation = []
+    if not _cad_pass:
+        s._pending_notation = []
     rows = []
     for _i, inst in enumerate(plot["instruments"]):
         focus = ((inst["focusX"], inst["focusY"])
@@ -268,9 +280,10 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                    color_tier=_tiers[_i])
         rows.append(r)
 
-    from plotedit import notation_layout as _notation_layout
-    _notation_layout.flush(s)
-    del s._pending_notation
+    if not _cad_pass:
+        from plotedit import notation_layout as _notation_layout
+        _notation_layout.flush(s)
+        del s._pending_notation
 
     # ⭐ THE POSITION NAMES GO ON LAST, after every pool and every pipe. Their
     # knockout can only clear what is already on the canvas, so a name drawn

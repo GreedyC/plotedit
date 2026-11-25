@@ -81,7 +81,7 @@ def _touches(a, b, pad):
             and a[1] < b[3] + pad and b[1] < a[3] + pad)
 
 
-def _draw(sheet, commands, dx=0.0, dy=0.0):
+def _translated(commands, dx, dy):
     for name, args, kwargs in commands:
         args = list(args)
         args[0] += dx
@@ -89,7 +89,35 @@ def _draw(sheet, commands, dx=0.0, dy=0.0):
         if name == "line":
             args[2] += dx
             args[3] += dy
+        yield name, tuple(args), kwargs
+
+
+def _draw(sheet, commands, dx=0.0, dy=0.0):
+    for name, args, kwargs in _translated(commands, dx, dy):
         getattr(sheet, name)(*args, **kwargs)
+
+
+def _separate_captions(sheet, commands, axis):
+    """Move each caption with its container away from earlier captions."""
+    separated = []
+    container = []
+    captions = []
+    pad = 1 / sheet.pt_per_ft
+    vx, vy = axis
+    offset = 0.0
+    for command in commands:
+        container.append(command)
+        if command[0] != "text":
+            continue
+        box, = _boxes(sheet, [command])
+        while any(_touches(_shift(box, offset * vx, offset * vy), prev, pad)
+                  for prev in captions):
+            offset += pad
+        separated.extend(_translated(container, offset * vx, offset * vy))
+        captions.append(_shift(box, offset * vx, offset * vy))
+        container.clear()
+    separated.extend(container)
+    return separated
 
 
 def flush(sheet):
@@ -102,6 +130,8 @@ def flush(sheet):
         for groups, axis in pending:
             for phase, sign in (("front", -1), ("back", 1)):
                 commands = groups[phase]
+                if phase == "back":
+                    commands = _separate_captions(sheet, commands, axis)
                 boxes = _boxes(sheet, commands)
                 if not boxes:
                     continue

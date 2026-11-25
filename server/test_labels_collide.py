@@ -472,6 +472,23 @@ for _paper, _scale in (("ARCH_C", "1/8"), ("ARCH_C", "1/4"), ("ARCH_D", "1/2")):
     for _label in ("R52+R119", "1/15", "1/16", "46", "47", "door", "gobo"):
         check(f"{_scale} retains {_label}", _label in _text, True)
 
+# Sideways fixtures put the control captions side by side on paper.
+from types import SimpleNamespace
+from plotedit import notation_layout, symbols
+
+for _points_per_foot in (9, 18):
+    _sheet = SimpleNamespace(pt_per_ft=_points_per_foot, _pending_notation=[])
+    notation_layout.queue(_sheet, symbols.notation, 0, 0,
+                          address="1/512", channel=512, rotate_deg=90)
+    _groups, _axis = _sheet._pending_notation[0]
+    _stack = notation_layout._separate_captions(_sheet, _groups["back"], _axis)
+    _captions = [cmd for cmd in _stack if cmd[0] == "text"]
+    check("sideways stack retains both captions",
+          [cmd[1][2] for cmd in _captions], ["1/512", "512"])
+    _a, _b = notation_layout._boxes(_sheet, _captions)
+    check(f"sideways captions clear at {_points_per_foot} points per foot",
+          notation_layout._touches(_a, _b, 1 / _points_per_foot), False)
+
 if FAILS:
 
 
