@@ -23,7 +23,7 @@ from plotedit.booms import BOOM_PITCH
 
 def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=None,
            pool_plane=None, show_pools=True, show_focus=True, show_labels=True,
-           rulers=None, lift=None, shift=None, base=None, *, _cad_pass=False):
+           rulers=None, lift=None, shift=None, base=None, stamp=None, *, _cad_pass=False):
     """Draw the plot.
 
     ⭐ `lift` is how far up the sheet the drawing sits, in feet, and None means
