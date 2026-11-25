@@ -23,7 +23,7 @@ import math
 import os
 import sys
 
-from plotedit.scaled_pdf import Sheet, ft
+from plotedit.scaled_pdf import Sheet, ft, credits, revision
 from plotedit import photometrics as ph
 from plotedit import positions as P
 from plotedit import symbols as sym
@@ -112,7 +112,7 @@ def place_for(probe):
 
 
 def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
-           page="ARCH_D", landscape=True, head_h=5.5, place=None):
+           page="ARCH_D", landscape=True, head_h=5.5, place=None, stamp=None):
     # "fit" zooms in as far as the sheet allows, on standard scales only. The
     # section is the drawing trims are read off, so a bigger scale is a more
     # useful drawing — as long as nothing falls off the edge.
@@ -138,12 +138,14 @@ def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
                 else f"at {ph.fmt_ft(cut_at)} from stage left")
 
     house = Sheet.foh_extent(plot.get("positions"))
+    _rev, _rev_note = revision(plot)
     s = Sheet(pdf_path, page=page, scale=scale, landscape=landscape,
               show=plot["show"], venue=plot.get("venue", ""),
               sheet=f"Section — cut {cut_desc}, looking stage left",
-              rev=str(plot.get("revision", "0"))[:3],
-              designer=(f"Design: {plot['designer']}" if plot.get("designer") else ""),
-              studio=plot.get("studio", ""), date=plot.get("date", ""))
+              rev=_rev, rev_note=_rev_note,
+              **credits(plot),
+              studio=plot.get("studio", ""), date=plot.get("date", ""),
+              stamp=stamp)
     s.angle_in_barrel = _barrel = bool(plot.get("angleInBarrel"))
     # ⭐ MEASURED AND CENTRED — see place_for(). The left margin has to absorb
     # what is drawn LEFT of the room: the deck runs a foot past it, and a house
@@ -346,9 +348,11 @@ def render(plot_path, pdf_path, cut_at=None, axis="y", scale="fit",
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
+    from plot_to_pdf import _stamp_arg
+    args, _stamp = _stamp_arg(sys.argv[1:])
     s, drawn = render(args[0] if args else "testdata/blackbox.plot.json",
-                      args[1] if len(args) > 1 else "../out/section.pdf")
+                      args[1] if len(args) > 1 else "../out/section.pdf",
+                      stamp=_stamp)
     for w in s.warnings:
         print("⚠", w)
     print(f"{len(drawn)} positions drawn, one governing luminaire each:")

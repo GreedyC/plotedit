@@ -11,16 +11,17 @@ key can be dropped onto the plot instead once there is room for it.
 import json
 import sys
 
-from plotedit.scaled_pdf import Sheet, ft
+from plotedit.scaled_pdf import Sheet, ft, credits, revision
 from plotedit import key as K
 
 
 def render(plot_path, pdf_path, scale="1/2", page="ARCH_C", landscape=False):
     plot = json.load(open(plot_path))
+    _rev, _rev_note = revision(plot)
     s = Sheet(pdf_path, page=page, scale=scale, landscape=landscape,
               show=plot["show"], venue=plot.get("venue", ""),
-              sheet="Instrument Key", rev=str(plot.get("revision", "0"))[:3],
-              designer=f"Design: {plot.get('designer', '')}")
+              sheet="Instrument Key", rev=_rev, rev_note=_rev_note,
+              **credits(plot))
     s.origin(ft(2), ft(2))
     top = 30.0
     K.draw(s, plot, 1.0, top)

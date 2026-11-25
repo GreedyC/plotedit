@@ -3,7 +3,7 @@
 
     cd server && python3 test_gel_keys.py
 
-🔴 gels.csv keys all 498 rows WITHOUT punctuation — R33, L142. Plots and imported
+🔴 gels.csv keys all 646 rows WITHOUT punctuation — R33, L142, G470. Plots and imported
 paperwork commonly write the dashed form. A house rep plot read into plotedit came
 in as R-37, L-142, R-54 and R-05, and every one missed the table.
 

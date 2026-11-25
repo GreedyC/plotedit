@@ -10,7 +10,8 @@ import json
 import os
 import sys
 
-from plotedit.scaled_pdf import Sheet, ft, check, largest_scale, FIT_SCALES
+from plotedit.scaled_pdf import (Sheet, ft, check, largest_scale, FIT_SCALES,
+                                 credits, revision)
 from plotedit import photometrics as ph
 from plotedit import positions as _P
 
@@ -73,7 +74,11 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                                    landscape=landscape, pool_plane=pool_plane,
                                    show_pools=show_pools, show_focus=show_focus,
                                    show_labels=show_labels, rulers=rulers,
-                                   lift=0.0, shift=None)[0],
+                                   # ⚠ Stamped here too. The search has to draw
+                                   # the sheet that will be ISSUED — the stamp
+                                   # grows the opaque corner, so a search run
+                                   # without it answers about a different sheet.
+                                   lift=0.0, shift=None, stamp=stamp)[0],
             system=_system)
 
     # ⭐ PASS ONE: draw it at the floor to find out how much room is left.
@@ -89,7 +94,7 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
                                dxf=dxf, pool_plane=pool_plane,
                                show_pools=show_pools, show_focus=show_focus,
                                show_labels=show_labels, rulers=rulers,
-                               lift=0.0, shift=0.0, base=base)
+                               lift=0.0, shift=0.0, base=base, stamp=stamp)
         if lift is None:
             lift = _probe.slack_above()
         if shift is None:
@@ -97,16 +102,20 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
 
     plot = json.load(open(plot_path))
     room = plot["room"]
+    _rev, _rev_note = revision(plot)
     s = Sheet(pdf_path, page=page, scale=scale, landscape=landscape,
               show=plot["show"], venue=plot.get("venue", ""),
-              sheet=plot.get("revision", ""), rev=plot.get("revision", "0")[:3],
-              designer=(f"Design: {plot['designer']}" if plot.get("designer") else ""),
+              sheet="Light Plot", rev=_rev, rev_note=_rev_note,
+              **credits(plot),
               studio=plot.get("studio", ""), date=plot.get("date", ""), dxf=dxf,
               # ⭐ Line weights come off the PLOT, not off an export option.
               # "the pipes are too thick" is a property of the drawing, so it
               # belongs with the drawing and travels with the file.
               weights=plot.get("lineWeights"),
-              units=_units.system_of(plot))
+              units=_units.system_of(plot),
+              # ⭐ Passed, never read from the plot: see Sheet.__init__. A plot
+              # is issued and marked up from the same file on the same day.
+              stamp=stamp)
     # 2025 USITT RP: the beam angle written in the barrel instead of the mark.
     # One setting for the whole plot (Jerry, 2026.10.09).
     s.angle_in_barrel = bool(plot.get("angleInBarrel"))
@@ -346,10 +355,26 @@ def render(plot_path, pdf_path, scale="fit", page="ARCH_D", landscape=True, dxf=
     return s, rows
 
 
+def _stamp_arg(args):
+    """Pull `--stamp TEXT` out of a plain argv list, leaving the positionals.
+
+    ⚠ Deliberately NOT argparse. Both of these CLIs are positional and have
+    been since the first commit; switching them would change how every existing
+    command line behaves for the sake of one option.
+    """
+    if "--stamp" in args:
+        i = args.index("--stamp")
+        if i + 1 >= len(args):
+            raise SystemExit("--stamp needs the words to stamp, e.g. --stamp 'MARKUP COPY'")
+        return args[:i] + args[i + 2:], args[i + 1]
+    return args, None
+
+
 if __name__ == "__main__":
-    plot_path = sys.argv[1] if len(sys.argv) > 1 else "testdata/blackbox.plot.json"
-    pdf_path = sys.argv[2] if len(sys.argv) > 2 else "../out/blackbox.pdf"
-    s, rows = render(plot_path, pdf_path)
+    argv, _stamp = _stamp_arg(sys.argv[1:])
+    plot_path = argv[0] if argv else "testdata/blackbox.plot.json"
+    pdf_path = argv[1] if len(argv) > 1 else "../out/blackbox.pdf"
+    s, rows = render(plot_path, pdf_path, stamp=_stamp)
     print(f"wrote {pdf_path}")
     check(pdf_path)
     if s.warnings:

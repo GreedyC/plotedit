@@ -119,6 +119,7 @@ class _Rec:
     def line(self, *a, **k): pass
     def rect(self, *a, **k): pass
     def circle(self, *a, **k): pass
+    def polygon(self, *a, **k): pass
 
 print()
 for _name, _deg, _fx, _fy in [("downstage", 0, 0, -1), ("upstage", 180, 0, 1),

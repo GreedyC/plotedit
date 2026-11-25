@@ -966,6 +966,42 @@ CONTROL_MODELS = ("dimmer-per-circuit", "hard-and-soft-patch", "no-soft-patch",
                   "dimmer-is-address")
 
 
+#: The channel number's point size. Jerry, 2026.11.02: it is the number read
+#: off a ladder, and at 6pt it was the smallest type on the sheet bar the pool
+#: annotations.
+CHANNEL_PT = 9
+
+
+def _text_w(sheet, text, pt):
+    """Width of `text` in POINTS, measured if the canvas will measure it."""
+    c = getattr(sheet, "c", None)
+    if c is not None and hasattr(c, "stringWidth"):
+        try:
+            return c.stringWidth(text, "Helvetica", pt)
+        except (AttributeError, TypeError, ValueError):
+            pass
+    # The same empirical figure labels.CHAR_W uses, so the fallback is not a
+    # second opinion about how wide Helvetica is.
+    return len(text) * 0.62 * pt
+
+
+def channel_radius(sheet, channel, size):
+    """Radius IN FEET of the 6.14.1 channel ring.
+
+    THE RING IS DRAWN IN FEET AND ITS NUMBER IN POINTS, so the two scale
+    apart: a ring that holds three digits at 1/2" spills them at 1/4". This
+    only ever GROWS the 0.52-size ring, and at 1/2" = 1'-0" with a two-digit
+    channel it does not grow it at all.
+    """
+    base = size * 0.52
+    tp = getattr(sheet, "pt_per_ft", None)
+    if channel is None or not tp:
+        return base
+    half_w = _text_w(sheet, str(channel), CHANNEL_PT) / 2.0
+    half_h = CHANNEL_PT * 0.72 / 2.0                 # cap height, halved
+    return max(base, math.hypot(half_w, half_h) * 1.15 / tp)
+
+
 def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=None,
              color=None, purpose=None, unit=None, wattage=None,
              control="dimmer-per-circuit", rotate_deg=0.0, body_center=0.0,
@@ -1011,7 +1047,7 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
     anything passed as None is simply not drawn.
     """
     import math as _m
-    from reportlab.lib.colors import black
+    from reportlab.lib.colors import black, white
 
     _r = _m.radians(rotate_deg)
     _sa, _ca = _m.sin(_r), _m.cos(_r)
@@ -1170,19 +1206,19 @@ def notation(sheet, x, y, *, channel=None, circuit=None, dimmer=None, address=No
         cx, cy = _along(d)
         pts = [(cx + size * 0.58 * _m.cos(a), cy + size * 0.58 * _m.sin(a))
                for a in [_m.radians(30 + 60 * i) for i in range(6)]]
-        for i in range(6):
-            p, q = pts[i], pts[(i + 1) % 6]
-            sheet.line(p[0], p[1], q[0], q[1], width=0.6)
+        sheet.polygon(pts, width=0.6, fill=white)
         sheet.text(cx, cy - size * 0.12, str(circuit), size=6, center=True)
         d += size + gap * 0.5
 
     if dimmer is not None:
         cx, cy = _along(d)
-        sheet.rect(cx - size * 0.62, cy - size * 0.41, size * 1.24, size * 0.82, width=0.6)
+        sheet.rect(cx - size * 0.62, cy - size * 0.41, size * 1.24, size * 0.82,
+                   width=0.6, fill=white)
         sheet.text(cx, cy - size * 0.24, str(dimmer), size=6, center=True)
         d += size + gap * 0.5
 
     if channel is not None:
         cx, cy = _along(d)
-        sheet.circle(cx, cy, size * 0.52, width=0.6)
-        sheet.text(cx, cy - size * 0.12, str(channel), size=6, center=True)
+        _cr = channel_radius(sheet, channel, size)
+        sheet.circle(cx, cy, _cr, width=0.6, fill=white)
+        sheet.text(cx, cy - _cr * 0.23, str(channel), size=CHANNEL_PT, center=True)

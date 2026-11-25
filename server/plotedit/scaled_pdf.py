@@ -32,6 +32,7 @@ reader's measuring tool, or run  scaled_pdf.py --check file.pdf  which
 reads the 1-inch check bar and reports its width in points (want 72.0).
 """
 import contextlib
+import datetime
 import os
 import tempfile
 import shutil
@@ -250,11 +251,74 @@ DXF_FOR_PDF = {v: k for k, v in PDF_FOR_DXF.items()}
 # holding a drawing that says what it is and what scale it is at.
 FRAME = "frame"
 
+# The title block, in INCHES, declared once. Anything that has to stay clear
+# of it — the scale bar and the one-inch check, today — reads it from here
+# rather than repeating the number and drifting (issue #131).
+#
+# ⚠ ONLY THE WIDTH IS FIXED. The height is whatever the block's contents need
+# — credits and revision note both add lines — so it is not declared here at
+# all. The width is the only part anything else has to stay clear of.
+TITLE_BLOCK_W_IN = 4.0
+# The stamp's height. It holds one headline and one line of small print, and it
+# is a constant because the clipping guard has to know it before it is drawn.
+STAMP_H = 46.0
+
+
+def credits(plot):
+    """The title block's three credit lines, read off the plot and nowhere else.
+
+    ⭐ ONE PLACE, because there are three sheets. The plan, the section and the
+    symbol key each build their own Sheet, so a credit assembled at each call
+    site is a credit three renderers can disagree about — and they already did:
+    plot_to_key.py printed a bare "Design: " on every plot that named nobody,
+    which is the exact thing test_package forbids on the plan.
+
+    ⚠ Blank unless the file names someone. Jerry, 2026.09.24: "I don't want to
+    print anything that is hardcoded." A label with nothing after it asserts a
+    role the plot never filled, so an absent credit prints no line at all.
+    """
+    def _line(label, key):
+        name = str(plot.get(key) or "").strip()
+        return f"{label}: {name}" if name else ""
+    return dict(designer=_line("Design", "designer"),
+                director=_line("Director", "director"),
+                scenic=_line("Scenic Design", "scenicDesigner"))
+
+
+def revision(plot):
+    """Split the plot's `revision` into a designator and a note.
+
+    🔴 ONE FIELD HOLDING TWO FACTS, and every consumer took a slice of it. The
+    title block printed `revision[:3]` as the designator and the WHOLE string
+    again in the sheet slot — so a plot revised with a sentence had that
+    sentence printed where the plate's own name belongs, truncated with an
+    ellipsis, while `Rev` showed its first three characters. On the shipped
+    samples that reads "Rev ver"; on a string beginning "Rev H" it reads
+    "Rev Rev".
+
+    ⚠ The designator is the FIRST TOKEN, not the first three characters. A
+    designator is as long as it is — "Prelim" is one, and so is "0".
+
+    ⚠ A leading "Rev", "Revision" or "version" is the LABEL, not the
+    designator. The title block supplies the word itself.
+    """
+    import re
+    raw = str(plot.get("revision") or "").strip()
+    if not raw:
+        return "0", ""
+    label = re.match(r"(?:rev(?:ision)?|ver(?:sion)?|v)\.?\s+", raw, re.I)
+    if label:
+        raw = raw[label.end():].strip() or raw
+    head, _, tail = raw.partition(" ")
+    return head.rstrip(".:,;-—–") or head, tail.strip().lstrip("—–-:·|").strip()
+
 
 class Sheet:
     def __init__(self, path, page="ARCH_D", scale="1/4", landscape=True,
                  show="", venue="", sheet="", rev="A", designer="", studio="", date="",
-                 margin_in=0.5, dxf=None, weights=None, units=None, layered=True):
+                 director="", scenic="", rev_note="",
+                 margin_in=0.5, dxf=None, weights=None, units=None, layered=True,
+                 stamp=None, stamp_date=None):
         w, h = PAGES[page] if isinstance(page, str) else page
         if landscape: w, h = h, w
         self.page_pt = (w * inch, h * inch)
@@ -262,6 +326,17 @@ class Sheet:
         # holds 40.0' x 58.8'" and leave the reader to work backwards from two
         # numbers to a paper size — Jerry, 2026.09.24: "do we know what size
         # sheet it is referring to?" It did not, because nothing kept the name.
+        # ⭐ A DRAFT STAMP IS A PROPERTY OF THE PRINT, NOT OF THE PLOT, so it
+        # arrives as an argument and nothing is written back to the file. A plot
+        # is issued and marked up from the same source on the same day; it is
+        # the sheet in someone's hand that is one or the other.
+        #
+        # ⚠ The DATE ON THE STAMP IS TODAY, deliberately — the title block's
+        # date belongs to the revision and can be weeks old, which is the whole
+        # reason the stamp exists. `stamp_date` overrides it so a test can
+        # render the same bytes twice.
+        self.stamp = str(stamp).strip() if stamp else None
+        self.stamp_date = stamp_date or datetime.date.today().strftime("%Y.%m.%d")
         self.page_name = page if isinstance(page, str) else "custom"
         self.landscape = bool(landscape)
         self.page_in = (w, h)
@@ -317,13 +392,23 @@ class Sheet:
         # came out with his name on it — in the title block, in brown, as a
         # claim of authorship. Both now come from the plot file or stay blank.
         self.meta = dict(show=show, venue=venue, sheet=sheet, rev=rev,
-                         designer=designer, studio=studio, date=date)
+                         designer=designer, studio=studio, date=date,
+                         director=director, scenic=scenic, rev_note=rev_note)
         # The plot's `angleInBarrel`, set by whoever builds the sheet from a
         # plot. Every symbol this sheet draws asks for it, so the plan, the boom
         # elevations and the key cannot disagree about how an angle is shown.
         self.angle_in_barrel = False
         self.c.setLineJoin(1); self.c.setLineCap(1)
         self._bounds = [1e9, 1e9, -1e9, -1e9]   # page-pt extents of everything drawn
+        # ⭐ THE TITLE BLOCK'S COLUMN, watched separately. The clipping guard
+        # polices the sheet EDGE, and the block is nowhere near one — so a
+        # drawing that fits the paper perfectly can still run underneath it,
+        # and nothing was asking. The whole-drawing bounding box cannot answer
+        # this either: on a wide plot it reaches that corner whether or not
+        # anything is drawn there. So P() keeps the low-water mark of the
+        # right-hand column only, which is as precise as the coordinates get.
+        self._tb_x = self.page_pt[0] - self.margin - TITLE_BLOCK_W_IN * inch
+        self._tb_low = 1e9
         self.warnings = []
         # ⭐ Resolved ONCE, per sheet. Every drawing call reads self.styles, so
         # an override reaches the whole drawing rather than the handful of
@@ -522,6 +607,8 @@ class Sheet:
         px, py = self.ox + x_ft * self.pt_per_ft, self.oy + y_ft * self.pt_per_ft
         b = self._bounds
         b[0], b[1], b[2], b[3] = min(b[0], px), min(b[1], py), max(b[2], px), max(b[3], py)
+        if px > self._tb_x and py < self._tb_low:
+            self._tb_low = py
         return px, py
 
     def drawn_right_ft(self):
@@ -675,6 +762,28 @@ class Sheet:
         self.P(x - r, y - r); self.P(x + r, y + r)
         c.circle(*self.P(x, y), self.L(r), stroke=1, fill=1 if fill else 0); c.restoreState()
         if self.dxf: self.dxf.circle(x, y, r)
+
+    def polygon(self, pts, width=0.75, fill=None, color=black):
+        """A closed polygon. `fill` makes it OPAQUE, which is the point: a
+        §6.14.1 container has to read as a container, and a batten running
+        through it breaks the shape that carries the meaning.
+
+        ⚠ NOT filled in the DXF — same reason Sheet.text leaves its knockout
+        off. There the reader turns layers on and off, and a white polygon
+        exported under the number is an object nobody asked for.
+        """
+        c = self.c; c.saveState(); c.setLineWidth(width); c.setStrokeColor(color)
+        if fill: c.setFillColor(fill)
+        path = c.beginPath()
+        for i, (px, py) in enumerate(pts):
+            self.P(px, py)
+            (path.moveTo if i == 0 else path.lineTo)(*self.P(px, py))
+        path.close()
+        c.drawPath(path, stroke=1, fill=1 if fill else 0); c.restoreState()
+        if self.dxf:
+            for i in range(len(pts)):
+                a, b = pts[i], pts[(i + 1) % len(pts)]
+                self.dxf.line(a[0], a[1], b[0], b[1])
 
     def ellipse(self, cx, cy, a, b, angle_deg=0.0, width=0.75, color=black,
                 dash=None, style=None, steps=64):
@@ -1533,54 +1642,193 @@ class Sheet:
         if self.base_note:
             c.setFillColor(grey); c.setFont("Helvetica", 6); c.drawString(m + 6, m + 6, self.base_note)
         # title block, lower right
-        tb_w, tb_h = 4.0 * inch, 1.1 * inch
-        x0, y0 = W - m - tb_w, m
-        c.setLineWidth(HEAVY); c.rect(x0, y0, tb_w, tb_h)             # §6.18 title block border
-        c.setFillColor(GREEN); c.setFont("Helvetica-Bold", 11)
-        c.drawString(x0 + 6, y0 + tb_h - 15, self.meta["show"] or "Untitled")
-        c.setFillColor(black); c.setFont("Helvetica", 8)
+        # ⭐ TALLER, AND RULED INTO BANDS. Jerry, 2026.10.27, off a 24" x 36"
+        # print: "the title block should be bigger. A space should be put in the
+        # title block for the director and scenic designer." Both halves of that
+        # are the same complaint — four facts stacked with no rules between them
+        # read as one paragraph from arm's length, and there was no room to add
+        # a fifth. 1.1" held what it held because nothing else was asking.
+        #
+        # ⚠ The bands are measured from the BOTTOM edge, because that is the
+        # edge that does not move: the block is anchored at the sheet margin and
+        # grows upward. Writing them from the top meant every offset changed the
+        # day the height did.
+        tb_w = TITLE_BLOCK_W_IN * inch
+        x0 = W - m - tb_w
         from reportlab.pdfbase.pdfmetrics import stringWidth
+
+        def _fitted(t, font="Helvetica", size=8, room=None):
+            """Trim to the block's width, since a show's name is free text."""
+            room = (tb_w - 12) if room is None else room
+            t = str(t or "")
+            if stringWidth(t, font, size) <= room:
+                return t
+            while t and stringWidth(t + "…", font, size) > room:
+                t = t[:-1]
+            return t + "…"
+
+        def _wrapped(t, size=7, limit=2):
+            """The revision note, broken on spaces over at most `limit` lines.
+
+            ⚠ The LAST line carries the ellipsis, not the first. Anything that
+            did not fit is appended to it before trimming, so a note cut short
+            says so where the reader stops rather than looking complete.
+            """
+            room, words = tb_w - 12, str(t or "").split()
+            out, cur, i = [], "", 0
+            while i < len(words) and len(out) < limit:
+                trial = f"{cur} {words[i]}".strip()
+                if cur and stringWidth(trial, "Helvetica", size) > room:
+                    out.append(cur); cur = ""
+                    continue
+                cur, i = trial, i + 1
+            if cur and len(out) < limit:
+                out.append(cur); cur = ""
+            if i < len(words) and out:
+                out[-1] = " ".join([out[-1]] + words[i:])
+            return [_fitted(o, size=size) for o in out]
+
+        # ⭐ THE BLOCK IS AS TALL AS WHAT IS IN IT. Jerry, 2026.10.27: "the
+        # title block should be bigger" and "wrap the note to two lines."
+        # Bigger is a consequence of carrying more, not a size to hold open —
+        # so a plot naming a director, a scenic designer and a two-line
+        # revision gets 2.24", and one naming nobody gets 1.24".
+        #
+        # 🔴 A FIXED HEIGHT EATS THE DRAWING. Held open at 2.0" this ran under
+        # the section's deck on the shipped sample and under CAT 1 (FOH) on a
+        # LETTER plan — neither of which the 1.1" block touched. The corner is
+        # in use on anything fitted to its sheet, and reserving it for white
+        # space nobody asked for is the worst of both.
+        _note = _wrapped(self.meta["rev_note"])
+        _credits = [(self.meta["designer"], BROWN, "Helvetica-Bold"),
+                    (self.meta["director"], black, "Helvetica"),
+                    (self.meta["scenic"], black, "Helvetica")]
+        _credits = [c for c in _credits if c[0]]
+        y0 = m
+        FOOT_T, CTRL_T = 18, 42                    # band ceilings, above y0
+        CRED_T = CTRL_T + (12 * len(_credits) + 12 if _credits else 0)
+        tb_h = CRED_T + 47 + 12 * len(_note)
+        # 🔴 THE STAMP IS PART OF WHAT THE CORNER COVERS. It sits on top of the
+        # block and is opaque for the same reason the block is, so the clipping
+        # guard below has to measure to the top of the STAMP, not the top of the
+        # block. Left out, a stamped sheet hides a strip of the drawing and says
+        # nothing — the one failure the comment above is about.
+        stamp_h = STAMP_H if self.stamp else 0
+        # ⭐ OPAQUE, like every title block on paper and like the instrument
+        # bodies fill_poly already clears. It is drawn last, over everything,
+        # and a stroked-only block lets the drawing run through its text — the
+        # block stops saying what the sheet is, which is the one thing it is
+        # for. On a LETTER sheet the position name CAT 1 (FOH) had the border
+        # ruled through the foot of its letters.
+        #
+        # ⚠ What it covers, it covers. The warning below is the other half:
+        # nothing may be hidden without the sheet saying so.
+        c.setFillColor(white)
+        c.setLineWidth(HEAVY); c.rect(x0, y0, tb_w, tb_h, stroke=1, fill=1)   # §6.18 title block border
+        if self._tb_low < y0 + tb_h + stamp_h:
+            msg = (f"TITLE BLOCK: the drawing runs "
+                   f"{(y0 + tb_h + stamp_h - self._tb_low) / inch:.2f}\" under the title block, which is "
+                   f"opaque — whatever is there is hidden. Use a larger sheet, a smaller scale, "
+                   f"or shorten the revision note (each line of it grows the block).")
+            self.warnings.append(msg); print("⚠", msg, file=sys.stderr)
+
+        def _rule(dy):
+            c.setLineWidth(0.6); c.line(x0, y0 + dy, x0 + tb_w, y0 + dy)
+
+        # ── identity ──────────────────────────────────────────────────────
+        c.setFillColor(GREEN); c.setFont("Helvetica-Bold", 11)
+        c.drawString(x0 + 6, y0 + tb_h - 17,
+                     _fitted(self.meta["show"] or "Untitled", "Helvetica-Bold", 11))
+        c.setFillColor(black); c.setFont("Helvetica", 8)
         for i, key in enumerate(("venue", "sheet")):
-            t = self.meta[key]
-            if stringWidth(t, "Helvetica", 8) > tb_w - 12:
-                while stringWidth(t + "…", "Helvetica", 8) > tb_w - 12: t = t[:-1]
-                t += "…"
-            c.drawString(x0 + 6, y0 + tb_h - 27 - 12 * i, t)
+            c.drawString(x0 + 6, y0 + tb_h - 29 - 12 * i, _fitted(self.meta[key]))
+        # ⚠ WHAT THIS REVISION IS, under the plate's name and not instead of it.
+        # `sheet` used to be handed the whole revision string, so a plot revised
+        # with a sentence printed that sentence where "Light Plot" belongs —
+        # ellipsis and all — and the designator beside Rev was its first three
+        # characters. revision() splits the one field the plot actually has.
+        c.setFillColor(grey); c.setFont("Helvetica", 7)
+        for i, _line in enumerate(_note):
+            c.drawString(x0 + 6, y0 + tb_h - 53 - 11 * i, _line)
+        _rule(CRED_T)
+
+        # ── who made it ───────────────────────────────────────────────────
+        # ⚠ A CREDIT IS ONLY PRINTED IF THE FILE CARRIES IT, and the band simply
+        # comes out shorter when it does not. The renderer used to default the
+        # designer to a name and print a studio from a string literal, so a plot
+        # drawn for somebody else claimed this studio's authorship (Jerry,
+        # 2026.09.24: "I don't want to print anything that is hardcoded"). An
+        # empty DIRECTOR label with a blank after it is the same mistake in a
+        # politer font — the drawing would be asserting a role nobody filled.
+        _cy = CRED_T - 12
+        for _text, _colour, _font in _credits:
+            c.setFillColor(_colour); c.setFont(_font, 8)
+            c.drawString(x0 + 6, y0 + _cy, _fitted(_text, _font))
+            _cy -= 12
+        # ⚠ No credits, no band and no rule — not an empty one. A ruled box with
+        # nothing in it reads as a field somebody forgot to fill.
+        if _credits:
+            _rule(CTRL_T)
+
+        # ── scale, revision, date ─────────────────────────────────────────
         # ⭐ THE PLOT'S DATE, not today's. The title block carries "the date the
         # plate was published" (2025 USITT RP §2.2.6; RP-2 §4.1 the same), and
         # printing today's date made a reprint of an old plot claim to be new.
         # Today's date only when the plot carries none.
-        import datetime
         when = str(self.meta.get("date") or "").strip()
         try:
             when = datetime.date.fromisoformat(when).strftime('%Y.%m.%d') if when else ""
         except ValueError:
             pass                    # not ISO: print it as the plot has it
         when = when or datetime.date.today().strftime('%Y.%m.%d')
-        c.drawString(x0 + 6, y0 + tb_h - 51, f"Scale {self.scale_label}   Rev {self.meta['rev']}   "
-                                              f"{when}")
-        if self.meta["designer"]:
-            c.setFillColor(BROWN); c.setFont("Helvetica-Bold", 8)
-            c.drawString(x0 + 6, y0 + 6, self.meta["designer"])
+        # ⚠ One list, so a divider cannot drift away from the cell it divides.
+        # The scale cell is the widest on purpose: 'Scale 3/16" = 1\'-0"' is the
+        # longest thing this row ever holds, and a metric '1:100' the shortest.
+        _dividers = (0.0, 118.0, 196.0)
+        _cells = [f"Scale {self.scale_label}", f"Rev {self.meta['rev']}", when]
+        c.setFillColor(black); c.setFont("Helvetica", 8)
+        for _x, _t in zip(_dividers, _cells):
+            c.drawString(x0 + _x + 6, y0 + CTRL_T - 15, _t)
+        for _x in _dividers[1:]:
+            c.setLineWidth(0.6); c.line(x0 + _x, y0 + FOOT_T, x0 + _x, y0 + CTRL_T)
+        _rule(FOOT_T)
+
+        # ── the sheet's own footer ────────────────────────────────────────
         # "Print at 100%" is a fact about the SHEET — the scale bar is only true
-        # at actual size — so it is always drawn. The studio name in front of it
-        # is not, and appears only if the plot carries one.
+        # at actual size — so it is always drawn. The studio name beside it is
+        # not, and appears only if the plot carries one.
         c.setFillColor(grey); c.setFont("Helvetica", 6)
-        foot = "print at 100% / Actual size"
         if self.meta["studio"]:
-            foot = f"{self.meta['studio']} — {foot}"
-        c.drawRightString(x0 + tb_w - 6, y0 + 6, foot)
-        # scale bar: 0 to 10 ft in 1-ft ticks, left of title block
+            c.drawString(x0 + 6, y0 + 6, self.meta["studio"])
+        c.drawRightString(x0 + tb_w - 6, y0 + 6, "print at 100% / Actual size")
+        # scale bar, left of the title block, with the one-inch check above it
         # ⚠ Positioned from the bar's REAL width. It used to be placed as though
         # it were ten feet wide and then drawn ten metres wide, so on a metric
         # sheet it started in the right place and ended a long way past the edge.
-        sx, sy = x0 - 0.4 * inch - self.scale_bar_plan()[2], m + 0.35 * inch
+        #
+        # 🔴 THE TWO BARS ARE ONE CLUSTER, placed from the WIDER of them — issue
+        # #131, and the reason is the mirror of the bug above. The check bar's
+        # caption is a fixed length in PAPER POINTS while the scale bar shrinks
+        # with the scale, so reserving room for the scale bar alone reserves the
+        # wrong amount. Measured against the room the old placement left:
+        #
+        #     3/8"   4.7 pt over      3/4"   31.7 pt over     1:50   108.9 pt over
+        #
+        # Jerry, 2026.10.27, off a 24" x 36" print: "100% bleeds into the title".
+        # ⚠ 1:50 is not in the issue and is five times the worst case in it. A
+        # metric sheet was never printed to find out.
+        if self.is_metric_scale:
+            bar_pt, bar_says = 50.0 / 25.4 * inch, "this bar is 50 mm when printed at 100%"
+        else:
+            bar_pt, bar_says = 72.0, 'this bar is 1" when printed at 100%'
+        _check_w = bar_pt + 4 + stringWidth(bar_says, "Helvetica", 6)
+        divs, step, total, per_div = self.scale_bar_plan()
+        sx, sy = x0 - 0.4 * inch - max(total, _check_w), m + 0.35 * inch
         c.setStrokeColor(black); c.setFillColor(black); c.setLineWidth(1)
         # ⚠ The bar is divided in the unit the sheet is DRAWN in — ten feet on an
         # imperial sheet, ten metres on a metric one. A metric drawing with a
         # bar ticked in feet is the one thing on the page somebody would measure
         # against, and it would be lying.
-        divs, step, total, per_div = self.scale_bar_plan()
         for i in range(divs):
             c.rect(sx + i * step, sy, step, 5, stroke=1, fill=(i % 2 == 0))
         c.setFont("Helvetica", 6)
@@ -1597,17 +1845,54 @@ class Sheet:
         # printer at 100% rather than fitted to the page. 50 mm on a metric sheet
         # because nobody reaches for an inch rule to check a 1:50 drawing.
         cx, cy = sx, sy + 0.32 * inch
-        if self.is_metric_scale:
-            bar_pt, bar_says = 50.0 / 25.4 * inch, "this bar is 50 mm when printed at 100%"
-        else:
-            bar_pt, bar_says = 72.0, 'this bar is 1" when printed at 100%'
         c.setLineWidth(1); c.rect(cx, cy, bar_pt, 4, stroke=1, fill=0)
         c.drawString(cx + bar_pt + 4, cy, bar_says)
+        if self.stamp:
+            self._draw_stamp(x0, y0 + tb_h, tb_w, _fitted)
         if self.layered:
             self._compose()
         else:
             c.save()
         if _dxf and self.dxf_path: _dxf.save(self.dxf_path)
+
+    def _draw_stamp(self, x0, y_top, tb_w, fitted):
+        """A draft stamp sitting on top of the title block, the same width.
+
+        ⭐ ON TOP OF THE BLOCK, NOT ACROSS THE DRAWING. A stamp banner over the
+        rig hides the thing the sheet is for, and anyone drafting on it works
+        around the stamp. Sat on the block it reads as part of the block, which
+        is where a reader already looks to find out what a sheet is.
+
+        🔴 OPAQUE, LIKE THE BLOCK, AND COUNTED BY THE CLIPPING GUARD. See
+        STAMP_H at the top of the file: a stamp that covered drawing without
+        saying so would be the exact fault the block's own warning exists for.
+
+        ⚠ ANYTHING THE FONT CANNOT SET IS REPLACED, NOT DROPPED. The text is
+        free, so it can carry a character Helvetica has no glyph for; reportlab
+        raises on that at save time, a long way from the typo that caused it.
+        Replaced, the sheet still prints and the warning names what happened.
+        """
+        c = self.c
+        text = fitted(self._stampable(self.stamp), "Helvetica-Bold", 15)
+        under = fitted(f"Printed {self.stamp_date}. "
+                       "The revision below is the plot's, not this print's.",
+                       "Helvetica", 7)
+        c.saveState()
+        c.setFillColor(white); c.setStrokeColor(BROWN); c.setLineWidth(HEAVY)
+        c.rect(x0, y_top, tb_w, STAMP_H, stroke=1, fill=1)
+        c.setFillColor(BROWN)
+        c.setFont("Helvetica-Bold", 15); c.drawString(x0 + 7, y_top + STAMP_H - 21, text)
+        c.setFont("Helvetica", 7); c.drawString(x0 + 7, y_top + STAMP_H - 35, under)
+        c.restoreState()
+
+    def _stampable(self, text):
+        """`text` with anything the standard fonts cannot set turned into '?'."""
+        safe = text.encode("cp1252", "replace").decode("cp1252")
+        if safe != text:
+            msg = (f"STAMP: {text!r} contains characters Helvetica cannot set; "
+                   f"they are printed as '?'. Stamped as {safe!r}.")
+            self.warnings.append(msg); print("⚠", msg, file=sys.stderr)
+        return safe
 
     def _compose(self):
         """Overlay the per-layer canvases onto one page, each its own group.

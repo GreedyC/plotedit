@@ -826,12 +826,24 @@ function labels(inst: Instrument, c?: Computed, symbolAngle?: string,
   // ⚠ Clear the symbol by the CIRCLE'S OWN RADIUS. The screen draws this circle
   // at 0.55 ft where the paper's is 0.24, so the paper's offset left the screen
   // circle lapping over the instrument body.
-  const R = 0.55;
+  //
+  // ⭐ 9pt on paper, so TEXT * 0.9 here. Jerry, 2026.11.02 asked for the channel
+  // number bigger — it is what an electrician reads off a ladder. The paper's
+  // symbols.CHANNEL_PT is the figure; this keeps the same ratio to the unit
+  // number so the two drawings still look like one another.
+  //
+  // ⚠ AND THE RING HAS TO HOLD IT. 0.55 ft was ample for the old size and is
+  // not for this one: a three-digit channel at TEXT * 0.9 is wider than the
+  // old circle. Mirrors symbols.channel_radius(), which only ever grows it.
+  const CH = TEXT * 0.9;
+  const chText = String(inst.channel ?? "");
+  const R = Math.max(0.55, Math.hypot(chText.length * 0.62 * CH / 2,
+                                      CH * 0.72 / 2) * 1.15);
   if (inst.channel !== undefined) {
     const b = behind(clear + R + 0.1);
     g.appendChild(el("circle", { cx: b.x, cy: b.y, r: R,
       fill: "#fff", stroke: "#111", "stroke-width": 0.07 }));
-    add(b.x - inst.x, b.y - inst.y - 0.2, String(inst.channel), TEXT * 0.62, "600");
+    add(b.x - inst.x, b.y - inst.y - CH * 0.33, chText, CH, "600");
   }
   // ⚠ COLOUR ONLY. The screen used to print the type here too — "S4 26 · R52+R119"
   // — which the paper has never drawn: §6.14.2 puts colour and focus at the

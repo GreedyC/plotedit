@@ -247,6 +247,13 @@ export interface Plot {
    * authorship. Jerry, 2026.09.24: "I don't want to print anything that is
    * hardcoded about the venue because it will be used for other venues." */
   studio?: string;
+  /** The other two people whose names belong on a plate.
+   *
+   * ⚠ Blank prints nothing — not a blank line and not a bare label. See
+   * `credits()` in scaled_pdf.py: an empty DIRECTOR slot would be the drawing
+   * asserting a role the file never filled. */
+  director?: string;
+  scenicDesigner?: string;
   /** ISO date. */
   date?: string;
   revision?: string;

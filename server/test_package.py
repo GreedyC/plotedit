@@ -31,12 +31,12 @@ check("gels.csv found beside the module", len(ph.GELS) > 250, True)
 check("R119 transmission", ph.GELS["R119"]["t"], 0.893)
 
 print("\ngel notation — + stacks, / splits")
-check("R52+R119 stacked", round(ph.gel_factor("R52+R119")[0], 3), 0.232)
-check("R52/R119 split -> first gel only", round(ph.gel_factor("R52/R119")[0], 3), 0.26)
+check("R52+R119 stacked", round(ph.gel_factor("R52+R119")[0], 3), 0.305)
+check("R52/R119 split -> first gel only", round(ph.gel_factor("R52/R119")[0], 3), 0.342)
 # ⭐ LEE ARRIVED 2026.09.29 — 259 colour filters, so L201 is no longer unknown.
 check("a LEE number resolves", round(ph.gel_factor("L201")[0], 3), 0.350)
 check("...and mixes with a Rosco one",
-      round(ph.gel_factor("R52+L201")[0], 3), 0.091)
+      round(ph.gel_factor("R52+L201")[0], 3), 0.12)
 check("a gel nobody has entered still refuses", ph.gel_factor("R9999")[0], None)
 
 # 🔴 THE COLLISION THAT MAKES THE PREFIX MANDATORY. R119 is Light Hamburg Frost
@@ -62,8 +62,8 @@ s.origin(ft(3), ft(5))
 r = s.unit(ft(6), ft(20), 1, ch=1, kind="S4 26", color_gel="R52+R119",
            trim=14, focus_to=(ft(10), ft(10)), lamp="HPL 575")
 # Regression: a compound gel used to miss a dict lookup and silently report
-# open white — 729 fc instead of 169. The acting-area wash, 4.5x too bright.
-check("R52+R119 acting-area wash", round(r["fc"]), 169)
+# open white — 729 fc instead of 223. The acting-area wash, 3.3x too bright.
+check("R52+R119 acting-area wash", round(r["fc"]), 223)
 check("throw", ph.fmt_ft(r["throw"]), "13'-9\"")
 
 print("\nscaled_pdf -> dxf_bridge, and the printed scale")
@@ -444,11 +444,15 @@ check("an explicit 750 still computes at 750",
       round(ph.footcandles("S4 26", 14, lamp="HPL 750")[0]), 898)
 check("...without claiming it was assumed",
       "assumed" in ph.footcandles("S4 26", 14, lamp="HPL 750")[1], False)
-# ⭐ Corroboration from outside the code: how-we-light.md, built from Jerry's own
-# paperwork before any of this existed, puts a 575 S4 26 at 14ft through
-# R52+R119 at 163 fc. The default now agrees with his own business file.
-check("163 fc through R52+R119 — matches how-we-light.md",
-      round(ph.footcandles("S4 26", 14, gel="R52+R119")[0]), 163)
+# 🔴 THIS USED TO CLAIM CORROBORATION FROM how-we-light.md AND IT WAS CIRCULAR.
+# That file's 163 fc was written in the same sentence as its own arithmetic,
+# "(0.26 x 0.893)" — the same 0.26 this code was reading. One number dressed up
+# as two independent routes, asserting a confidence neither route earned.
+# What the paperwork actually supplied was the COMBINATION — R52+R119, in 112 of
+# 605 instruments — never a footcandle figure. 0.26 was Rosco's prose; the
+# measured Source A Y is 34.234, so the honest number is 214.
+check("214 fc through R52+R119, the acting-area default",
+      round(ph.footcandles("S4 26", 14, gel="R52+R119")[0]), 214)
 
 print("\nwattage: the engine's, not the lens tube's — and it varies by mode")
 check("an unstated S4 is 575W", ph.watts_for("S4 26")[0], 575.0)
@@ -1143,6 +1147,116 @@ check("a Sheet made with no names prints none", "Jerry" in _bt or "Twin Oaks" in
 check("a plot that names someone prints THEM", "Design: A N Other" in _t2, True)
 check("...and their shop", "Some Other Shop" in _t2, True)
 check("...and still nobody else", "Jerry" in _t2 or "Twin Oaks" in _t2, False)
+
+# ⭐ THE OTHER TWO CREDITS. Jerry, 2026.10.27: "a space should be put in the
+# title block for the director and scenic designer." Same rule as the designer —
+# printed from the file or not printed at all.
+#
+# 🔴 THE ABSENCE CHECK IS THE ONE THAT MATTERS. A labelled blank is the failure
+# this whole section exists to prevent, wearing a different label: a plot that
+# names no director would be printing the word DIRECTOR over an empty space,
+# asserting a role the file never filled. Checking only that a named director
+# appears would pass just as happily with the label hardcoded.
+check("a plot that names no director says nothing about one", "Director" in _t, False)
+check("...and nothing about scenic design either", "Scenic" in _t, False)
+
+_t3 = _pdf_text({**_anon, "director": "D Irector", "scenicDesigner": "S Cenic"}, "credits")
+check("a plot that names a director prints them", "Director: D Irector" in _t3, True)
+check("...and the scenic designer", "Scenic Design: S Cenic" in _t3, True)
+check("...and still invents no lighting designer", "Design: A" in _t3 or "Jerry" in _t3, False)
+
+# ⚠ THE SYMBOL KEY TOO, not just the plan. It built its credit with an f-string
+# of its own and printed a bare "Design: " on every plot that named nobody —
+# the identical bug, one file over, passing because nothing looked. All three
+# renderers now read the same credits().
+import plot_to_key as _K
+_key_src = os.path.join(_tmp, "key-anon.json")
+with open(_key_src, "w") as _fh:
+    _json.dump(_anon, _fh)
+_key_pdf = os.path.join(_tmp, "key-anon.pdf")
+_K.render(_key_src, _key_pdf)
+check("the symbol key prints no bare 'Design:' either",
+      "Design:" in _fz.open(_key_pdf)[0].get_text(), False)
+
+# ---------------------------------------------- one field, two facts
+# 🔴 `revision` held a designator AND a note, and every consumer took a slice.
+# plot_to_pdf passed the WHOLE string as the sheet name — so the slot that
+# should read "Light Plot" carried a sentence about what changed, truncated
+# with an ellipsis — and the designator beside Rev was revision[:3]. On the
+# shipped samples that prints "Rev ver"; on a string beginning "Rev H" it
+# prints "Rev Rev". Jerry, 2026.10.27, off a 24" x 36" print.
+from plotedit.scaled_pdf import revision as _rev_split
+
+print("\nthe revision splits into a designator and a note")
+for _raw, _want in [
+        ("I. Colour settled 27 Oct — front ERS regelled", ("I", "Colour settled 27 Oct — front ERS regelled")),
+        ("0 — test data, not a design", ("0", "test data, not a design")),
+        # ⚠ The LABEL is not the designator. All three of these used to print
+        # the label's own first letters where the revision belongs.
+        ("Rev H — pipes retrimmed", ("H", "pipes retrimmed")),
+        ("version 1", ("1", "")),
+        # ⚠ A designator is as long as it is. [:3] turned this into "Pre".
+        ("Prelim", ("Prelim", "")),
+        ("A", ("A", "")),
+        ("", ("0", "")),
+]:
+    check(f"{_raw!r} splits", _rev_split({"revision": _raw}), _want)
+
+_t4 = _pdf_text({**_anon, "revision": "H — pipes retrimmed, boom 3 struck"}, "revised")
+check("the sheet slot names the PLATE", "Light Plot" in _t4, True)
+check("...and the revision note is printed in full, not truncated",
+      "boom 3 struck" in _t4, True)
+check("...and the designator is the designator", "Rev H" in _t4, True)
+# 🔴 The failure this replaces: the note printed where the plate name goes.
+check("...and the note is NOT standing in for the plate name",
+      "Rev pip" in _t4 or "Rev H —" in _t4, False)
+
+# ---------------------------------------------- the note wraps, and the block grows
+# Jerry, 2026.10.27: "wrap the note to two lines." A revision note is a sentence
+# and the block is four inches wide, so one line was never going to hold one.
+#
+# ⚠ THE HEIGHT FOLLOWS THE NOTE. Reserving both lines on every sheet would
+# leave a plot with no revision note carrying an inch of white where a note
+# would have gone — so the block grows by a line when the note needs one, and
+# never drops below the 2.0" it is otherwise.
+from plotedit.scaled_pdf import TITLE_BLOCK_W_IN as _TB_W
+
+def _tb_height(path):
+    """The title block's drawn height in points, measured off the border."""
+    page = _fz.open(path)[0]
+    rects = [d["rect"] for d in page.get_drawings()
+             if abs(d["rect"].width - _TB_W * 72) < 1
+             and d["rect"].x1 > page.rect.width - 40]
+    return max(r.height for r in rects) if rects else None
+
+_LONG = ("Colour settled 27 Oct — FRONT ERS R53+R119, ROOM TONE R08 x8, "
+         "HOUSE WASH NC, ch 12 L202 out, ch 43 uppercase")
+_p_two = os.path.join(_tmp, "two.pdf")
+_t5 = _pdf_text({**_anon, "revision": "I. " + _LONG}, "two")
+check("a long note wraps rather than truncating", "ch 43 uppercase" in _t5.replace("\n", " "), True)
+check("...with no ellipsis, because it all fitted", "…" in _t5, False)
+
+_h2 = _tb_height(os.path.join(_tmp, "two.pdf"))
+_h1 = _tb_height(os.path.join(_tmp, "revised.pdf"))       # "H — pipes retrimmed, boom 3 struck"
+_pdf_text({**_anon, "revision": "J"}, "nonote")
+_h0 = _tb_height(os.path.join(_tmp, "nonote.pdf"))
+check("two lines is taller than one", _h2 > _h1, True)
+check("...and one is taller than none", _h1 > _h0, True)
+# 🔴 AND IT SHRINKS. Held open at a fixed 2.0" this ran under the section's
+# deck on the shipped sample and under CAT 1 (FOH) on a LETTER plan — neither
+# of which the old 1.1" block touched. The corner is in use on anything fitted
+# to its sheet, so a block reserving it for white space nobody asked for buys
+# the complaint back one drawing over.
+check("...and the growth is one 12pt line each time", (_h1 - _h0, _h2 - _h1), (12.0, 12.0))
+check("a block carrying nothing but the plate is under 1.5\"", _h0 / 72 < 1.5, True)
+_h3 = _tb_height(os.path.join(_tmp, "credits.pdf"))     # director + scenic, no note
+check("...and one carrying credits is taller than one without", _h3 > _h0, True)
+
+# 🔴 THE ELLIPSIS GOES ON THE LAST LINE, not the first. A note cut short has to
+# say so where the reader stops; trimming line one would leave line two reading
+# like the end of a complete sentence.
+_t6 = _pdf_text({**_anon, "revision": "K. " + " ".join(["overrun"] * 60)}, "overrun")
+check("a note too long for two lines is marked as cut", "…" in _t6, True)
 
 # The SECTION fits itself too — it is the drawing trims are read off, so a
 # bigger scale is a more useful drawing.

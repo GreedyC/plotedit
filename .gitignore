@@ -46,3 +46,29 @@ release-notes.md
 # ⚠ This repository is PUBLIC, so anything that lands here lands in front of
 # everybody; ignoring it is the cheap way to make sure nothing does by accident.
 .claude/
+
+# A show model exported out of a real production, and the images it carries.
+# ⚠ THE IMAGE RULE COVERS THE FAMILY, NOT ONE EXTENSION. A venue photograph
+# is as likely to be a .png as a .jpg, and a half-closed hole reads as a
+# closed one. Nothing in this repo tracks an image, so none is at risk.
+#
+# 🔴 AND BOTH CASES, BECAUSE GITIGNORE IS CASE-SENSITIVE WHERE IT COUNTS.
+# macOS sets core.ignoreCase=true, so *.png catches plan.PNG there and the
+# gap is invisible on the machine these are written on. CI runs Linux, where
+# it does not — and a camera still writes IMG_1234.JPG.
+# ⚠ SAME REASON AS .claude/ ABOVE, and a sharper one. These land here by hand
+# while somebody is testing the importer against a real job, and an exported
+# model's <title> is the SHOW AND THE VENUE — a client's name, one `git add -A`
+# from a public repo. Three copies of one had been sitting untracked since
+# 15 Oct, none of them ignored.
+#
+# ⚠ `_m.html` is deliberately narrow: web/index.html is the editor itself and
+# is tracked, so nothing wider than the exact name can be used here.
+_m.html
+*.jpg
+*.jpeg
+*.png
+*.JPG
+*.JPEG
+*.PNG
+web/public/

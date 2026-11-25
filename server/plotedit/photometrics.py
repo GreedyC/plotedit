@@ -750,8 +750,8 @@ def pool(kind, throw, elevation=None):
 def gel_key(gel):
     """A gel code reduced to what identifies it: letters and digits, uppercased.
 
-    🔴 "R-33" AND "R33" ARE THE SAME FILTER. gels.csv keys all 498 rows without
-    punctuation — R33, L142 — while plots and imported paperwork commonly write
+    🔴 "R-33" AND "R33" ARE THE SAME FILTER. gels.csv keys all 646 rows without
+    punctuation — R33, L142, G470 — while plots and imported paperwork commonly write
     the dashed form. A house rep plot read into plotedit came in as R-37, L-142,
     R-54 and R-05, and every one of them missed the table: no transmission, so no
     footcandle figure anywhere on the plot. It failed honestly, with a note, which

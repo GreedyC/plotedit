@@ -174,7 +174,7 @@ print("the scale bar stays on the paper, at every scale")
 # The clipping guard only knows what the drawing touched, so furniture can walk
 # off the sheet without it ever being asked. Hence this test measures the
 # rendered rectangles rather than trusting the arithmetic that placed them.
-from plotedit.scaled_pdf import fit_scales as _fits
+from plotedit.scaled_pdf import fit_scales as _fits, TITLE_BLOCK_W_IN
 from plotedit import units as _u
 
 def _bar_extent(path):
@@ -215,8 +215,36 @@ for _sys in (_u.IMPERIAL, _u.METRIC):
         if _total > 4.2 * 72:
             check(f"{_sc}: the bar is a readable length", round(_total / 72, 2), "<= 4.2 in")
 
+        # 🔴 Issue #131, and the mirror of the bug this loop was written for.
+        # The one-inch check bar's CAPTION is a fixed length in paper points
+        # while the scale bar shrinks with the scale, so placing the pair from
+        # the scale bar's width alone reserves the wrong amount of room and the
+        # caption runs into the title block. 3/8" was 4.7pt over, 3/4" 31.7pt,
+        # and 1:50 — which the issue never mentions — 108.9pt.
+        #
+        # ⚠ Measured from the RENDERED word, not from the arithmetic that placed
+        # it, for the same reason as the bar above: this furniture is drawn in
+        # page points rather than through P(), so nothing else is watching it.
+        _tb_left = _page.rect.width - _sheet.margin - TITLE_BLOCK_W_IN * 72
+        # ⚠ NOT just any "100%". The title block's own footer says "print at
+        # 100% / Actual size", and it is right-aligned inside the block — so
+        # matching on the number alone measures the footer and reports every
+        # scale as failing by the same 248pt. Anchor on "printed", which only
+        # the check bar's caption contains, and measure ITS line.
+        _words = _page.get_text("words")
+        _anchor = [w for w in _words if w[4] == "printed"]
+        if not _anchor:
+            check(f"{_sc}: the check bar is captioned", _anchor, "one 'printed'")
+        else:
+            _line = (_anchor[0][5], _anchor[0][6])
+            _right = max(w[2] for w in _words if (w[5], w[6]) == _line)
+            if _right >= _tb_left:
+                check(f"{_sc}: the check bar's caption clears the title block",
+                      f"ends {_right - _tb_left:.1f}pt INSIDE it", "clear of it")
+
 check(f"every scale in both ladders drawn and measured ({_checked})", _checked, 11)
 check("...and none of them put the bar off the sheet", True, True)
+check("...nor let the check bar's caption into the title block", True, True)
 
 
 # ------------------------------------------- a position label is read, not lost

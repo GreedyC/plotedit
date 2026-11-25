@@ -259,241 +259,389 @@ L797,Deep Purple,0.028,"leefilters.com filter page, Tungsten Transmission Y (the
 L798,Chrysalis Pink,0.035,"leefilters.com filter page, Tungsten Transmission Y (the Source C daylight figure is also published and differs)",2026.09.29
 L799,Special Kh Lavender,0.008,"leefilters.com filter page, Tungsten Transmission Y (the Source C daylight figure is also published and differs)",2026.09.29
 R00,Dempster Open White,0.960,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R01,Light Bastard Amber,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R02,Bastard Amber,0.78,us.rosco.com product page,2026.09.22
-R03,Dark Bastard Amber,0.620,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R04,Medium Bastard Amber,0.660,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R05,Rose Tint,0.800,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R06,No Color Straw,0.920,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R07,Pale Yellow,0.960,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R08,Pale Gold,0.860,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R09,Pale Amber Gold,0.740,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R10,Medium Yellow,0.920,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R11,Light Straw,0.820,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R12,Straw,0.880,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R13,Straw Tint,0.780,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R14,Medium Straw,0.680,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R15,Deep Straw,0.650,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R16,Light Amber,0.680,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R17,Light Flame,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R18,Flame,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R19,Fire,0.200,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R20,Medium Amber,0.540,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R21,Golden Amber,0.430,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R22,Deep Amber,0.260,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R23,Orange,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R24,Scarlet,0.220,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R25,Orange Red,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R26,Light Red,0.120,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R27,Medium Red,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R30,Light Salmon Pink,0.440,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R31,Salmon Pink,0.460,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R32,Medium Salmon Pink,0.280,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R33,No Color Pink,0.65,us.rosco.com product page,2026.09.22
-R34,Floral Pink,0.450,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R35,Light Pink,0.660,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R36,Medium Pink,0.460,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R37,Pale Rose Pink,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R38,Light Rose,0.490,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R39,Skelton Exotic Sangria,0.100,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R40,Light Salmon,0.340,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R41,Salmon,0.240,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R42,Deep Salmon,0.080,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R43,Deep Pink,0.280,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R44,Middle Rose,0.260,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R45,Rose,0.080,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R46,Magenta,0.060,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R47,Light Rose Purple,0.160,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R48,Rose Purple,0.160,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R49,Medium Purple,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R50,Mauve,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R51,Surprise Pink,0.540,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R52,Light Lavender,0.26,us.rosco.com product page,2026.09.22
-R53,Pale Lavender,0.640,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R54,Special Lavender,0.500,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R55,Lilac,0.370,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R56,Dark Amethyst,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R57,Lavender,0.240,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R58,Deep Lavender,0.100,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R59,Indigo,0.020,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R60,No Color Blue,0.62,us.rosco.com product page,2026.09.22
-R61,Mist Blue,0.660,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R62,Booster Blue,0.540,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R63,Pale Blue,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R64,Light Steel Blue,0.260,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R65,Daylight Blue,0.350,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R66,Cool Blue,0.670,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R67,Light Sky Blue,0.260,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R68,Parry Sky Blue,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R69,Brilliant Blue,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R70,Nile Blue,0.450,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R71,Sea Blue,0.300,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R72,Azure Blue,0.440,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R73,Peacock Blue,0.280,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R74,Night Blue,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R75,Twilight Blue,0.110,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R76,Light Green Blue,0.090,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R77,Green Blue,0.090,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R78,Trudy Blue,0.190,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R79,Bright Blue,0.080,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R80,Primary Blue,0.09,us.rosco.com product page,2026.09.22
-R81,Urban Blue,0.100,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R82,Surprise Blue,0.060,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R83,Medium Blue,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R84,Zephyr Blue,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R85,Deep Blue,0.030,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R86,Pea Green,0.560,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R87,Pale Yellow Green,0.850,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R88,Light Green,0.820,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R89,Moss Green,0.450,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R90,Dark Yellow Green,0.130,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R91,Primary Green,0.070,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R92,Turquoise,0.590,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R93,Blue Green,0.350,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R94,Kelly Green,0.250,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R95,Medium Blue Green,0.150,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R96,Lime,0.980,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R97,Light Grey,0.500,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R98,Medium Grey,0.250,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R99,Chocolate,0.350,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R114,Hamburg Frost,0.888,"Rosco myColor swatch app, read by Jerry 2026.09.22",2026.09.22
-R119,Light Hamburg Frost,0.893,"Rosco myColor swatch app, read by Jerry 2026.09.22",2026.09.22
-R132,Quarter Hamburg Frost,0.901,"Rosco myColor swatch app, read by Jerry 2026.09.22",2026.09.22
-R302,Pale Bastard Amber,0.880,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R303,Warm Peach,0.550,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R304,Pale Apricot,0.790,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R305,Rose Gold,0.750,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R310,Daffodil,0.820,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R312,Canary,0.850,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R313,Light Relief Yellow,0.760,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R316,Gallo Gold,0.580,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R317,Apricot,0.510,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R318,Mayan Sun,0.520,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R321,Soft Golden Amber,0.390,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R324,Cherry Red,0.310,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R325,Henna Sky,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R331,Shell Pink,0.680,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R332,Cherry Rose,0.380,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R333,Blush Pink,0.710,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R336,Billington Pink,0.480,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R337,True Pink,0.550,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R339,Broadway Pink,0.150,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R342,Rose Pink,0.160,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R343,Neon Pink,0.330,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R344,Follies Pink,0.210,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R346,Tropical Magenta,0.220,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R347,Belladonna Rose,0.060,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R348,Purple Jazz,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R349,Fisher Fuchsia,0.110,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R351,Lavender Mist,0.610,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R353,Lilly Lavender,0.290,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R355,Pale Violet,0.200,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R356,Middle Lavender,0.270,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R357,Royal Lavender,0.050,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R358,Rose Indigo,0.050,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R359,Medium Violet,0.090,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R360,Clearwater,0.520,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R361,Hemsley Blue,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R362,Tipton Blue,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R363,Aquamarine,0.520,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R364,Blue Bell,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R365,Tharon Delft Blue,0.360,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R366,Jordan Blue,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R367,Slate Blue,0.200,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R368,Winkler Blue,0.160,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R369,Tahitian Blue,0.220,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R370,Italian Blue,0.310,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R371,Theatre Booster 1,0.350,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R372,Theatre Booster 2,0.550,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R373,Theatre Booster 3,0.720,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R374,Sea Green,0.260,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R375,Cerulean Blue,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R376,Bermuda Blue,0.060,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R377,Iris Purple,0.110,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R378,Alice Blue,0.150,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R381,Baldassari Blue,0.060,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R382,Congo Blue,0.010,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R383,Sapphire Blue,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R384,Midnight Blue,0.020,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R385,Royal Blue,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
+R01,Light Bastard Amber,0.594,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R02,Bastard Amber,0.737,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R03,Dark Bastard Amber,0.628,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R04,Medium Bastard Amber,0.662,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R05,Rose Tint,0.743,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R06,No Color Straw,0.870,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R07,Pale Yellow,0.860,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R08,Pale Gold,0.772,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R09,Pale Amber Gold,0.739,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R10,Medium Yellow,0.839,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R11,Light Straw,0.772,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R12,Straw,0.805,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R13,Straw Tint,0.763,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R14,Medium Straw,0.695,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R15,Deep Straw,0.677,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R16,Light Amber,0.675,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R17,Light Flame,0.576,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R18,Flame,0.551,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R19,Fire,0.252,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R20,Medium Amber,0.564,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R21,Golden Amber,0.444,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R22,Deep Amber,0.320,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R23,Orange,0.390,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R24,Scarlet,0.261,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R25,Orange Red,0.211,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R26,Light Red,0.145,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R27,Medium Red,0.048,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R30,Light Salmon Pink,0.498,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R31,Salmon Pink,0.487,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R32,Medium Salmon Pink,0.361,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R33,No Color Pink,0.661,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R34,Floral Pink,0.475,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R35,Light Pink,0.659,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R36,Medium Pink,0.497,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R37,Pale Rose Pink,0.570,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R38,Light Rose,0.505,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R39,Skelton Exotic Sangria,0.112,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R40,Light Salmon,0.407,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R41,Salmon,0.303,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R42,Deep Salmon,0.167,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R43,Deep Pink,0.328,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R44,Middle Rose,0.330,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R45,Rose,0.133,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R46,Magenta,0.076,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R47,Light Rose Purple,0.090,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R48,Rose Purple,0.178,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R49,Medium Purple,0.058,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R50,Mauve,0.145,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R51,Surprise Pink,0.533,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R52,Light Lavender,0.342,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R53,Pale Lavender,0.602,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R54,Special Lavender,0.488,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R55,Lilac,0.330,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R56,Dark Amethyst,0.046,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R57,Lavender,0.211,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R58,Deep Lavender,0.101,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R59,Indigo,0.012,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R60,No Color Blue,0.488,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R61,Mist Blue,0.608,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R62,Booster Blue,0.396,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R63,Pale Blue,0.509,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R64,Light Steel Blue,0.212,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R65,Daylight Blue,0.251,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R66,Cool Blue,0.589,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R67,Light Sky Blue,0.200,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R68,Parry Sky Blue,0.099,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R69,Brilliant Blue,0.134,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R70,Nile Blue,0.340,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R71,Sea Blue,0.216,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R72,Azure Blue,0.312,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R73,Peacock Blue,0.242,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R74,Night Blue,0.028,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R75,Twilight Blue,0.102,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R76,Light Green Blue,0.059,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R77,Green Blue,0.060,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R78,Trudy Blue,0.166,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R79,Bright Blue,0.055,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R80,Primary Blue,0.060,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R81,Urban Blue,0.095,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R82,Surprise Blue,0.050,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R83,Medium Blue,0.030,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R84,Zephyr Blue,0.087,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R85,Deep Blue,0.021,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R86,Pea Green,0.431,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R87,Pale Yellow Green,0.735,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R88,Light Green,0.687,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R89,Moss Green,0.284,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R90,Dark Yellow Green,0.081,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R91,Primary Green,0.038,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R92,Turquoise,0.422,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R93,Blue Green,0.227,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R94,Kelly Green,0.164,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R95,Medium Blue Green,0.092,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R96,Lime,0.845,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R97,Light Grey,0.447,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R98,Medium Grey,0.237,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R99,Chocolate,0.324,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R114,Hamburg Frost,0.888,"Swatch app (third party, not a Rosco product; its own source for the figure is not stated), read by Jerry 2026.09.22",2026.09.22
+R119,Light Hamburg Frost,0.893,"Swatch app (third party, not a Rosco product; its own source for the figure is not stated), read by Jerry 2026.09.22",2026.09.22
+R132,Quarter Hamburg Frost,0.901,"Swatch app (third party, not a Rosco product; its own source for the figure is not stated), read by Jerry 2026.09.22",2026.09.22
+R302,Pale Bastard Amber,0.810,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R303,Warm Peach,0.565,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R304,Pale Apricot,0.708,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R305,Rose Gold,0.684,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R310,Daffodil,0.823,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R312,Canary,0.777,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R313,Light Relief Yellow,0.763,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R316,Gallo Gold,0.588,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R317,Apricot,0.565,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R318,Mayan Sun,0.488,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R321,Soft Golden Amber,0.438,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R324,Cherry Red,0.282,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R325,Henna Sky,0.156,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R331,Shell Pink,0.628,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R332,Cherry Rose,0.274,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R333,Blush Pink,0.717,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R336,Billington Pink,0.456,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R337,True Pink,0.585,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R339,Broadway Pink,0.174,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R342,Rose Pink,0.168,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R343,Neon Pink,0.329,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R344,Follies Pink,0.271,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R346,Tropical Magenta,0.169,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R347,Belladonna Rose,0.026,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R348,Purple Jazz,0.122,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R349,Fisher Fuchsia,0.112,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R351,Lavender Mist,0.609,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R353,Lilly Lavender,0.283,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R355,Pale Violet,0.192,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R356,Middle Lavender,0.265,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R357,Royal Lavender,0.055,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R358,Rose Indigo,0.039,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R359,Medium Violet,0.051,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R360,Clearwater,0.539,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R361,Hemsley Blue,0.146,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R362,Tipton Blue,0.358,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R363,Aquamarine,0.622,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R364,Blue Bell,0.267,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R365,Tharon Delft Blue,0.350,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R366,Jordan Blue,0.303,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R367,Slate Blue,0.214,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R368,Winkler Blue,0.146,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R369,Tahitian Blue,0.227,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R370,Italian Blue,0.235,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R371,Theatre Booster 1,0.332,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R372,Theatre Booster 2,0.527,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R373,Theatre Booster 3,0.717,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R374,Sea Green,0.253,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R375,Cerulean Blue,0.226,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R376,Bermuda Blue,0.150,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R377,Iris Purple,0.057,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R378,Alice Blue,0.118,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R381,Baldassari Blue,0.034,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R382,Congo Blue,0.009,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R383,Sapphire Blue,0.023,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R384,Midnight Blue,0.016,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R385,Royal Blue,0.012,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
 R386,Leaf Green,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R388,Gaslight Green,0.760,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R389,Chroma Green,0.400,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R392,Pacific Green,0.200,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R393,Emerald Green,0.140,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R395,Teal Green,0.130,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R397,Pale Grey,0.700,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R398,Neutral Grey,0.400,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2001,Storaro Red,0.120,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2002,Storaro Orange,0.230,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2003,Storaro Yellow,0.640,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2004,Storaro Green,0.150,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2005,Storaro Cyan,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2006,Storaro Azure,0.090,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2007,Storaro Blue,0.100,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2008,Storaro Indigo,0.040,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R2009,Storaro Violet,0.030,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3114,Uv Filter,0.940,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3150,Industrial Vapor,0.380,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3152,Urban Vapor,0.290,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3202,Full Blue (CTB),0.36,us.rosco.com product page,2026.09.22
-R3203,Three Quarter Blue Ctb,0.410,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3204,Half Blue (1/2 CTB),0.52,Rosco figure via B&H / Performance Audio listings,2026.09.22
-R3206,Third Blue Ctb,0.640,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3208,Quarter Blue (1/4 CTB),0.74,Rosco figure via B&H / Set Shop listings,2026.09.22
-R3216,Eighth Blue Ctb,0.810,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3220,Double Blue Ctb,0.100,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3304,Tough Plusgreen,0.760,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3308,Tough Minusgreen,0.550,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3309,34 Minusgreen,0.650,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3310,Fluorofilter,0.030,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3313,Tough 12 Minusgreen,0.710,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3314,Tough 14 Minusgreen,0.810,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3315,Tough 12 Plusgreen,0.900,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3316,Tough 14 Plusgreen,0.920,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3317,Tough 18 Plusgreen,0.930,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3318,Tough 18 Minusgreen,0.890,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3405,Roscosun 85 N3,0.330,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3406,Roscosun 85 N6,0.170,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3407,Roscosun Cto,0.470,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3408,Roscosun 12 Cto,0.730,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3409,Roscosun 14 Cto,0.810,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3410,Roscosun 18 Cto,0.920,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3411,Roscosun 34 Cto,0.580,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3441,Full Straw Cts,0.500,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3442,Half Straw 12 Cts,0.730,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3443,Quarter Straw 14 Cts,0.810,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R3444,Eighth Straw 18 Cts,0.920,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4215,Calcolor 15 Blue,0.570,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4230,Calcolor 30 Blue,0.420,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4260,Calcolor 60 Blue,0.240,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4290,Calcolor 90 Blue,0.150,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4307,Calcolor 75 Cyan,0.790,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4315,Calcolor 15 Cyan,0.720,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4330,Calcolor 30 Cyan,0.630,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4360,Calcolor 60 Cyan,0.500,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4390,Calcolor 90 Cyan,0.390,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4415,Calcolor 15 Green,0.670,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4430,Calcolor 30 Green,0.520,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4460,Calcolor 60 Green,0.320,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4490,Calcolor 90 Green,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4515,Calcolor 15 Yellow,0.800,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4530,Calcolor 30 Yellow,0.750,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4560,Calcolor 60 Yellow,0.700,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4590,Calcolor 90 Yellow,0.660,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4615,Calcolor 15 Red,0.670,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4630,Calcolor 30 Red,0.550,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4660,Calcolor 60 Red,0.390,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4690,Calcolor 90 Red,0.300,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4715,Calcolor 15 Magenta,0.650,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4730,Calcolor 30 Magenta,0.520,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4760,Calcolor 60 Magenta,0.370,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4790,Calcolor 90 Magenta,0.280,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4815,Calcolor 15 Pink,0.710,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4830,Calcolor 30 Pink,0.610,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4860,Calcolor 60 Pink,0.460,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4890,Calcolor 90 Pink,0.380,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4915,Calcolor 15 Lavender,0.610,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4930,Calcolor 30 Lavender,0.470,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4960,Calcolor 60 Lavender,0.290,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
-R4990,Calcolor 90 Lavender,0.180,"us.rosco.com filter page, the '(Transmission = n%)' in its description",2026.09.29
+R388,Gaslight Green,0.674,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R389,Chroma Green,0.312,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R392,Pacific Green,0.224,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R393,Emerald Green,0.133,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R395,Teal Green,0.130,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R397,Pale Grey,0.620,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R398,Neutral Grey,0.410,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2001,Storaro Red,0.145,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2002,Storaro Orange,0.347,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2003,Storaro Yellow,0.698,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2004,Storaro Green,0.092,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2005,Storaro Cyan,0.159,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2006,Storaro Azure,0.060,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2007,Storaro Blue,0.081,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2008,Storaro Indigo,0.018,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R2009,Storaro Violet,0.030,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3114,Uv Filter,0.854,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3150,Industrial Vapor,0.452,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3152,Urban Vapor,0.299,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3202,Full Blue (CTB),0.272,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R3203,Three Quarter Blue Ctb,0.359,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3204,Half Blue (1/2 CTB),0.459,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R3206,Third Blue Ctb,0.516,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3208,Quarter Blue (1/4 CTB),0.584,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.22
+R3216,Eighth Blue Ctb,0.714,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3220,Double Blue Ctb,0.081,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3304,Tough Plusgreen,0.684,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3308,Tough Minusgreen,0.572,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3309,34 Minusgreen,0.643,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3310,Fluorofilter,0.418,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3313,Tough 12 Minusgreen,0.654,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3314,Tough 14 Minusgreen,0.736,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3315,Tough 12 Plusgreen,0.740,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3316,Tough 14 Plusgreen,0.796,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3317,Tough 18 Plusgreen,0.822,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3318,Tough 18 Minusgreen,0.771,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3405,Roscosun 85 N3,0.322,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3406,Roscosun 85 N6,0.171,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3407,Roscosun Cto,0.519,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3408,Roscosun 12 Cto,0.684,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3409,Roscosun 14 Cto,0.769,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3410,Roscosun 18 Cto,0.803,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3411,Roscosun 34 Cto,0.600,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3441,Full Straw Cts,0.608,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3442,Half Straw 12 Cts,0.708,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3443,Quarter Straw 14 Cts,0.792,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R3444,Eighth Straw 18 Cts,0.814,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4215,Calcolor 15 Blue,0.518,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4230,Calcolor 30 Blue,0.343,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4260,Calcolor 60 Blue,0.161,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4290,Calcolor 90 Blue,0.062,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4307,Calcolor 75 Cyan,0.778,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4315,Calcolor 15 Cyan,0.706,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4330,Calcolor 30 Cyan,0.633,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4360,Calcolor 60 Cyan,0.466,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4390,Calcolor 90 Cyan,0.348,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4415,Calcolor 15 Green,0.724,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4430,Calcolor 30 Green,0.592,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4460,Calcolor 60 Green,0.413,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4490,Calcolor 90 Green,0.247,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4515,Calcolor 15 Yellow,0.878,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4530,Calcolor 30 Yellow,0.840,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4560,Calcolor 60 Yellow,0.829,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4590,Calcolor 90 Yellow,0.804,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4615,Calcolor 15 Red,0.687,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4630,Calcolor 30 Red,0.551,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4660,Calcolor 60 Red,0.403,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4690,Calcolor 90 Red,0.296,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4715,Calcolor 15 Magenta,0.621,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4730,Calcolor 30 Magenta,0.465,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4760,Calcolor 60 Magenta,0.263,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4790,Calcolor 90 Magenta,0.211,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4815,Calcolor 15 Pink,0.665,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4830,Calcolor 30 Pink,0.522,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4860,Calcolor 60 Pink,0.400,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4890,Calcolor 90 Pink,0.301,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4915,Calcolor 15 Lavender,0.522,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4930,Calcolor 30 Lavender,0.379,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4960,Calcolor 60 Lavender,0.182,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+R4990,Calcolor 90 Lavender,0.090,"Rosco technical data sheet (CIE 1964 10 deg, Source A), transcribed in github.com/eosti/color-filter-sds from us.rosco.com/en/mycolor; spot-checked here against Rosco's own sheets",2026.09.29
+G100,Dusty Rose,0.243,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G101,Lavender Blue,0.348,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G103,Blue Rose,0.246,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G104,Broadway Rose,0.462,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G105,Antique Rose,0.588,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G105X,3/4 Antique Rose,0.69,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G106,1/2 Antique Rose,0.709,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G107,1/4 Antique Rose,0.723,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G108,1/8 Antique Rose,0.750,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G109,Naked Pink,0.801,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G110,Dark Rose,0.237,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G120,Bright Pink,0.252,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G135,Soft Pink,0.397,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G140,Dark Magenta,0.116,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G150,Pink Punch,0.266,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G152,Party Pink,0.483,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G155,Light Pink,0.653,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G160,Chorus Pink,0.623,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G180,Cherry,0.297,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G190,Cold Pink,0.512,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G195,Nymph Pink,0.510,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G220,Pink Magenta,0.198,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G235,Pink Red,0.211,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G245,Light Red,0.158,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G250,Medium Red XT,0.101,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G270,Red Orange,0.210,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G280,Fire Red,0.268,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G290,Fire Orange,0.285,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G305,French Rose,0.672,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G310,English Rose,0.539,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G315,Autumn Glory,0.370,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G320,Peach,0.461,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G323,Indian Summer,0.432,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G325,Bastard Amber,0.699,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G327,Pale Sepia,0.759,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G330,Sepia,0.335,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G335,Coral,0.459,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G338,Forever Amber,0.831,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G340,Light Bastard Amber,0.748,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G342,Light Honey,0.638,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G343,Honey,0.58,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G345,Deep Amber,0.408,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G350,Dark Amber,0.463,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G355,Amber Flame,0.505,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G364,Pale Honey,0.769,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G365,Warm Straw,0.761,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G370,Spice,0.210,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G375,Flame,0.578,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G380,Golden Tan,0.305,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G382,Brass,0.497,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G388,Gold Rush,0.607,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G390,Walnut,0.094,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G395,Golden Sunset,0.615,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G410,Yellow Gold,0.694,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G420,Medium Amber,0.697,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G425,Sunflower,0.700,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G430,Warm Ivory,0.625,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G435,Ivory,0.831,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G440,Very Light Straw,0.809,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G450,Saffron,0.775,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G455,Yellow Sun,0.563,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G460,Mellow Yellow,0.821,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G470,Pale Gold,0.840,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G480,Medium Yellow,0.816,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G515,Lime Yellow,0.822,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G525,Lime Sun,0.831,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G535,Lime,0.772,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G540,Pale Green,0.697,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G570,Light Green Yellow,0.451,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G650,Grass Green,0.055,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G655,Rich Green,0.099,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G660,Medium Green,0.350,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G666,Wicked Green,0.298,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G670,Emerald Green,0.074,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G685,Pistachio,0.295,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G690,Bluegrass,0.179,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G725,Princess Blue,0.279,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G730,Azure Blue,0.227,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G740,Off Blue,0.172,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G750,Nile Blue,0.158,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G760,Aqua Blue,0.138,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G770,Christel Blue,0.207,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G780,Shark Blue,0.301,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G785,Beverly Blue,0.562,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G810,Moon Blue,0.135,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G813,Dark Moon Blue,0.053,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G815,Moody Blue,0.197,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G830,North Sky Blue,0.514,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G835,Aztec Blue,0.078,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G840,Steel Blue,0.205,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G841,Diamond Blue,0.104,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G842,Whisper Blue,0.394,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G845,Cobalt,0.037,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G847,City Blue,0.121,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G848,Bonus Blue,0.117,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G855,Blue Jazz,0.010,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G870,Winter White,0.689,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G872,Opera White,0.648,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G880,Daylight Blue,0.229,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G882,Southern Sky,0.223,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G885,Blue Ice,0.7,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G888,Blue Belle,0.314,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G889,Hot Blue,0.007,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G890,Dark Sky Blue,0.021,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G905,Dark Blue,0.014,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G910,Alice Blue,0.120,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G915,Twilight,0.045,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G920,Pale Lavender,0.622,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G925,Cosmic Blue,0.028,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G930,Real Congo Blue,0.008,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G940,Light Purple,0.199,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G948,African Violet,0.042,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G960,Medium Lavender,0.258,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G970,Special Lavender,0.344,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G980,Surprise Pink,0.532,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G982,Lovely Lavender,0.420,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G985,Ripe Plum,0.024,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G990,Dark Lavender,0.165,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G995,Orchid,0.057,"Rosco GamColor technical data sheet (CIE 1964 10 deg, Source A), read by OCR 2026.11.19",2026.10.29
+G1510,UV Shield,0.83,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1514,.15ND,0.64,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1515,.3ND,0.52,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1518,1.2ND,0.16,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1520,Extra Blue CTB,0.34,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1523,Full Blue CTB,0.43,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1529,1/2 Blue CTB,0.55,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1532,1/4 Blue CTB,0.7,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1534,1/6 Blue CTB,0.74,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1535,1/8 Blue CTB,0.74,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1540,Extra CTO,0.49,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1543,Full CTO,0.58,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1546,3/4 CTO,0.62,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1549,1/2 CTO,0.66,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1552,1/4 CTO,0.75,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1556,CTO/ .3 ND,0.32,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1557,CTO/ .6 ND,0.24,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1558,CTO/ .9 ND,0.14,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1578,Xtra Minus Green,0.6,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1580,Minus Green,0.71,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1581,3/4 Minus Green,0.69,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1583,1/4 Minus Green,0.77,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1584,1/8 Minus Green,0.78,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1585,Plus Green,0.6,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1587,1/2 Plus Green,0.7,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1588,1/4 Plus Green,0.8,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1589,1/8 Plus Green,0.8,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1590,Fluorofilter CW,0.49,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29
+G1594,MV - INCD,0.46,"us.rosco.com GamColor catalog, the '(Transmission = n%)' in its description",2026.10.29

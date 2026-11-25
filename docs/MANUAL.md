@@ -127,10 +127,21 @@ is yours rather than ours.
 
 ### Say where you are
 
-Open **Show & Venue** and fill in the show, venue, designer, revision and date.
-These go in the title block. ⭐ **The date printed is the plot's own**, so a
-reprint of an old plot still carries the date it was issued; leave it blank and
-the sheet prints the day you export.
+Open **Show & Venue** and fill in the show, venue, designer, director, scenic
+design, revision and date. These go in the title block. ⭐ **The date printed
+is the plot's own**, so a reprint of an old plot still carries the date it was
+issued; leave it blank and the sheet prints the day you export.
+
+⭐ **A credit nobody filled in prints nothing at all** — no label, and no blank
+space waiting beside one. Leave the scenic designer out and that line is not
+there; the block closes up and is shorter. Nothing on the sheet claims a person
+the file does not name.
+
+**Revision holds two facts, and the first word is the designator.** Type
+`H — colour settled, fronts now R53+R119` and `H` prints in the **Rev** slot,
+while the rest prints as a note across the foot of the block and wraps to two
+lines. A designator is as long as it is — `2`, `H`, `Prelim`. ⚠ A leading `Rev`
+or `Revision` is read as the label and dropped, so `Rev H` still shows `H`.
 
 Then **The Room**: width, depth, grid height, house ceiling, plaster line.
 
@@ -180,6 +191,31 @@ Check that against something you measured.
 🔴 **Check it.** At the wrong scale the import is still a perfectly believable
 drawing — just of a different building. That number is the only thing that
 catches it.
+
+#### How heavily it is drawn
+
+Once it is in, the bar under the drawing carries a slider: **ink** for a DXF or
+PDF plan, **fade** for a scanned image. Drag it until the venue's drawing reads
+as something you can work over — a dense grid plan wants it lighter, a sparse
+one wants it darker, which is the whole reason it is a setting and not a
+constant.
+
+⭐ **It is ink, not transparency.** A vector plan is re-stroked in one flat
+grey rather than faded, so a lattice crossing itself a hundred times does not go
+dirty wherever its own lines meet. A scanned image is faded instead, because an
+image's colours are not ours to change.
+
+⚠ **The dark end stays lighter than the rig.** However far you drag it, the
+imported plan stops short of the weight your own pipes and units are drawn in.
+The venue's drawing is their claim and it stays underneath yours.
+
+⚠ **The setting goes with the import, not with the plot.** The imported plan is
+not part of the file — open a different plot and it is gone — so the slider
+starts where it starts each time you bring a plan in.
+
+⚠ **Screen only.** The exported PDF draws the base plan at the RP-2 scenery
+weight whatever the slider says. That is the standard's call, not a working
+view's.
 
 ### Build the positions
 
@@ -265,6 +301,20 @@ the channel hookup, the magic sheet and the patch always report the whole rig** 
 a load worked out without the units somebody switched off is how a breaker trips
 on a Thursday.
 
+#### What is arriving in a crate
+
+**Name anyone in Rented from and a `rented` chip joins that row**, with how many
+units carry a name; its tooltip lists who they are hired from and how many from
+each. Switch it off and the hired units leave the drawing, and the exported plot
+PDF with it.
+
+⭐ **One chip for everybody's units together**, not one per renter. The question
+on hang day is what is arriving in a crate, not whose crate it is. The
+per-renter split is what the shop order wants, and that is where it lives.
+
+⚠ **No chip at all when nothing is hired**, so a plot off the house rig never
+grows a switch it has no use for.
+
 #### A unit added later: 10A
 
 **Type `10A` into the Unit box and it goes between 10 and 11** — on the plot, in
@@ -314,7 +364,7 @@ fields are in the order you use them, not the order a database would put them.
 | **DMX personality** | What the fixture is set to at its own display. Two identical units can be on different personalities. |
 | **Type** | The fixture. ⭐ **The lens is part of the type** — a `Lustr 26 EDLT` and a `Lustr 36 EDLT` are different rows, which is why changing it resizes the pool. There is no separate beam-angle box to contradict it. |
 | **Position** | |
-| **Color** | A dropdown of **498 gels** — Roscolux and LEE — that you can also type into. `R52+R119` **stacks** (the transmissions multiply); `R52/R119` is a **split frame** (only the first counts). Neither is in any list, which is why this is not a plain dropdown. ⚠ A bare number is refused: `R119` is Light Hamburg Frost at 89% and `L119` is Dark Blue at 2%. |
+| **Color** | A dropdown of **646 gels** — Roscolux, LEE and GamColor — that you can also type into. `R52+R119` **stacks** (the transmissions multiply); `R52/R119` is a **split frame** (only the first counts). Neither is in any list, which is why this is not a plain dropdown. ⚠ A bare number is refused: `R119` is Light Hamburg Frost at 89% and `L119` is Dark Blue at 2%. |
 | **Gobo** | |
 | **Accessories** | Separate with `+` — "top hat + gobo". Gate accessories are drawn at the gate, front accessories at the nose; you say only what is on the unit. |
 | **X / Y / Trim** | ⭐ Usually not typed — they arrive from dragging. The boxes are there to read back and to correct. On a **boom**, trim is the height on the boom and is written to both fields. |
@@ -322,6 +372,7 @@ fields are in the order you use them, not the order a database would put them.
 | **Lamp** | What is in it. A **Source 4WRD** retrofit is a lamp: same barrel, same lens, 150 W instead of 575. |
 | **LED mode** | The **photometric** output mode — how bright. Not the DMX personality. |
 | **Lens angle** | Oval-beam units only (PARNel): degrees the lens is turned. |
+| **Rented from** | Who the unit is **hired from** — a shop, or a person. ⭐ **The presence of a name is the fact**: blank means the house already has it, so there is no house-or-hire tick to forget to set. It prints as its own column in the instrument schedule, between Accessory and Notes, and it is what the shop order is grouped by. |
 | **Notes** | |
 
 **Delete instrument** is at the bottom, and it asks first.

@@ -10,7 +10,8 @@
  *
  * ⚠ Two kinds of field, and the difference matters:
  *
- *   IDENTITY   show, venue, designer, studio, revision. These print, and
+ *   IDENTITY   show, venue, designer, director, scenic design, studio,
+ *              revision. These print, and
  *              nothing else changes. A redraw is enough.
  *   THE ROOM   width, depth, grid height, house ceiling, plaster line. Every
  *              one of these moves the drawing or changes what is CHECKED — the
@@ -129,7 +130,18 @@ export function renderDetails(host: HTMLElement, store: Store, deps: DetailDeps)
                 + "the drawing never claims an author the file does not name." }),
     field("Studio", p.studio, v => { store.setMeta({ studio: v }); deps.onChange(); },
           { hint: "Printed along the bottom of the title block." }),
-    field("Revision", p.revision, v => { store.setMeta({ revision: v }); deps.onChange(); }),
+    field("Director", p.director, v => { store.setMeta({ director: v }); deps.onChange(); },
+          { hint: "Printed in the title block under the lighting credit. Left blank, "
+                + "no line is printed at all." }),
+    field("Scenic design", p.scenicDesigner,
+          v => { store.setMeta({ scenicDesigner: v }); deps.onChange(); },
+          { hint: "Printed in the title block under the director. Left blank, "
+                + "no line is printed at all." }),
+    field("Revision", p.revision, v => { store.setMeta({ revision: v }); deps.onChange(); },
+          { wide: true,
+            hint: "The designator, then what changed — \"H — pipes retrimmed\". The "
+                + "first word prints beside Rev in the title block; the rest prints "
+                + "under the sheet name. One word on its own is fine." }),
     field("Date", p.date, v => { store.setMeta({ date: v }); deps.onChange(); },
           { hint: "The date on the plot, printed in the title block. Blank prints the day it is exported." }),
   ]);

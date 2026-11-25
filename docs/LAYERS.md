@@ -163,11 +163,11 @@ expensive model is only worth it if the cheap one cannot do the job.
 
 - **"Show me the act 2 additions."**
 - **"The dance plot, not the play plot"** — one rig, two shows, shared positions.
-- **"Everything Jairous is hanging on Thursday"**, versus the FOH call.
+- **"Everything the sound op is hanging on Thursday"**, versus the FOH call.
 - **"Hide the rep plot so I can see what I added."** ⭐ This one is already real
-  here: a rented black box arrives with a house rep plot up, and
-  `our-clients.md` says the Bluver likely will. Telling *my* units from *theirs*
-  is a live problem in November, not a hypothetical.
+  here: a rented black box arrives with a house rep plot already up, and the
+  next booking on the designer's calendar is one of those. Telling *my* units
+  from *theirs* is a live problem in November, not a hypothetical.
 
 🔴 **Every one of those is about INSTRUMENTS, not about drawing elements.** None
 of them wants to hide the room, the text or the dimensions. That is the strongest

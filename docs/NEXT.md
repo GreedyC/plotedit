@@ -245,7 +245,7 @@ dash — *"Without Consent — Plot.pdf"*. Every download raised
   it is doubled.
 
 - **✅ THE GEL LIBRARY — done 2026.09.29, except the diffusions.** 11 gels became
-  **498**: 239 Roscolux and 259 LEE, each row citing the maker's own page.
+  **646**: 239 Roscolux, 259 LEE and 148 GamColor, each row citing the maker's own page.
 
   ⚠ **What is still missing is one class, and it is the same class from both
   makers: DIFFUSION.** 29 Roscolux (the R100 series — frosts, silks, spuns,

@@ -335,7 +335,7 @@ export function renderInspector(
       }
       input.value = String(inst[f.key] ?? "");
     } else if (f.kind === "combo") {
-      // A text box with a datalist: 498 suggestions, and anything typed is
+      // A text box with a datalist: 646 suggestions, and anything typed is
       // still accepted. ⚠ The browser stops matching once you type "R52+",
       // because no single entry starts with that — normal combobox behaviour,
       // and the reason this must never become a <select>.
